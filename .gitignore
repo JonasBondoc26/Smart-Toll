@@ -1,0 +1,19 @@
+# Dependencies (reinstalled with npm install / composer install)
+node_modules/
+vendor/
+
+# Build output
+dist/
+smarttoll/frontend/dist/
+
+# Local environment and secrets (copy .env.example to .env instead)
+.env
+.env.*
+!.env.example
+
+# Logs, caches, editor and OS files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

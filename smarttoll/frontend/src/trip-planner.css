@@ -1,0 +1,91 @@
+/* Plan a Trip — additions to styles.css (imported by pages/TripPlanner.jsx) */
+
+.planner-grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+.planner-grid > * { min-width: 0; }
+@media (max-width: 1024px) { .planner-grid { grid-template-columns: 1fr; } }
+
+/* Map */
+.planner-map { height: 420px; isolation: isolate; }
+.planner-map .map-canvas { position: absolute; inset: 0; background: #E8ECE3; }
+.planner-map .map-legend { z-index: 500; pointer-events: none; }
+.planner-map .leaflet-container { font-family: 'Inter', sans-serif; }
+@media (max-width: 480px) { .planner-map { height: 300px; } }
+
+.map-status {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 500;
+  background: var(--white); border-radius: 8px; padding: 9px 14px; font-size: 12.5px; font-weight: 600;
+  box-shadow: var(--shadow-card); color: var(--ink); max-width: 88%; text-align: center;
+}
+.map-status.is-error { background: var(--red-pale); color: var(--red); }
+
+.leaflet-div-icon.st-icon { background: none; border: none; }
+.st-icon .map-pin { position: relative; }
+.st-plaza-tip.leaflet-tooltip {
+  font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: var(--amber-dark);
+  border: none; box-shadow: var(--shadow-card); border-radius: 6px; padding: 4px 9px;
+}
+.st-plaza-tip.is-entry.leaflet-tooltip { color: #15803D; }
+.st-plaza-tip.is-exit.leaflet-tooltip { color: #C2410C; }
+
+/* Form */
+.swap-row { display: flex; justify-content: flex-end; margin: -8px 0 6px; }
+.swap-btn {
+  background: none; border: none; cursor: pointer; color: var(--green-deep);
+  font: 600 12.5px 'Inter', sans-serif; display: inline-flex; align-items: center; gap: 5px; padding: 4px 2px;
+}
+.swap-btn:focus-visible, .route-option:focus-visible { outline: 2px solid var(--green-mid); outline-offset: 2px; }
+
+/* "Pin on map" beside the Origin / Destination label */
+.field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.field-label-row label { margin-bottom: 0; }
+.pin-btn {
+  background: none; border: none; cursor: pointer; color: var(--green-deep); border-radius: 999px;
+  font: 600 12px 'Inter', sans-serif; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+}
+.pin-btn:hover { background: var(--green-pale); }
+.pin-btn.is-active { background: var(--green-deep); color: var(--white); }
+.pin-btn:focus-visible { outline: 2px solid var(--green-mid); outline-offset: 2px; }
+.planner-map .map-canvas.is-pinning, .planner-map .map-canvas.is-pinning .leaflet-interactive { cursor: crosshair; }
+
+.btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Route option cards */
+.route-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.route-option {
+  text-align: left; background: var(--white); border: 1.5px solid var(--concrete-line); border-radius: var(--radius-md);
+  padding: 14px 16px; cursor: pointer; font-family: 'Inter', sans-serif; color: var(--ink); box-shadow: var(--shadow-card);
+}
+.route-option.is-selected { border-color: var(--green-deep); box-shadow: 0 0 0 3px rgba(11,79,63,0.12); }
+.route-option-badges { display: flex; flex-wrap: wrap; gap: 5px; min-height: 24px; margin-bottom: 9px; }
+.route-option-badges .badge { padding: 3px 9px; font-size: 11px; }
+.route-option-toll { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 26px; color: var(--green-deep); line-height: 1.1; }
+.route-option-toll small { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: var(--amber-dark); margin-left: 4px; }
+.route-option-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; font-variant-numeric: tabular-nums; }
+.route-option-via { font-size: 12px; color: var(--ink-faint); margin-top: 3px; }
+
+/* Gantry: one entry → exit pair per toll system */
+.gantry-plazas.is-segments { flex-wrap: wrap; gap: 14px 10px; justify-content: space-around; }
+.gantry-plaza.is-wide { width: auto; min-width: 120px; max-width: 220px; text-align: center; }
+.gantry-plaza-road { color: #A9CDBB; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 4px; }
+
+.notice { border-radius: var(--radius-md); padding: 12px 16px; font-size: 13px; line-height: 1.5; }
+.notice-warn { background: var(--amber-pale); color: var(--amber-dark); border: 1px solid #F0D9A8; }
+.notice ul { margin: 6px 0 0 18px; }
+.notice-ok { background: var(--green-pale); color: var(--green-deep); border: 1px solid #BFE0CC; }
+.notice-error { background: var(--red-pale); color: var(--red); border: 1px solid #F3C4C0; }
+
+/* RFID balance card (Plan a Trip) */
+.balance-card.is-short { border-color: #F3C4C0; }
+.balance-after {
+  padding: 14px 0 0; margin-top: 8px; border-top: 2px solid var(--green-dark);
+  font-weight: 700; font-size: 15px;
+}
+.balance-after-value { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 26px; color: var(--green-deep); }
+.balance-card.is-short .balance-after { border-top-color: var(--red); }
+.balance-card.is-short .balance-after-value { color: var(--red); }
+.save-done { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.save-done a { color: inherit; text-decoration: underline; }
+.save-rfid { margin: 6px 0 0 24px; font-weight: 400; }
+.planner-hint { color: var(--ink-faint); font-size: 13px; text-align: center; padding: 26px 10px; }
+.breakdown-row { padding: 11px 0; border-top: 1px solid var(--concrete-line); }
+.breakdown-sub { font-size: 11.5px; color: var(--ink-faint); }

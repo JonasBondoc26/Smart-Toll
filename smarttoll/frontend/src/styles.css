@@ -1,0 +1,575 @@
+/* ============================================
+   SmartToll Design System v2
+   Signature: expressway signage — gantry green,
+   condensed signage type, illustrated route line
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --green-deep: #0B4F3F;
+  --green-dark: #12261F;
+  --green-mid: #2F8F5B;
+  --green-pale: #F0F6F2;
+  --amber: #E8A33D;
+  --amber-dark: #B87A1F;
+  --amber-pale: #FCF0DB;
+  --red: #C1442E;
+  --red-pale: #FBEAE6;
+  --concrete: #F3F4EF;
+  --concrete-line: #E2E4DC;
+  --white: #FFFFFF;
+  --ink: #14201C;
+  --ink-soft: #5B6B63;
+  --ink-faint: #93A099;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 2px rgba(11,38,31,0.04), 0 6px 20px rgba(11,38,31,0.06);
+  --shadow-modal: 0 20px 60px rgba(11,38,31,0.25), 0 4px 16px rgba(11,38,31,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--concrete);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+h1, h2, h3, .signage {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--green-dark);
+}
+
+svg { display: block; flex-shrink: 0; }
+
+/* ---------- Layout shell ---------- */
+.app-shell { display: flex; min-height: 100vh; }
+
+.topbar {
+  background: var(--green-dark);
+  color: var(--white);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--amber);
+}
+.topbar.admin-bar { background: var(--ink); border-bottom-color: var(--amber); }
+.brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.brand .mark {
+  width: 32px; height: 32px;
+  background: var(--amber);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--green-dark);
+}
+.brand-tag {
+  font-family: 'Inter'; text-transform: none; font-weight: 600; font-size: 12px;
+  color: #A9CDBB; background: rgba(255,255,255,0.08); padding: 3px 9px; border-radius: 100px; margin-left: 6px;
+}
+.topbar-user {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 14px;
+  color: #CFE3DA;
+}
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center;
+  color: #CFE3DA; cursor: pointer; border: none;
+}
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--green-mid);
+  color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-family: 'Inter'; font-size: 13px;
+}
+.avatar.admin { background: var(--amber); color: var(--green-dark); }
+
+.sidebar {
+  width: 232px;
+  background: var(--white);
+  border-right: 1px solid var(--concrete-line);
+  padding: 20px 14px;
+  flex-shrink: 0;
+}
+.sidebar a {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  margin-bottom: 2px;
+}
+.sidebar a svg { opacity: 0.7; }
+.sidebar a.active {
+  color: var(--green-deep);
+  font-weight: 700;
+  background: var(--green-pale);
+}
+.sidebar a.active svg { opacity: 1; }
+.sidebar a:hover:not(.active) { background: #FAFBF8; }
+.sidebar-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  padding: 16px 12px 8px;
+  font-weight: 700;
+}
+
+.main { flex: 1; padding: 32px 40px 60px; max-width: 1240px; }
+.page-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 26px; }
+.page-head h1 { font-size: 30px; }
+.page-head .subtitle { color: var(--ink-soft); font-size: 14px; margin-top: 5px; font-family: 'Inter'; text-transform: none; font-weight: 400; max-width: 560px; }
+.breadcrumb { font-size: 12px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin-bottom: 8px; }
+.breadcrumb span { color: var(--green-deep); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: 'Inter'; font-weight: 600; font-size: 14px;
+  padding: 11px 20px; border-radius: var(--radius-sm);
+  border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  transition: none;
+}
+.btn-primary { background: var(--green-deep); color: var(--white); }
+.btn-secondary { background: var(--white); color: var(--green-deep); border: 1px solid var(--concrete-line); }
+.btn-amber { background: var(--amber); color: var(--green-dark); }
+.btn-danger { background: var(--red); color: var(--white); }
+.btn-ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--concrete-line); }
+/* The mockups used <a> for these; as <button>s they also need the browser's border, font and cursor reset. */
+.btn-text, .btn-danger-text {
+  background: none; border: none; border-radius: var(--radius-sm); cursor: pointer;
+  font-family: 'Inter'; font-weight: 600; font-size: 13px; line-height: 1.2;
+  padding: 6px 2px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none;
+}
+.btn-text { color: var(--green-deep); }
+.btn-danger-text { color: var(--red); }
+.btn-text:hover, .btn-danger-text:hover { text-decoration: underline; }
+.btn-text:focus-visible, .btn-danger-text:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.btn-text:disabled, .btn-danger-text:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
+.btn-block { width: 100%; justify-content: center; padding: 13px; }
+/* A button that looks like an inline text link (e.g. "Forgot your current password?") */
+.link-btn { background: none; border: none; padding: 0; cursor: pointer; font: inherit; font-weight: 600; color: var(--green-deep); }
+.link-btn:hover { text-decoration: underline; }
+.btn-icon { padding: 10px; }
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--concrete-line);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+.card-row { display: flex; justify-content: space-between; align-items: center; }
+.card-flush { padding: 0; overflow: hidden; }
+
+/* ---------- Stat / KPI cards ---------- */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.kpi-card {
+  background: var(--white); border: 1px solid var(--concrete-line); border-radius: var(--radius-md);
+  padding: 20px; box-shadow: var(--shadow-card);
+}
+.kpi-icon {
+  width: 38px; height: 38px; border-radius: 9px; background: var(--green-pale);
+  display: flex; align-items: center; justify-content: center; color: var(--green-deep); margin-bottom: 14px;
+}
+.kpi-value { font-family: 'Barlow Condensed'; font-size: 30px; font-weight: 700; color: var(--green-dark); line-height: 1; }
+.kpi-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; font-weight: 500; }
+.kpi-trend { font-size: 12px; font-weight: 700; margin-top: 10px; display: flex; align-items: center; gap: 4px; }
+.kpi-trend.up { color: var(--green-mid); }
+.kpi-trend.warn { color: var(--amber-dark); }
+
+/* ---------- Forms ---------- */
+.field { margin-bottom: 18px; }
+.field label {
+  display: block; font-size: 12.5px; font-weight: 700;
+  color: var(--ink-soft); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: 0.04em; font-family: 'Inter';
+}
+.field input, .field select {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--concrete-line); border-radius: var(--radius-sm);
+  font-family: 'Inter'; font-size: 14px; background: var(--white); color: var(--ink);
+}
+/* Drop the native select chrome so it matches the search-select inputs (same height, same chevron at right 12px). */
+.field select {
+  appearance: none; -webkit-appearance: none; cursor: pointer; line-height: 1.2;
+  padding-right: 38px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2393A099' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 14px;
+}
+.field select:disabled { background-color: var(--concrete); color: var(--ink-soft); cursor: not-allowed; }
+.field input { line-height: 1.2; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(47,143,91,0.15); }
+.field-hint { font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+.input-prefix { position: relative; }
+.input-prefix span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); font-weight: 600; font-size: 14px; }
+.input-prefix input { padding-left: 30px; }
+
+/* ---------- Searchable location dropdown (combobox) ---------- */
+.search-select { position: relative; }
+.search-select input { padding-left: 38px; padding-right: 34px; }
+.search-select .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); pointer-events: none; }
+.search-select .chevron-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); pointer-events: none; }
+.search-select.open input { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(47,143,91,0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.search-dropdown {
+  position: absolute; top: calc(100% - 1px); left: 0; right: 0; z-index: 5;
+  background: var(--white); border: 1.5px solid var(--green-mid); border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  box-shadow: var(--shadow-modal); max-height: 260px; overflow-y: auto;
+}
+.search-dropdown-group-label {
+  padding: 9px 14px 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--ink-faint); background: var(--concrete);
+}
+.search-dropdown-item {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer;
+  border-top: 1px solid var(--concrete-line);
+}
+.search-dropdown-item:first-of-type { border-top: none; }
+.search-dropdown-item.highlighted { background: var(--green-pale); }
+.search-dropdown-item-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--concrete); display:flex; align-items:center; justify-content:center; color: var(--ink-soft); flex-shrink:0; }
+.search-dropdown-item.highlighted .search-dropdown-item-icon { background: var(--white); color: var(--green-deep); }
+.search-dropdown-item-text { font-size: 13.5px; }
+.search-dropdown-item-name { font-weight: 600; color: var(--ink); }
+.search-dropdown-item-name mark { background: #CFE8DA; color: var(--green-deep); border-radius: 2px; }
+.search-dropdown-item-meta { color: var(--ink-faint); font-size: 12px; margin-top: 1px; }
+.search-dropdown-empty { padding: 20px 14px; text-align: center; color: var(--ink-faint); font-size: 13px; }
+
+/* ---------- Badges ---------- */
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 100px; font-size: 12px; font-weight: 700; }
+.badge-ok { background: var(--green-pale); color: var(--green-mid); }
+.badge-warn { background: var(--amber-pale); color: var(--amber-dark); }
+.badge-neutral { background: #EFF1EC; color: var(--ink-soft); }
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ---------- Route illustration (signature element) ---------- */
+.gantry {
+  background: linear-gradient(155deg, var(--green-dark) 0%, #0E2019 100%);
+  border-radius: var(--radius-lg);
+  padding: 26px 30px 22px;
+  position: relative;
+  overflow: hidden;
+}
+.gantry::before {
+  content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px;
+  border: 34px solid rgba(232,163,61,0.08); border-radius: 50%;
+}
+.gantry-title { color: #A9CDBB; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 22px; font-family: 'Inter'; font-weight: 700; position: relative; }
+.route-svg { width: 100%; height: auto; display: block; position: relative; }
+.gantry-plazas { display: flex; justify-content: space-between; margin-top: 10px; position: relative; }
+.gantry-plaza { display: flex; flex-direction: column; align-items: center; width: 100px; }
+.gantry-plaza-name { color: var(--white); font-size: 12.5px; font-weight: 600; text-align: center; font-family: 'Inter'; }
+.gantry-plaza-fee { color: var(--amber); font-size: 13px; margin-top: 3px; font-family: 'Barlow Condensed'; font-weight: 700; font-size: 16px; }
+
+/* ---------- Map illustration ---------- */
+.map-block {
+  background: #E8ECE3;
+  border-radius: var(--radius-lg);
+  min-height: 340px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--concrete-line);
+}
+.map-pin {
+  position: absolute; width: 30px; height: 30px; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg); display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 8px rgba(11,38,31,0.25);
+}
+.map-pin.origin { background: var(--green-deep); }
+.map-pin.dest { background: var(--red); }
+.map-pin span { transform: rotate(45deg); color: white; font-size: 12px; font-weight: 800; }
+.map-label {
+  position: absolute; background: var(--white); padding: 5px 10px; border-radius: 6px;
+  font-size: 11.5px; font-weight: 700; box-shadow: var(--shadow-card); color: var(--ink);
+}
+.map-legend { position: absolute; bottom: 14px; left: 14px; background: rgba(255,255,255,0.92); border-radius: 8px; padding: 10px 14px; font-size: 11.5px; box-shadow: var(--shadow-card); }
+.map-legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.map-legend-row:last-child { margin-bottom: 0; }
+.map-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ---------- Table (admin) ---------- */
+table { width: 100%; border-collapse: collapse; background: var(--white); }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); background: #F0F1EC; padding: 13px 20px; font-family: 'Inter'; font-weight: 700; }
+td { padding: 15px 20px; font-size: 14px; border-top: 1px solid var(--concrete-line); }
+tr:hover td { background: #FAFBF8; }
+.table-actions { display: flex; gap: 16px; align-items: center; }
+
+/* ---------- Auth screens ---------- */
+.auth-shell { min-height: 100vh; display: flex; }
+.auth-visual {
+  flex: 1.15; background: linear-gradient(160deg, var(--green-dark) 0%, #0E2019 100%);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 64px; color: var(--white); position: relative; overflow: hidden;
+}
+.auth-visual::after {
+  content: ''; position: absolute; right: -100px; bottom: -100px; width: 380px; height: 380px;
+  border: 46px solid rgba(232,163,61,0.10); border-radius: 50%;
+}
+.auth-visual::before {
+  content: ''; position: absolute; left: -60px; top: -60px; width: 200px; height: 200px;
+  border: 26px solid rgba(255,255,255,0.04); border-radius: 50%;
+}
+.auth-form-side { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--white); padding: 40px; }
+.auth-box { width: 400px; }
+
+/* ---------- Empty states ---------- */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 70px 40px;
+  background: var(--white); border: 1.5px dashed var(--concrete-line); border-radius: var(--radius-lg);
+}
+.empty-icon {
+  width: 68px; height: 68px; border-radius: 18px; background: var(--green-pale);
+  display: flex; align-items: center; justify-content: center; color: var(--green-deep); margin-bottom: 22px;
+}
+.empty-state h3 { font-size: 20px; margin-bottom: 8px; }
+.empty-state p { color: var(--ink-soft); font-size: 14px; max-width: 340px; margin-bottom: 24px; font-family: 'Inter'; }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(11,38,31,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 10;
+}
+.modal-card {
+  background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-modal);
+  width: 440px; max-width: 92vw; padding: 28px;
+}
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.modal-head h3 { font-size: 20px; }
+.modal-close { width: 30px; height: 30px; border-radius: 8px; background: var(--concrete); display: flex; align-items: center; justify-content: center; color: var(--ink-soft); cursor: pointer; border: none; }
+.modal-footer { display: flex; gap: 10px; margin-top: 22px; }
+.modal-footer .btn { flex: 1; justify-content: center; }
+.modal-icon-warn {
+  width: 50px; height: 50px; border-radius: 50%; background: var(--red-pale); color: var(--red);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+}
+.modal-icon-ok {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--green-pale); color: var(--green-mid);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;
+}
+.modal-card-center { text-align: center; }
+.modal-card-center .modal-footer .btn { flex: none; width: 100%; }
+
+/* generic helpers */
+.mt-8 { margin-top: 8px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; } .mt-32 { margin-top: 32px; }
+.mb-16 { margin-bottom: 16px; } .mb-24 { margin-bottom: 24px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.muted { color: var(--ink-soft); font-family: 'Inter'; font-size: 13px; text-transform: none; font-weight: 400; }
+.divider { border-top: 1px solid var(--concrete-line); margin: 18px 0; }
+.flex { display: flex; align-items: center; }
+.gap-8 { gap: 8px; } .gap-12 { gap: 12px; }
+
+/* ============================================
+   Bottom tab bar only exists for the mobile layout.
+   Hidden by default (desktop + tablet); the mobile
+   media query below flips it back to display:flex.
+   ============================================ */
+.bottom-nav { display: none; }
+
+/* ============================================
+   TABLET — fluid up to 1024px
+   (was a fixed 834px-only stylesheet, now a real
+   breakpoint that scales down to 834 and below)
+   ============================================ */
+@media (max-width: 1024px) {
+   SmartToll — TABLET Overrides (iPad-class, 834px)
+   Loaded AFTER styles-tablet-base.css (the desktop
+   design system). Same colors/type/branding as
+   desktop — only spacing, widths, and column counts
+   change for the smaller frame.
+   ============================================ */
+
+html, body {
+  width: 100%;
+  max-width: 834px;
+  margin: 0 auto;
+  min-height: auto;
+}
+#root, .app-shell, .auth-shell { width: 100%; max-width: 834px; }
+
+/* ---------- Tablet nav: collapsed icon-only rail ----------
+   834px is wide enough to justify a persistent left nav, but not
+   wide enough for full labels without eating into content — so it
+   collapses to an icon rail (same pattern as Gmail/YouTube on
+   tablet) instead of dropping to a bottom tab bar. Bottom tab bars
+   stay a mobile-only pattern: they exist for one-thumb reach on a
+   phone-sized screen, which isn't a constraint here. */
+.sidebar { width: 68px; padding: 20px 8px; align-items: center; }
+.sidebar a {
+  flex-direction: column; justify-content: center; align-items: center;
+  padding: 12px 4px; font-size: 0; gap: 0; margin-bottom: 6px;
+}
+.sidebar a svg { width: 20px; height: 20px; }
+.sidebar-label { display: none; } /* "Account" text divider — icon rail has no room for section labels */
+
+.main { padding: 24px 24px 48px; max-width: none; }
+.page-head h1 { font-size: 25px; }
+.page-head .subtitle { font-size: 13px; max-width: 420px; }
+
+/* Two/three-column layouts compress to fit 834px width */
+.grid-2 { grid-template-columns: 1fr; gap: 14px; }
+.grid-3 { grid-template-columns: 1fr 1fr; gap: 14px; }
+.kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+/* Trip planner's 340px-sidebar layout becomes stacked on tablet */
+div[style*="grid-template-columns: 340px 1fr"] {
+  grid-template-columns: 1fr !important;
+}
+
+/* Admin tables scroll horizontally instead of overflowing the frame */
+.card-flush { overflow-x: auto; }
+table { min-width: 620px; }
+
+/* Auth screens: visual panel shrinks, form stays full-width readable */
+.auth-visual { flex: 1; padding: 40px; }
+.auth-form-side { flex: 1; padding: 28px; }
+.auth-box { width: 100%; max-width: 380px; }
+
+/* Modal stays centered but narrower margin so it doesn't crowd the frame */
+.modal-card { width: 400px; max-width: 90vw; }
+
+/* Map / route illustration blocks keep their aspect but shrink height a touch */
+.map-block { min-height: 280px; }
+}
+
+/* ============================================
+   MOBILE — fluid up to 480px
+   (was a fixed 390px-only stylesheet, now a real
+   breakpoint; also re-enables .bottom-nav)
+   ============================================ */
+@media (max-width: 480px) {
+   SmartToll — MOBILE Overrides (iPhone-class, 390px)
+   Same colors/type/branding as desktop — layout is
+   what changes: sidebar becomes a bottom tab bar,
+   grids stack to one column, modals go full-screen.
+   ============================================ */
+
+html, body {
+  width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
+  min-height: auto;
+  overflow-x: hidden;
+}
+
+/* ---------- App shell: sidebar removed from flow, main takes full width ---------- */
+.app-shell { display: block; width: 100%; }
+.main { padding: 16px 16px 88px; max-width: none; width: 100%; box-sizing: border-box; }
+.page-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+.page-head h1 { font-size: 22px; }
+.page-head .subtitle { font-size: 12.5px; max-width: none; }
+.page-head .btn { width: 100%; justify-content: center; }
+
+/* ---------- Condensed topbar ---------- */
+.topbar { padding: 12px 16px; }
+.brand { font-size: 17px; gap: 8px; }
+.brand .mark { width: 26px; height: 26px; }
+.topbar-user { gap: 8px; font-size: 0; } /* hide the name text on mobile, keep avatar */
+.topbar-user .avatar { font-size: 12px; width: 30px; height: 30px; }
+.icon-btn { width: 30px; height: 30px; }
+
+/* ---------- Bottom tab navigation (replaces sidebar) ---------- */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 390px; background: var(--white); border-top: 1px solid var(--concrete-line);
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 8px 4px 10px; box-shadow: 0 -4px 16px rgba(11,38,31,0.08); z-index: 20;
+}
+.bottom-nav.admin-bn { background: var(--white); border-top-color: var(--ink); border-top-width: 2px; }
+.bn-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--ink-faint); text-decoration: none; font-size: 10px; font-weight: 600;
+  padding: 4px 8px; border-radius: 8px; flex: 1;
+}
+.bn-item.active { color: var(--green-deep); }
+.bn-item.active svg { stroke: var(--green-deep); }
+.bn-item.bn-more { color: var(--ink-faint); }
+
+/* ---------- Sidebar itself is hidden if it ever appears (auth pages don't have one) ---------- */
+.sidebar { display: none; }
+
+/* ---------- Grids: everything stacks to one column ---------- */
+.grid-2, .grid-3, .kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+div[style*="grid-template-columns: 340px 1fr"] { grid-template-columns: 1fr !important; }
+div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+/* ---------- Cards ---------- */
+.card { padding: 18px; }
+
+/* ---------- Tables: horizontal scroll instead of restructuring to cards ---------- */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-md); }
+.table-scroll table { min-width: 560px; }
+
+/* ---------- Modals become full-screen sheets on mobile ---------- */
+.modal-backdrop { padding: 0; align-items: flex-end; background: rgba(11,38,31,0.55); }
+.modal-card {
+  width: 100%; max-width: 390px; height: 92vh; border-radius: 18px 18px 0 0;
+  overflow-y: auto; padding: 22px 18px 28px;
+}
+.modal-footer { position: sticky; bottom: 0; background: var(--white); padding-top: 14px; margin-top: 18px; }
+
+/* ---------- Auth screens stack vertically, visual panel becomes a compact top hero ---------- */
+.auth-shell { flex-direction: column; width: 100%; min-height: auto; }
+.auth-visual { flex: none; width: 100%; padding: 32px 24px; min-height: 220px; box-sizing: border-box; }
+.auth-visual h1 { font-size: 26px !important; }
+.auth-visual p { display: none; } /* tagline copy hidden on mobile to save vertical space */
+.auth-visual .gantry { display: none; } /* the sample-route illustration is desktop-only flourish */
+.auth-form-side { width: 100%; padding: 28px 20px 40px; box-sizing: border-box; }
+.auth-box { width: 100%; }
+
+/* ---------- Route / map illustrations shrink ---------- */
+.map-block { min-height: 200px; }
+.gantry { padding: 18px 16px 16px; }
+.gantry-plaza { width: 74px; }
+.gantry-plaza-name { font-size: 11px; }
+
+/* ---------- KPI cards condense ---------- */
+.kpi-card { padding: 16px; }
+.kpi-value { font-size: 24px; }
+
+/* ---------- Forms: side-by-side fields stack ---------- */
+.field { margin-bottom: 16px; }
+}
+
+/* ============================================
+   Profile screens (end-user + admin)
+   ============================================ */
+.profile-hero { display: flex; align-items: center; gap: 20px; }
+.avatar-lg {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: var(--green-mid); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed'; font-weight: 700; font-size: 28px;
+  position: relative; flex-shrink: 0;
+}
+.avatar-lg.admin { background: var(--amber); color: var(--green-dark); }
+.profile-name { font-size: 20px; }
+.profile-meta { color: var(--ink-soft); font-size: 13.5px; margin-top: 4px; font-family: 'Inter'; font-weight: 400; text-transform: none; }
+
+@media (max-width: 480px) {
+  .profile-hero { flex-direction: column; align-items: center; text-align: center; }
+}

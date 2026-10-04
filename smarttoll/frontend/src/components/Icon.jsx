@@ -4,7 +4,8 @@ export const PATHS = {
   lock: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM8 9V7a4 4 0 118 0v2',
   plus: 'M12 5v14M5 12h14',
   chevron: 'M9 6l6 6-6 6',
-  car: 'M3 12l2-6h14l2 6M5 12v6a1 1 0 001 1h1a1 1 0 001-1v-1h8v1a1 1 0 001 1h1a1 1 0 001-1v-6M5 12h14M7 15h.01M17 15h.01',
+  // front view: windshield, body, wheels, headlights
+  car: 'M4 11l1.8-4.6A2 2 0 017.7 5h8.6a2 2 0 011.9 1.4L20 11M4 11h16a1 1 0 011 1v5a1 1 0 01-1 1H4a1 1 0 01-1-1v-5a1 1 0 011-1zM6 18v2M18 18v2M7 14.5h.01M17 14.5h.01',
   card: 'M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2zM6 12h.01M10 12h4',
   clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3',
   // Dot centred in the pin's head (12,10), as in the mockups' location-search icon.
@@ -25,11 +26,11 @@ export const PATHS = {
   'chevron-up': 'M18 15l-6-6-6 6',
   swap: 'M7 4v16M7 20l-4-4M7 4l4 4M17 20V4M17 4l4 4M17 20l-4-4',
   check: 'M5 13l4 4L19 7',
-  // Admin nav, from the admin mockups' bottom nav
-  road: 'M4 20L14 4M20 20L10 4M4 20h6M16 4h4',
-  plaza: 'M6 2v20M18 2v20M6 8h12M6 16h12',
-  classes: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
-  table: 'M3 3h18v18H3zM3 9h18M9 3v18',
+  // Admin module
+  road: 'M5 21L10 3M19 21L14 3M12 4v2.5M12 10.5v3M12 17.5v3',                                        // expressway: two edges + lane dashes
+  plaza: 'M2 21h20M4 21V9l3.5-3.5L11 9v12M11 11.5h10v3.5H11M14.5 11.5v3.5M18 11.5v3.5M6 13h3',          // toll booth with a striped barrier arm
+  classes: 'M2 6h12v10H2zM14 9h4.5L22 12.5V16h-8M6 20a2 2 0 100-4 2 2 0 000 4zM18 20a2 2 0 100-4 2 2 0 000 4z', // truck (vehicle classes)
+  table: 'M3 4h18v16H3zM3 9h18M9 4v16M13 13h5M13 16h3',                                                 // rate table (toll matrix)
   logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
 };
 

@@ -41,7 +41,14 @@ It was built as a capstone project at Holy Angel University.
 - **Trip History:** a list of saved trips, and a detail page per trip with its map, toll breakdown and RFID payment.
 - **Dashboard:** your vehicles, RFID balances (low ones flagged), trips planned, tolls this month and recent trips.
 
-**Admin:** there's an admin log-in. The admin pages (expressways, toll plazas, vehicle classes, toll matrix) are still in progress.
+**Admin** (log in at `/admin/login`)
+- **Dashboard:** counts, quick actions, and a **Needs Attention** list of plazas without coordinates, plazas without rates, and expressways without plazas.
+- **Expressways:** add, edit or delete. Each one shows whether the trip planner uses it. Deleting an expressway also deletes its plazas and rates.
+- **Toll Plazas:** add, edit or delete, with filters. You set the location by clicking or dragging a pin on a map, and plazas missing coordinates have a **Fix Now** button.
+- **Vehicle Classes:** add, edit or delete. A class can't be deleted while toll rates or vehicles still use it.
+- **Toll Matrix:** browse all 2,311 rates with filters by expressway and class, search and pages. Add, edit or delete rates; duplicates and pairs across different expressways are rejected.
+- **Admin Profile:** edit name and email, change password.
+- Plazas that saved trips refer to can't be deleted, so motorists' trip history stays intact.
 
 ---
 
@@ -67,6 +74,7 @@ Code/
 ├── smarttoll-api/             ← Laravel backend (REST API)
 │   ├── app/
 │   │   ├── Http/Controllers/  ← Auth, Profile, Vehicles, RFID, Trip planner, Trips, Dashboard
+│   │   ├── Http/Controllers/Admin/AdminController.php   ← admin module (reference data)
 │   │   ├── Services/TripPlannerService.php   ← route → toll segments → fares
 │   │   └── Console/Commands/  ← trb:* commands that import the TRB toll data
 │   ├── config/smarttoll.php   ← toll systems, RFID networks, supported cities, OSRM settings
@@ -78,7 +86,7 @@ Code/
 │   └── .env.example           ← copy to .env
 └── smarttoll/
     └── frontend/              ← React app (Vite)
-        ├── src/pages/         ← one file per screen
+        ├── src/pages/         ← one file per screen (src/pages/admin/ for the admin module)
         ├── src/components/    ← map, sidebar, location search, icons, modals
         └── vite.config.js     ← forwards /api to http://localhost:8000
 ```
@@ -193,6 +201,14 @@ php artisan db:seed
 | Admin | `admin@smarttoll.system` | `Admin@12345` |
 
 > Run `db:seed` only once. A second run fails because the emails already exist. Never run it on a database that has real users.
+
+**Create an administrator account.** There's no sign-up page for admins:
+
+```bash
+php artisan smarttoll:create-admin you@example.com "Your Name"
+```
+
+It asks for a password (at least 8 characters) and a confirmation. Log in with that account at **http://localhost:5173/admin/login**.
 
 Start the API:
 
@@ -322,6 +338,7 @@ The toll data is already in `smarttoll.sql`, so **you don't need these to run th
 | `php artisan trb:import-naiax storage/app/trb/naiax.html` | Imports NAIAX (short segment / full fares) |
 | `php artisan trb:import-connector storage/app/trb/connector.html` | Imports the NLEX-SLEX Connector flat fare |
 | `php artisan trb:check-coordinates` | Lists plazas whose coordinates are missing or far from where they should be (`--fix` corrects them) |
+| `php artisan smarttoll:create-admin <email> "<name>"` | Creates an administrator account |
 
 The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`, `naiax` and `connector`.
 
@@ -339,7 +356,7 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 | "No application encryption key has been specified" | Run `php artisan key:generate` in `smarttoll-api`. |
 | The page loads but every action says "Something went wrong" | The API isn't running. Start `php artisan serve` in `smarttoll-api` (it must be on port 8000). |
 | Changed `.env` but nothing changed | Run `php artisan config:clear`, then restart `php artisan serve`. |
-| Port 8000 is already in use | Run `php artisan serve --port=8001` and change `http://localhost:8000` in `smarttoll/frontend/vite.config.js` to match. |
+| Port 8000 is already in use | Run `php artisan serve --port=8001`, then start the React app with `API_URL=http://localhost:8001 npm run dev`. In PowerShell: `$env:API_URL="http://localhost:8001"; npm run dev` |
 | Port 5173 is already in use | Vite picks the next free port automatically. Use the address it prints, and set `FRONTEND_URL` in `.env` to match so reset links work. |
 | The map is grey, or "The routing service could not be reached" | Check your internet connection. Map tiles and routing come from online services. |
 | "The routing service found no route" or slow routes | The public OSRM server allows about one request per second and can be busy. Wait a moment and try again. |
@@ -353,7 +370,6 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 - **The RFID balance is a recorded estimate.** SmartToll doesn't connect to Easytrip or Autosweep. You enter your balance, and saving a trip deducts its estimated toll from it.
 - Each vehicle has one RFID account, and a trip's whole estimated toll is deducted from it, even when the trip also uses roads on the other RFID network.
 - Routes come from OSRM and OpenStreetMap, so road names and interchanges can occasionally differ from the toll operators' own maps.
-- The admin pages are still in progress.
 
 ---
 

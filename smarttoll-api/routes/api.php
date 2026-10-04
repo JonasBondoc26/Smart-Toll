@@ -7,6 +7,8 @@ use App\Http\Controllers\RfidController;
 use App\Http\Controllers\TripPlannerController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Middleware\EnsureAdmin;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -34,4 +36,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/trips', [TripController::class, 'store']);
     Route::get('/trips/{id}', [TripController::class, 'show'])->whereNumber('id');
     Route::delete('/trips/{id}', [TripController::class, 'destroy'])->whereNumber('id');
+});
+
+// Admin module: reference data for route planning and toll computation
+Route::middleware(['auth:sanctum', EnsureAdmin::class])->prefix('admin')->group(function () {
+    Route::get('/summary', [AdminController::class, 'summary']);
+
+    Route::get('/expressways', [AdminController::class, 'expressways']);
+    Route::post('/expressways', [AdminController::class, 'storeExpressway']);
+    Route::put('/expressways/{id}', [AdminController::class, 'updateExpressway'])->whereNumber('id');
+    Route::delete('/expressways/{id}', [AdminController::class, 'destroyExpressway'])->whereNumber('id');
+
+    Route::get('/toll-plazas', [AdminController::class, 'plazas']);
+    Route::post('/toll-plazas', [AdminController::class, 'storePlaza']);
+    Route::put('/toll-plazas/{id}', [AdminController::class, 'updatePlaza'])->whereNumber('id');
+    Route::delete('/toll-plazas/{id}', [AdminController::class, 'destroyPlaza'])->whereNumber('id');
+
+    Route::get('/vehicle-classes', [AdminController::class, 'classes']);
+    Route::post('/vehicle-classes', [AdminController::class, 'storeClass']);
+    Route::put('/vehicle-classes/{id}', [AdminController::class, 'updateClass'])->whereNumber('id');
+    Route::delete('/vehicle-classes/{id}', [AdminController::class, 'destroyClass'])->whereNumber('id');
+
+    Route::get('/toll-matrix', [AdminController::class, 'matrix']);
+    Route::post('/toll-matrix', [AdminController::class, 'storeRate']);
+    Route::put('/toll-matrix/{id}', [AdminController::class, 'updateRate'])->whereNumber('id');
+    Route::delete('/toll-matrix/{id}', [AdminController::class, 'destroyRate'])->whereNumber('id');
 });

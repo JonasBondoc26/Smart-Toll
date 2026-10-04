@@ -162,7 +162,7 @@ export default function Profile() {
   );
 }
 
-function ChangePasswordModal({ onClose, onDone, onForgot }) {
+export function ChangePasswordModal({ onClose, onDone, onForgot }) {
   const [f, setF] = useState({ current_password: '', password: '', password_confirmation: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -221,7 +221,7 @@ function ChangePasswordModal({ onClose, onDone, onForgot }) {
   );
 }
 
-function ResetLinkModal({ email, onBack, onClose, onSent }) {
+export function ResetLinkModal({ email, onBack, onClose, onSent }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -263,7 +263,7 @@ function ResetLinkModal({ email, onBack, onClose, onSent }) {
   );
 }
 
-function DoneModal({ title, onClose, children }) {
+export function DoneModal({ title, onClose, children }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card modal-card-center" onClick={(e) => e.stopPropagation()}>

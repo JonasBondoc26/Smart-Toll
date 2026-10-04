@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout, { Headline, Lead, linkStyle } from '../components/AuthLayout.jsx';
 import Field from '../components/Field.jsx';
-import Icon from '../components/Icon.jsx';
 import { useAuth } from '../AuthContext.jsx';
 
 const PLAZAS = [['Balintawak', '₱63'], ['San Fernando', '₱122'], ['Dau', '₱45']];
@@ -57,10 +56,7 @@ export default function Login() {
         <p className="muted" style={{ textAlign: 'center', marginTop: 20 }}>
           Don't have an account? <Link to="/register" style={linkStyle}>Register</Link>
         </p>
-        <div className="divider" />
-        <Link to="/admin/login" className="muted flex gap-8" style={{ justifyContent: 'center', color: 'var(--ink-soft)', textDecoration: 'none', fontWeight: 600 }}>
-          <Icon name="lock" size={15} /> System Administrator log in
-        </Link>
+        {/* Administrators sign in at /admin/login (not linked from here). */}
       </form>
     </AuthLayout>
   );

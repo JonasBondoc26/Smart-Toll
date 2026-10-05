@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\RateLog;
 use App\Services\TripPlannerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -78,16 +79,18 @@ class AdminController extends Controller
         return ['message' => 'Expressway updated.'];
     }
 
-    public function destroyExpressway(int $id)
+    public function destroyExpressway(Request $r, int $id)
     {
         $this->mustExist('expressways', 'expressway_id', $id, 'Expressway');
         $plazaIds = DB::table('toll_plazas')->where('expressway_id', $id)->pluck('plaza_id');
         $this->blockIfUsedByTrips($plazaIds->all(), 'this expressway\'s toll plazas');
 
-        DB::transaction(function () use ($id, $plazaIds) {
+        DB::transaction(function () use ($r, $id, $plazaIds) {
+            $before = RateLog::snapshot(['plaza_ids' => $plazaIds->all()]);
             DB::table('toll_matrix')->whereIn('entry_plaza_id', $plazaIds)->orWhereIn('exit_plaza_id', $plazaIds)->delete();
             DB::table('toll_plazas')->where('expressway_id', $id)->delete();
             DB::table('expressways')->where('expressway_id', $id)->delete();
+            RateLog::record(RateLog::diff($before, []), 'cascade', $r->user());
         });
         return ['message' => 'Expressway deleted.'];
     }
@@ -155,13 +158,15 @@ class AdminController extends Controller
         return ['message' => 'Toll plaza updated.'];
     }
 
-    public function destroyPlaza(int $id)
+    public function destroyPlaza(Request $r, int $id)
     {
         $this->mustExist('toll_plazas', 'plaza_id', $id, 'Toll plaza');
         $this->blockIfUsedByTrips([$id], 'this toll plaza');
-        DB::transaction(function () use ($id) {
+        DB::transaction(function () use ($r, $id) {
+            $before = RateLog::snapshot(['plaza_ids' => [$id]]);
             DB::table('toll_matrix')->where('entry_plaza_id', $id)->orWhere('exit_plaza_id', $id)->delete();
             DB::table('toll_plazas')->where('plaza_id', $id)->delete();
+            RateLog::record(RateLog::diff($before, []), 'cascade', $r->user());
         });
         return ['message' => 'Toll plaza deleted.'];
     }
@@ -267,24 +272,53 @@ class AdminController extends Controller
         return $d;
     }
 
+    // Every rate change below is written to the change log (RateLog) in the same transaction.
+
     public function storeRate(Request $r)
     {
-        $id = DB::table('toll_matrix')->insertGetId($this->rateData($r));
+        $data = $this->rateData($r);
+        $id = DB::transaction(function () use ($r, $data) {
+            $id = DB::table('toll_matrix')->insertGetId($data);
+            RateLog::record(RateLog::diff([], RateLog::snapshot(['matrix_ids' => [$id]])), 'admin', $r->user());
+            return $id;
+        });
         return response()->json(['matrix_id' => $id], 201);
     }
 
     public function updateRate(Request $r, int $id)
     {
         $this->mustExist('toll_matrix', 'matrix_id', $id, 'Rate entry');
-        DB::table('toll_matrix')->where('matrix_id', $id)->update($this->rateData($r, $id));
+        $data = $this->rateData($r, $id);
+        DB::transaction(function () use ($r, $id, $data) {
+            $before = RateLog::snapshot(['matrix_ids' => [$id]]);
+            DB::table('toll_matrix')->where('matrix_id', $id)->update($data);
+            RateLog::record(RateLog::diff($before, RateLog::snapshot(['matrix_ids' => [$id]])), 'admin', $r->user());
+        });
         return ['message' => 'Rate updated.'];
     }
 
-    public function destroyRate(int $id)
+    public function destroyRate(Request $r, int $id)
     {
         $this->mustExist('toll_matrix', 'matrix_id', $id, 'Rate entry');
-        DB::table('toll_matrix')->where('matrix_id', $id)->delete();
+        DB::transaction(function () use ($r, $id) {
+            $before = RateLog::snapshot(['matrix_ids' => [$id]]);
+            DB::table('toll_matrix')->where('matrix_id', $id)->delete();
+            RateLog::record(RateLog::diff($before, []), 'admin', $r->user());
+        });
         return ['message' => 'Rate deleted.'];
+    }
+
+    /** GET /api/admin/rate-log?q=&action=&page= — the change log, newest first, 50 per page. */
+    public function rateLog(Request $r)
+    {
+        $f = $r->validate(['q' => 'nullable|string|max:100', 'action' => 'nullable|in:added,updated,deleted']);
+        $page = DB::table('toll_rate_logs')
+            ->when($f['action'] ?? null, fn ($q, $v) => $q->where('action', $v))
+            ->when($f['q'] ?? null, fn ($q, $v) => $q->where(fn ($w) => $w->where('entry_name', 'like', "%{$v}%")
+                ->orWhere('exit_name', 'like', "%{$v}%")->orWhere('expressway_name', 'like', "%{$v}%")))
+            ->orderByDesc('log_id')
+            ->paginate(50);
+        return ['logs' => $page->items(), 'page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()];
     }
 
     /* ------------------------------------------------------------------ */

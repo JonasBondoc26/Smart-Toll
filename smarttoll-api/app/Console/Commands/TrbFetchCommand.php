@@ -22,10 +22,10 @@ class TrbFetchCommand extends Command
     protected $signature = 'trb:fetch {keys?* : Page keys to fetch (default: all)}';
     protected $description = 'GET the TRB toll-rate pages and save them as HTML';
 
-    private const BASE = 'https://trb.gov.ph/index.php/toll-rates/';
+    public const BASE = 'https://trb.gov.ph/index.php/toll-rates/';
 
     /** key => [slug, expressways covered by that page] */
-    private const PAGES = [
+    public const PAGES = [
         'nlex'      => ['nlex-toll-rate', 'NLEX + SCTEX'],
         'tplex'     => ['tplex-toll-rate', 'TPLEX'],
         'slex'      => ['slex-toll-rate', 'Skyway Stage 1-2 + SLEX + MCX'],

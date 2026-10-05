@@ -19,43 +19,59 @@ class TripPlannerController extends Controller
      */
     public function locations()
     {
-        return ['locations' => array_values($this->allLocations())];
+        return [
+            'locations' => array_values($this->allLocations()),
+            // For visitors, who plan by vehicle class instead of a saved vehicle.
+            'classes'   => DB::table('vehicle_classifications')->orderBy('classification_id')->get(['classification_id', 'class_name', 'description']),
+        ];
     }
 
     /**
-     * POST /api/trip-planner/route   { vehicle_id, origin_id, destination_id }
+     * POST /api/trip-planner/route   { vehicle_id | classification_id, origin_id, destination_id }
      * An id is one from locations() or a map pin, "pin:<lat>,<lng>".
-     * Returns the candidate routes with tolls, the fastest / shortest /
-     * cheapest picks, and the vehicle's RFID account (for the balance check).
+     *
+     * Open to visitors (no login): they send a classification_id and get routes and
+     * fares only. A logged-in motorist sends one of their vehicle_ids and also gets
+     * that vehicle's RFID account (for the balance check before saving).
      */
     public function plan(Request $r)
     {
         $d = $r->validate([
-            'vehicle_id'     => 'required|integer',
-            'origin_id'      => 'required|string',
-            'destination_id' => 'required|string|different:origin_id',
+            'vehicle_id'        => 'nullable|integer|required_without:classification_id',
+            'classification_id' => 'nullable|integer|exists:vehicle_classifications,classification_id',
+            'origin_id'         => 'required|string',
+            'destination_id'    => 'required|string|different:origin_id',
         ], [
-            'destination_id.different' => 'Origin and destination are the same place.',
+            'destination_id.different'    => 'Origin and destination are the same place.',
+            'vehicle_id.required_without' => 'Choose a vehicle or a vehicle class.',
         ]);
 
-        $uid = $r->user()->user_id;
+        // This route is public, so the token is read optionally (no auth middleware).
+        $user = $r->user('sanctum');
+        $vehicle = null;
+        $rfid = null;
 
-        $vehicle = DB::table('vehicles as v')
-            ->join('vehicle_classifications as c', 'c.classification_id', '=', 'v.classification_id')
-            ->where('v.vehicle_id', $d['vehicle_id'])->where('v.user_id', $uid)
-            ->first(['v.vehicle_id', 'v.vehicle_name', 'v.plate_number', 'c.class_name']);
-        abort_if(!$vehicle, 403, 'Not your vehicle.');
+        if (!empty($d['vehicle_id'])) {
+            abort_if(!$user, 401, 'Log in to plan with your saved vehicles.');
+            $vehicle = DB::table('vehicles as v')
+                ->join('vehicle_classifications as c', 'c.classification_id', '=', 'v.classification_id')
+                ->where('v.vehicle_id', $d['vehicle_id'])->where('v.user_id', $user->user_id)
+                ->first(['v.vehicle_id', 'v.vehicle_name', 'v.plate_number', 'c.class_name']);
+            abort_if(!$vehicle, 403, 'Not your vehicle.');
+            $className = $vehicle->class_name;
+            $rfid = RfidAccount::where('vehicle_id', $vehicle->vehicle_id)->where('user_id', $user->user_id)->first(['rfid_id', 'network', 'balance']);
+        } else {
+            $className = DB::table('vehicle_classifications')->where('classification_id', $d['classification_id'])->value('class_name');
+        }
+        $account = $rfid ? ['network' => $rfid->network, 'balance' => (float) $rfid->balance] : null;
 
         $locations = $this->allLocations();
         $origin = $locations[$d['origin_id']] ?? $this->pinnedLocation($d['origin_id']);
         $destination = $locations[$d['destination_id']] ?? $this->pinnedLocation($d['destination_id']);
         abort_if(!$origin || !$destination, 422, 'Choose the origin and destination from the list, or pin them on the map within Luzon.');
 
-        $rfid = RfidAccount::where('vehicle_id', $vehicle->vehicle_id)->where('user_id', $uid)->first(['rfid_id', 'network', 'balance']);
-        $account = $rfid ? ['network' => $rfid->network, 'balance' => (float) $rfid->balance] : null;
-
         try {
-            $result = $this->planner->plan($origin, $destination, TripPlannerService::classNumber($vehicle->class_name));
+            $result = $this->planner->plan($origin, $destination, TripPlannerService::classNumber($className));
         } catch (RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 502);
         }
@@ -63,7 +79,8 @@ class TripPlannerController extends Controller
         return [
             'origin'      => $origin,
             'destination' => $destination,
-            'vehicle'     => $vehicle,
+            'vehicle'     => $vehicle,          // null for visitors
+            'class_name'  => $className,
             'rfid'        => $rfid ? ['rfid_id' => $rfid->rfid_id] + $account : null,
             'routes'      => $result['routes'],
             'picks'       => $result['picks'],

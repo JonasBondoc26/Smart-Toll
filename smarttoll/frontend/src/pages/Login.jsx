@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout, { Headline, Lead, linkStyle } from '../components/AuthLayout.jsx';
 import Field from '../components/Field.jsx';
+import GoogleButton from '../components/GoogleButton.jsx';
 import { useAuth } from '../AuthContext.jsx';
 
 const PLAZAS = [['Balintawak', '₱63'], ['San Fernando', '₱122'], ['Dau', '₱45']];
@@ -53,8 +54,12 @@ export default function Login() {
           hint={<div className="field-hint" style={{ textAlign: 'right', marginTop: 8 }}><Link to="/forgot-password" style={linkStyle}>Forgot password?</Link></div>}
         />
         <button className="btn btn-primary btn-block" type="submit">Log In</button>
+        <GoogleButton onSuccess={(created) => nav(created ? '/vehicles' : '/dashboard')} />
         <p className="muted" style={{ textAlign: 'center', marginTop: 20 }}>
           Don't have an account? <Link to="/register" style={linkStyle}>Register</Link>
+        </p>
+        <p className="muted" style={{ textAlign: 'center', marginTop: 8 }}>
+          or <Link to="/trip-planner" style={linkStyle}>plan a trip without an account →</Link>
         </p>
         {/* Administrators sign in at /admin/login (not linked from here). */}
       </form>

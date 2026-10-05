@@ -14,6 +14,11 @@ return [
     |
     */
 
+    // "Continue with Google" (GoogleAuthController). Empty = the Google button is hidden.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

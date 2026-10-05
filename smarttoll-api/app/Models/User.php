@@ -17,4 +17,10 @@ class User extends Authenticatable
     protected $hidden = ['password_hash'];
 
     public function getAuthPassword() { return $this->password_hash; }
+
+    /** The branded "Reset your SmartToll password" email instead of Laravel's default. */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
 }

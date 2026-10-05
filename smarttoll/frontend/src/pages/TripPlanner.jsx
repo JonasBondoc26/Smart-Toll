@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../AuthContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Icon from '../components/Icon.jsx';
 import LocationSelect from '../components/LocationSelect.jsx';
+import LoginModal from '../components/LoginModal.jsx';
+import { FormModal } from '../components/admin/Modals.jsx';
 import RouteMap from '../components/RouteMap.jsx';
 import '../trip-planner.css';
 
@@ -41,9 +43,20 @@ const makePin = (lat, lng) => {
 
 export default function TripPlanner() {
   const { user } = useAuth();
+  // Visitors (not logged in as a motorist) can plan by vehicle class; saving asks them to log in.
+  const guest = !user || user.role !== 'motorist';
   const [vehicles, setVehicles] = useState(null);
   const [locations, setLocations] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [classId, setClassId] = useState('1');     // visitors: the vehicle class to price for
+  const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [loginModal, setLoginModal] = useState(false);
+  const [notice, setNotice] = useState('');         // shown after logging in from this page
+  const [savedRoutes, setSavedRoutes] = useState([]);  // motorists: "Home → Office" shortcuts
+  const [params, setParams] = useSearchParams();       // ?again=<trip_id>: plan a saved trip again
+  const [routeNameModal, setRouteNameModal] = useState(false);
+  const [routeName, setRouteName] = useState('');
 
   const [vehicleId, setVehicleId] = useState('');
   const [origin, setOrigin] = useState(null);
@@ -70,19 +83,27 @@ export default function TripPlanner() {
   }, [trip]);
 
   useEffect(() => {
-    Promise.all([api('/vehicles'), api('/trip-planner/locations')])
+    Promise.all([guest ? null : api('/vehicles'), api('/trip-planner/locations')])
       .then(([v, l]) => {
-        setVehicles(v.vehicles);
+        if (v) {
+          setVehicles(v.vehicles);
+          if (v.vehicles.length) setVehicleId(String(v.vehicles[0].vehicle_id));
+        }
         setLocations(l.locations);
-        if (v.vehicles.length) setVehicleId(String(v.vehicles[0].vehicle_id));
+        setClasses(l.classes);
+        setLoaded(true);
       })
       .catch((e) => setLoadError(e.message));
+    if (!guest) loadSavedRoutes();
   }, []);
 
-  const initials = user.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  const loadSavedRoutes = () => api('/saved-routes').then((d) => setSavedRoutes(d.routes)).catch(() => {});
+
+  const initials = user ? user.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() : '';
 
   // All routing and toll computation happens in the Laravel API; this page only displays the result.
-  const findRoute = async (from = origin, to = destination, vehicle = vehicleId) => {
+  // `asGuest` / `cls` are passed explicitly when the caller's render is stale (right after logging in).
+  const findRoute = async (from = origin, to = destination, vehicle = vehicleId, asGuest = guest, cls = classId) => {
     if (!from || !to) return setStatus({ text: 'Choose an origin and a destination from the list, or pin them on the map.', error: true });
     if (from.id === to.id) return setStatus({ text: 'Origin and destination are the same place.', error: true });
     setBusy(true);
@@ -90,7 +111,10 @@ export default function TripPlanner() {
     try {
       const d = await api('/trip-planner/route', {
         method: 'POST',
-        body: { vehicle_id: Number(vehicle), origin_id: from.id, destination_id: to.id },
+        body: {
+          ...(asGuest ? { classification_id: Number(cls) } : { vehicle_id: Number(vehicle) }),
+          origin_id: from.id, destination_id: to.id,
+        },
       });
       setTrip(d);
       setSelected(d.picks.fastest);     // open on the fastest route, OSRM's own recommendation
@@ -115,6 +139,29 @@ export default function TripPlanner() {
   const changeVehicle = (id) => {
     setVehicleId(id);
     if (trip) findRoute(origin, destination, id);
+  };
+  const changeClass = (id) => {
+    setClassId(id);
+    if (trip) findRoute(origin, destination, vehicleId, true, id);
+  };
+
+  // Logged in from the pop-up: switch to the motorist's own vehicle (same class if they have one)
+  // and plan again, so the fares and the RFID balance are theirs before they save.
+  const afterLogin = async () => {
+    setLoginModal(false);
+    const v = await api('/vehicles');
+    setVehicles(v.vehicles);
+    loadSavedRoutes();
+    if (!v.vehicles.length) return;   // the "Add a vehicle first" screen takes over
+    const match = v.vehicles.find((x) => x.class_name === trip?.class_name) || v.vehicles[0];
+    setVehicleId(String(match.vehicle_id));
+    // The visitor's result (no RFID account, maybe another class) must not linger while re-planning.
+    const hadTrip = !!trip;
+    setTrip(null);
+    if (hadTrip && origin && destination) await findRoute(origin, destination, String(match.vehicle_id), false);
+    setNotice(hadTrip
+      ? `You're logged in. Fares and your RFID balance now use your ${match.vehicle_name} (${match.class_name}). Review the trip, then save it.`
+      : `You're logged in. Trips are now priced for your ${match.vehicle_name} (${match.class_name}).`);
   };
 
   // Editing the origin or destination makes the routes on screen stale.
@@ -175,6 +222,56 @@ export default function TripPlanner() {
     }
   };
 
+  // ---- Saved routes ----
+  // A saved place is matched back to the current list by id and name; if the list has
+  // changed since, it is used as a map pin at the saved coordinates.
+  const fromSaved = (p) => locations.find((l) => l.id === p.id && l.name === p.name)
+    || { id: `pin:${p.lat.toFixed(5)},${p.lng.toFixed(5)}`, kind: 'pin', name: p.name, meta: `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`, lat: p.lat, lng: p.lng };
+  // From Trip History ("Plan Again"): same origin, destination and vehicle, priced with today's rates.
+  useEffect(() => {
+    const tripId = params.get('again');
+    if (!loaded || guest || !tripId) return;
+    setParams({}, { replace: true });
+    api(`/trips/${tripId}`)
+      .then(({ trip: past }) => {
+        if (!past.map) {
+          setStatus({ text: 'This trip was saved before SmartToll kept trip locations, so it cannot be planned again. Choose the places below.', error: true });
+          return;
+        }
+        // A place still in the list is used as is; otherwise the saved spot becomes a map pin.
+        const placeOf = (name, at) => locations.find((l) => l.name === name)
+          || { id: `pin:${at.lat.toFixed(5)},${at.lng.toFixed(5)}`, kind: 'pin', name, meta: `${at.lat.toFixed(5)}, ${at.lng.toFixed(5)}`, lat: at.lat, lng: at.lng };
+        const o = placeOf(past.origin, past.map.origin);
+        const d = placeOf(past.destination, past.map.destination);
+        const sameVehicle = (vehicles || []).some((v) => v.vehicle_id === past.vehicle_id);
+        const vehicle = sameVehicle ? String(past.vehicle_id) : vehicleId;
+        setVehicleId(vehicle);
+        setOrigin(o); setDestination(d); setTrip(null);
+        setNotice(`Planning your trip again with today's toll rates${sameVehicle ? '' : ' (the vehicle used before is no longer in your account)'}.`);
+        findRoute(o, d, vehicle);
+      })
+      .catch((e) => setStatus({ text: e.message, error: true }));
+  }, [loaded]);
+
+  const applySavedRoute = (r) => {
+    const o = fromSaved(r.origin), d = fromSaved(r.destination);
+    setOrigin(o); setDestination(d); setTrip(null); setNotice('');
+    findRoute(o, d);
+  };
+  const isSaved = !!origin && !!destination && savedRoutes.some((r) => r.origin.id === origin.id && r.destination.id === destination.id);
+  const openSaveRoute = () => { setRouteName(`${origin.name} → ${destination.name}`.slice(0, 100)); setRouteNameModal(true); };
+  const saveRoute = async () => {
+    if (!routeName.trim()) throw new Error('Give the route a name.');
+    const keep = (p) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng });
+    await api('/saved-routes', { method: 'POST', body: { name: routeName.trim(), origin: keep(origin), destination: keep(destination) } });
+    setRouteNameModal(false);
+    await loadSavedRoutes();
+  };
+  const deleteSavedRoute = async (r) => {
+    await api(`/saved-routes/${r.route_id}`, { method: 'DELETE' }).catch(() => {});
+    await loadSavedRoutes();
+  };
+
   const routes = trip ? trip.routes : [];
   const route = routes[selected];
   const toll = route?.toll;
@@ -186,7 +283,7 @@ export default function TripPlanner() {
     if (insufficient && !dismissed[selected]) setBalanceModal(true);
   }, [insufficient, selected, dismissed]);
   const closeBalanceModal = () => { setBalanceModal(false); setDismissed((m) => ({ ...m, [selected]: true })); };
-  const onSaveClick = () => (insufficient ? setBalanceModal(true) : saveTrip());
+  const onSaveClick = () => (guest ? setLoginModal(true) : insufficient ? setBalanceModal(true) : saveTrip());
   const roads = toll ? roadsOf(toll) : [];
   const mapStatus = pinMode
     ? { text: `Click the map to set your ${pinMode}. Press Esc to cancel.`, error: false }
@@ -196,23 +293,38 @@ export default function TripPlanner() {
     <>
       <div className="topbar">
         <div className="brand"><span className="mark"><Icon name="menu" size={18} stroke={2.5} /></span>SmartToll</div>
-        <div className="topbar-user">{user.name} <div className="avatar">{initials}</div></div>
+        {guest ? (
+          <div className="topbar-guest">
+            <button type="button" className="topbar-login" onClick={() => setLoginModal(true)}>Log In</button>
+            <Link to="/register" className="btn btn-amber topbar-register">Register</Link>
+          </div>
+        ) : (
+          <div className="topbar-user">{user.name} <div className="avatar">{initials}</div></div>
+        )}
       </div>
 
       <div className="app-shell">
-        <Sidebar />
-        <div className="main">
+        {!guest && <Sidebar />}
+        <div className={`main${guest ? ' main-guest' : ''}`}>
           <div className="page-head">
             <div>
               <h1>Plan a Trip</h1>
-              <div className="subtitle">Enter your origin and destination to see the route, toll plazas, and estimated cost.</div>
+              <div className="subtitle">
+                Enter your origin and destination to see the route, toll plazas, and estimated cost.
+                {guest && ' No account needed. Log in to check your RFID balance and save trips.'}
+              </div>
             </div>
           </div>
 
           {loadError && <p className="muted" style={{ color: '#B3261E' }}>{loadError}</p>}
-          {vehicles === null && !loadError && <p className="muted">Loading…</p>}
+          {!loaded && !loadError && <p className="muted">Loading…</p>}
+          {notice && !guest && (
+            <div className="notice notice-ok mb-24 save-done">
+              <Icon name="check" size={16} stroke={2.5} /><span>{notice}</span>
+            </div>
+          )}
 
-          {vehicles && vehicles.length === 0 && (
+          {loaded && !guest && vehicles && vehicles.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon"><Icon name="car" size={30} /></div>
               <h3>Add a vehicle first</h3>
@@ -221,19 +333,49 @@ export default function TripPlanner() {
             </div>
           )}
 
-          {vehicles && vehicles.length > 0 && (
+          {loaded && (guest || (vehicles && vehicles.length > 0)) && (
             <div className="planner-grid">
               {/* ---------- Left: trip form and summary ---------- */}
               <div className="card">
-                <form onSubmit={submit}>
-                  <div className="field">
-                    <label htmlFor="vehicle">Vehicle</label>
-                    <select id="vehicle" value={vehicleId} onChange={(e) => changeVehicle(e.target.value)} disabled={busy}>
-                      {vehicles.map((v) => (
-                        <option key={v.vehicle_id} value={v.vehicle_id}>{v.vehicle_name} ({v.class_name})</option>
+                {!guest && savedRoutes.length > 0 && (
+                  <div className="saved-routes">
+                    <div className="saved-routes-label"><Icon name="star" size={13} stroke={2.2} />Saved routes</div>
+                    <div className="saved-routes-list">
+                      {savedRoutes.map((r) => (
+                        <span className="saved-route" key={r.route_id}>
+                          <button type="button" className="saved-route-go" onClick={() => applySavedRoute(r)} disabled={busy}
+                            title={`${r.origin.name} → ${r.destination.name}`}>{r.name}</button>
+                          <button type="button" className="saved-route-x" onClick={() => deleteSavedRoute(r)} aria-label={`Delete saved route ${r.name}`}>
+                            <Icon name="close" size={11} stroke={2.5} />
+                          </button>
+                        </span>
                       ))}
-                    </select>
+                    </div>
                   </div>
+                )}
+                <form onSubmit={submit}>
+                  {guest ? (
+                    <div className="field">
+                      <label htmlFor="vehicle-class">Vehicle Class</label>
+                      <select id="vehicle-class" value={classId} onChange={(e) => changeClass(e.target.value)} disabled={busy}>
+                        {classes.map((c) => (
+                          <option key={c.classification_id} value={c.classification_id}>{c.class_name}: {c.description}</option>
+                        ))}
+                      </select>
+                      <div className="field-hint">
+                        <button type="button" className="link-btn" onClick={() => setLoginModal(true)}>Log in</button> to use your saved vehicles.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="field">
+                      <label htmlFor="vehicle">Vehicle</label>
+                      <select id="vehicle" value={vehicleId} onChange={(e) => changeVehicle(e.target.value)} disabled={busy}>
+                        {vehicles.map((v) => (
+                          <option key={v.vehicle_id} value={v.vehicle_id}>{v.vehicle_name} ({v.class_name})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <LocationSelect
                     id="origin" label="Origin" locations={locations} value={origin} onChange={pickOrigin}
@@ -253,6 +395,13 @@ export default function TripPlanner() {
                   <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
                     <Icon name="search" size={15} stroke={2.3} />{busy ? 'Finding…' : 'Find Route'}
                   </button>
+                  {!guest && origin && destination && origin.id !== destination.id && origin.name !== 'Finding place name…' && destination.name !== 'Finding place name…' && (
+                    <div style={{ textAlign: 'center', marginTop: 10 }}>
+                      {isSaved
+                        ? <span className="field-hint" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 0 }}><Icon name="star" size={13} stroke={2.2} />This route is saved</span>
+                        : <button type="button" className="btn-text" style={{ margin: 0 }} onClick={openSaveRoute}><Icon name="star" size={14} />Save this route</button>}
+                    </div>
+                  )}
                 </form>
 
                 {route && (
@@ -395,10 +544,14 @@ export default function TripPlanner() {
                         </div>
                       </div>
 
-                      <BalanceCard
-                        rfid={rfid} toll={toll} deduction={deduction} paid={saved[selected]?.rfid}
-                        onUpdate={() => setBalanceModal(true)}
-                      />
+                      {guest ? (
+                        <GuestBalanceCard toll={toll} onLogin={() => setLoginModal(true)} />
+                      ) : (
+                        <BalanceCard
+                          rfid={rfid} toll={toll} deduction={deduction} paid={saved[selected]?.rfid}
+                          onUpdate={() => setBalanceModal(true)}
+                        />
+                      )}
                     </div>
                   </>
                 )}
@@ -415,14 +568,57 @@ export default function TripPlanner() {
         />
       )}
 
-      <nav className="bottom-nav">
-        {NAV.map(([to, icon, label]) => (
-          <NavLink key={to} to={to} className={({ isActive }) => `bn-item${isActive ? ' active' : ''}${label === 'Profile' ? ' bn-more' : ''}`}>
-            <Icon name={icon} size={21} /><span>{label}</span>
-          </NavLink>
-        ))}
-      </nav>
+      {routeNameModal && (
+        <FormModal kicker="SAVE ROUTE" title="Name This Route" submitLabel="Save Route" onClose={() => setRouteNameModal(false)} onSubmit={saveRoute}>
+          <p className="muted mb-16">{origin.name} → {destination.name}</p>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="route-name">Route Name</label>
+            <input id="route-name" type="text" maxLength={100} value={routeName} onChange={(e) => setRouteName(e.target.value)} autoFocus placeholder="e.g. Home → Office" />
+            <div className="field-hint">It will appear under "Saved routes" at the top of this page.</div>
+          </div>
+        </FormModal>
+      )}
+
+      {loginModal && (
+        <LoginModal
+          reason={route ? 'Log in to check this trip against your RFID balance and save it to your trip history.' : 'Log in to use your saved vehicles and RFID balance.'}
+          onClose={() => setLoginModal(false)} onLoggedIn={afterLogin}
+        />
+      )}
+
+      {!guest && (
+        <nav className="bottom-nav">
+          {NAV.map(([to, icon, label]) => (
+            <NavLink key={to} to={to} className={({ isActive }) => `bn-item${isActive ? ' active' : ''}${label === 'Profile' ? ' bn-more' : ''}`}>
+              <Icon name={icon} size={21} /><span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      )}
     </>
+  );
+}
+
+// Visitors see the toll, and why logging in helps, where motorists see their RFID balance.
+function GuestBalanceCard({ toll, onLogin }) {
+  return (
+    <div className="card balance-card">
+      <div className="flex gap-8" style={{ marginBottom: 16 }}>
+        <Icon name="card" size={18} />
+        <h3 style={{ fontSize: 15 }}>RFID Balance</h3>
+      </div>
+      <div className="card-row" style={{ padding: '7px 0' }}>
+        <span className="muted">Total estimated toll</span>
+        <span style={{ fontWeight: 600, fontSize: 14 }}>{peso(toll.total)}{toll.complete ? '' : ' +'}</span>
+      </div>
+      <p className="muted mt-16">
+        Log in to see whether your recorded Easytrip or Autosweep balance covers this trip, and to save it to your trip history.
+      </p>
+      <button type="button" className="btn btn-primary btn-block mt-16" onClick={onLogin}>Log In</button>
+      <p className="muted" style={{ textAlign: 'center', marginTop: 12 }}>
+        New to SmartToll? <Link to="/register" style={{ color: 'var(--green-deep)', fontWeight: 600 }}>Create an account</Link>
+      </p>
+    </div>
   );
 }
 

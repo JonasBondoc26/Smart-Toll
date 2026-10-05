@@ -12,6 +12,12 @@ export function AuthProvider({ children }) {
     user,
     login: async (b) => save(await api('/login', { method: 'POST', body: b })),
     adminLogin: async (b) => save(await api('/admin/login', { method: 'POST', body: b })),
+    // "Continue with Google": the credential is Google's signed ID token; the API verifies it.
+    googleLogin: async (credential) => {
+      const d = await api('/auth/google', { method: 'POST', body: { credential } });
+      save(d);
+      return d;   // d.created: a new account was made for this Google user
+    },
     register: (b) => api('/register', { method: 'POST', body: b }),
     // After a profile edit: same token, new name / email everywhere (top bar, profile).
     updateUser: (u) => { localStorage.setItem('st_user', JSON.stringify(u)); setUser(u); },

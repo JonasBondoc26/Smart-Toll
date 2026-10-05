@@ -68,7 +68,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Manila'),   // Philippine time, matching the MySQL server's clock
 
     /*
     |--------------------------------------------------------------------------

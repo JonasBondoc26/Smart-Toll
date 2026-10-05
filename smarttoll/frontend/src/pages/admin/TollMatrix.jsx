@@ -4,13 +4,19 @@ import { api } from '../../api.js';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { DeleteModal, FormModal, strongInk } from '../../components/admin/Modals.jsx';
 import Icon from '../../components/Icon.jsx';
+import RateImport from './RateImport.jsx';
+import RateLog from './RateLog.jsx';
 
 const peso = (n) => '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const empty = { expressway_id: '', entry_plaza_id: '', exit_plaza_id: '', classification_id: '', rate: '' };
 
 // Mockups 21, 28, 29, 35. 2,300+ rates, so the list is filtered and paged on the server.
+const TABS = [['rates', 'Rates'], ['import', 'Import'], ['log', 'Change Log']];
+
 export default function TollMatrix() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const tab = TABS.some(([k]) => k === params.get('tab')) ? params.get('tab') : 'rates';
+  const setTab = (k) => setParams(k === 'rates' ? {} : { tab: k }, { replace: true });
   const [filter, setFilter] = useState({ expressway_id: '', classification_id: params.get('class') || '', q: '' });
   const [query, setQuery] = useState('');          // debounced filter.q
   const [page, setPage] = useState(1);
@@ -84,10 +90,20 @@ export default function TollMatrix() {
   return (
     <AdminLayout
       title="Toll Matrix" subtitle="Official rates per entry–exit plaza pair and vehicle class, sourced from TRB / expressway operators."
-      action={<button className="btn btn-primary" onClick={openAdd}><Icon name="plus" stroke={2.5} />Add Rate Entry</button>}
+      action={tab === 'rates' && <button className="btn btn-primary" onClick={openAdd}><Icon name="plus" stroke={2.5} />Add Rate Entry</button>}
     >
       {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
 
+      <div className="tabs mb-24" role="tablist">
+        {TABS.map(([k, label]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} className={`tab${tab === k ? ' is-active' : ''}`} onClick={() => setTab(k)}>{label}</button>
+        ))}
+      </div>
+
+      {tab === 'import' && <RateImport expressways={expressways} onApplied={load} />}
+      {tab === 'log' && <RateLog reloadKey={reloads} />}
+
+      {tab === 'rates' && <>
       <div className="admin-filters">
         <div className="field">
           <label htmlFor="m-xw">Expressway</label>
@@ -150,6 +166,7 @@ export default function TollMatrix() {
           )}
         </>
       )}
+      </>}
 
       {modal && modal.mode !== 'delete' && (
         <FormModal

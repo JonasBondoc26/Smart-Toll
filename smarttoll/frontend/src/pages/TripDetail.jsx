@@ -91,9 +91,16 @@ export default function TripDetail() {
                     Planned {day(trip.date_created)} · {time(trip.date_created)} · {trip.vehicle_name} ({trip.class_name})
                   </div>
                 </div>
-                <button type="button" className="btn btn-ghost" onClick={() => { setDeleteError(''); setConfirming(true); }}>
-                  <Icon name="trash" size={15} />Delete Trip
-                </button>
+                <div className="flex gap-12" style={{ flexWrap: 'wrap' }}>
+                  {trip.map && (
+                    <Link to={`/trip-planner?again=${trip.trip_id}`} className="btn btn-primary" title="Plan this route again with today's toll rates">
+                      <Icon name="pin" size={15} />Plan Again
+                    </Link>
+                  )}
+                  <button type="button" className="btn btn-ghost" onClick={() => { setDeleteError(''); setConfirming(true); }}>
+                    <Icon name="trash" size={15} />Delete Trip
+                  </button>
+                </div>
               </div>
 
               {trip.map ? (

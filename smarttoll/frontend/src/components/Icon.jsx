@@ -26,6 +26,7 @@ export const PATHS = {
   'chevron-up': 'M18 15l-6-6-6 6',
   swap: 'M7 4v16M7 20l-4-4M7 4l4 4M17 20V4M17 4l4 4M17 20l-4-4',
   check: 'M5 13l4 4L19 7',
+  star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   // Admin module
   road: 'M5 21L10 3M19 21L14 3M12 4v2.5M12 10.5v3M12 17.5v3',                                        // expressway: two edges + lane dashes
   plaza: 'M2 21h20M4 21V9l3.5-3.5L11 9v12M11 11.5h10v3.5H11M14.5 11.5v3.5M18 11.5v3.5M6 13h3',          // toll booth with a striped barrier arm

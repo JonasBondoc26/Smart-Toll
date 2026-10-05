@@ -84,6 +84,21 @@ CREATE TABLE `rfid_accounts` (
   CONSTRAINT `rfid_accounts_ibfk_2` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`vehicle_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `saved_routes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `saved_routes` (
+  `route_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `origin` text NOT NULL,
+  `destination` text NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`route_id`),
+  KEY `saved_routes_user_id_index` (`user_id`),
+  CONSTRAINT `saved_routes_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `toll_matrix`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -115,6 +130,28 @@ CREATE TABLE `toll_plazas` (
   PRIMARY KEY (`plaza_id`),
   KEY `expressway_id` (`expressway_id`),
   CONSTRAINT `toll_plazas_ibfk_1` FOREIGN KEY (`expressway_id`) REFERENCES `expressways` (`expressway_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `toll_rate_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `toll_rate_logs` (
+  `log_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `action` varchar(10) NOT NULL,
+  `source` varchar(20) NOT NULL,
+  `expressway_name` varchar(100) NOT NULL,
+  `entry_name` varchar(100) NOT NULL,
+  `exit_name` varchar(100) NOT NULL,
+  `class_name` varchar(20) NOT NULL,
+  `old_rate` decimal(10,2) DEFAULT NULL,
+  `new_rate` decimal(10,2) DEFAULT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `user_name` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`log_id`),
+  KEY `toll_rate_logs_user_id_foreign` (`user_id`),
+  KEY `toll_rate_logs_created_at_index` (`created_at`),
+  CONSTRAINT `toll_rate_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trip_routes`;
@@ -235,8 +272,8 @@ LOCK TABLES `expressways` WRITE;
 INSERT INTO `expressways` VALUES (5,'Cavite-Laguna Expressway (CALAX)');
 INSERT INTO `expressways` VALUES (6,'Manila-Cavite Expressway (CAVITEX)');
 INSERT INTO `expressways` VALUES (8,'NAIA Expressway (NAIAX)');
-INSERT INTO `expressways` VALUES (1,'North Luzon Expressway / Subic-Clark-Tarlac Expressway (NLEX)');
 INSERT INTO `expressways` VALUES (15,'NLEX-SLEX Connector Road (CONNECTOR)');
+INSERT INTO `expressways` VALUES (1,'North Luzon Expressway / Subic-Clark-Tarlac Expressway (NLEX)');
 INSERT INTO `expressways` VALUES (12,'Skyway Stage 3 (SKYWAY3)');
 INSERT INTO `expressways` VALUES (4,'South Luzon Expressway (SLEX)');
 INSERT INTO `expressways` VALUES (7,'STAR Tollway');
@@ -2672,6 +2709,8 @@ LOCK TABLES `migrations` WRITE;
 /*!40000 ALTER TABLE `migrations` DISABLE KEYS */;
 INSERT INTO `migrations` VALUES (1,'2026_10_03_000001_create_trip_routes_table',1);
 INSERT INTO `migrations` VALUES (2,'2026_10_03_000002_make_vehicle_plate_number_optional',2);
+INSERT INTO `migrations` VALUES (3,'2026_10_06_000001_create_saved_routes_table',3);
+INSERT INTO `migrations` VALUES (4,'2026_10_06_000002_create_toll_rate_logs_table',3);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

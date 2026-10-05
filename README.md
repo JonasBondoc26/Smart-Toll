@@ -18,7 +18,9 @@ It was built as a capstone project at Holy Angel University.
 - [Running it after setup](#running-it-after-setup)
 - [The database](#the-database)
 - [Password reset emails](#password-reset-emails)
+- [Sign in with Google](#sign-in-with-google)
 - [Toll data commands](#toll-data-commands)
+- [Automated tests](#automated-tests)
 - [Troubleshooting](#troubleshooting)
 - [Notes and limitations](#notes-and-limitations)
 - [Credits](#credits)
@@ -28,17 +30,19 @@ It was built as a capstone project at Holy Angel University.
 ## Features
 
 **Motorist**
-- **Accounts:** register, log in, forgot password / reset by email, and a profile page to edit your name, email and password. Logging out asks for confirmation.
+- **Accounts:** register, log in (email and password, or **Continue with Google**), forgot password / reset by email, and a profile page to edit your name, email and password. Logging out asks for confirmation.
 - **Vehicles:** add, edit or delete vehicles with their toll class (Class 1, 2 or 3).
 - **RFID accounts:** link one Easytrip or Autosweep account to each vehicle and record its balance.
-- **Plan a Trip**
+- **Plan a Trip** (works without an account: visitors pick a vehicle class; saving asks them to log in in a pop-up)
   - Choose an origin and destination from a list of cities and toll plazas, or **pin any spot in Luzon on the map**. Pinned spots get a real place name, e.g. "M. Roxas Avenue, Diliman, Quezon City".
   - Compare up to four routes, with the fastest, shortest and cheapest labeled.
   - The map shows the toll expressway parts in solid green and the ordinary roads to the entry and from the exit in blue dashes. Entry and exit plazas are marked with their fees.
   - See the toll fee breakdown per expressway, from entry plaza to exit plaza.
   - **RFID balance check:** current balance, total estimated toll, the deduction and the balance after the trip. If the balance is too low, a pop-up lets you update it.
   - **Save to History** deducts the trip's toll from the vehicle's recorded RFID balance.
+- **Saved routes:** save a route such as "Home → Office" and plan it again in one click from Plan a Trip.
 - **Trip History:** a list of saved trips, and a detail page per trip with its map, toll breakdown and RFID payment.
+  - **Plan Again** opens a past trip in Plan a Trip with the same origin, destination and vehicle, priced with today's toll rates.
 - **Dashboard:** your vehicles, RFID balances (low ones flagged), trips planned, tolls this month and recent trips.
 
 **Admin** (log in at `/admin/login`)
@@ -47,6 +51,8 @@ It was built as a capstone project at Holy Angel University.
 - **Toll Plazas:** add, edit or delete, with filters. You set the location by clicking or dragging a pin on a map, and plazas missing coordinates have a **Fix Now** button.
 - **Vehicle Classes:** add, edit or delete. A class can't be deleted while toll rates or vehicles still use it.
 - **Toll Matrix:** browse all 2,311 rates with filters by expressway and class, search and pages. Add, edit or delete rates; duplicates and pairs across different expressways are rejected.
+  - **Import tab:** update an expressway's rates from the **TRB website** (or the saved TRB page), or by uploading a **CSV file**. Both show a preview of every change before anything is saved. The current rates can be downloaded as CSV to use as a template.
+  - **Change Log tab:** every rate change, showing old → new, who made it, when, and the source (edit, TRB import, CSV import or deletion).
 - **Admin Profile:** edit name and email, change password.
 - Plazas that saved trips refer to can't be deleted, so motorists' trip history stays intact.
 
@@ -267,13 +273,15 @@ To stop, press `Ctrl + C` in both terminals and stop MySQL in XAMPP.
 | `trips` | Saved trips: origin, destination, distance, time, total toll |
 | `trip_toll_details` | Plazas of a saved trip. Each toll stretch is two rows: the entry plaza (₱0) and the exit plaza (the fee). |
 | `trip_routes` | The map line of a saved trip (support table) |
+| `saved_routes` | A motorist's saved routes, e.g. "Home → Office" (support table) |
+| `toll_rate_logs` | The rate change log: old → new, who, when, source (support table) |
 | `personal_access_tokens` | Login tokens (Laravel Sanctum) |
 | `password_reset_tokens` | Pending password reset links |
 | `migrations` | Laravel's record of which migrations have run |
 
 ### What `smarttoll.sql` contains
 
-- **Included:** the structure of all 13 tables, plus data for `expressways`, `toll_plazas`, `toll_matrix`, `vehicle_classifications` and `migrations`.
+- **Included:** the structure of all 15 tables, plus data for `expressways`, `toll_plazas`, `toll_matrix`, `vehicle_classifications` and `migrations`.
 - **Not included:** any users, vehicles, RFID accounts or trips. Those tables start empty.
 
 Where the data comes from:
@@ -322,7 +330,41 @@ MAIL_FROM_ADDRESS=your.address@gmail.com
 MAIL_FROM_NAME="SmartToll"
 ```
 
-Then run `php artisan config:clear`.
+Then run `php artisan config:clear` and check it with a real email:
+
+```bash
+php artisan smarttoll:test-mail you@example.com            # a plain test message
+php artisan smarttoll:test-mail you@example.com --reset    # the actual "Reset your SmartToll password" email
+```
+
+Reset links expire after **30 minutes**. The email design is in `smarttoll-api/resources/views/emails/reset-password.blade.php`.
+
+---
+
+## Sign in with Google
+
+Motorists can use **Continue with Google** on the Log In and Register pages, and in the Plan a Trip log-in pop-up. The button only appears once `GOOGLE_CLIENT_ID` is set.
+
+1. Go to https://console.cloud.google.com/ and create a project, e.g. *SmartToll*.
+2. **APIs & Services → OAuth consent screen**:
+   - Choose **External** and fill in the app name and your email.
+   - Under **Test users**, add the Google accounts that should be able to sign in. While the app is in "Testing", only those accounts can.
+3. **APIs & Services → Credentials → Create Credentials → OAuth client ID**:
+   - Application type: **Web application**
+   - Authorized JavaScript origins: `http://localhost:5173` and `http://localhost`
+   - Redirect URIs: not needed
+4. Copy the **Client ID** (it ends with `.apps.googleusercontent.com`) into `smarttoll-api/.env`:
+   ```env
+   GOOGLE_CLIENT_ID=1234567890-abc123.apps.googleusercontent.com
+   ```
+5. Run `php artisan config:clear` and restart `php artisan serve`.
+
+How it behaves:
+- The API checks every sign-in with Google before trusting it.
+- A Google email that already has a SmartToll account logs into that account.
+- A new email gets a motorist account automatically and starts on **My Vehicles**.
+- Administrators can't use Google sign-in; they log in at `/admin/login`.
+- Only the Client ID is needed. There's no client secret to keep.
 
 ---
 
@@ -341,6 +383,24 @@ The toll data is already in `smarttoll.sql`, so **you don't need these to run th
 | `php artisan smarttoll:create-admin <email> "<name>"` | Creates an administrator account |
 
 The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`, `naiax` and `connector`.
+
+---
+
+## Automated tests
+
+33 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
+
+```bash
+php artisan test
+```
+
+What they cover:
+- **Toll calculation:** fares from the TRB matrix per vehicle class, fares stored one way pricing both directions, and a recorded NLEX route detected as Mindanao Avenue → San Simon (₱266 for Class 1).
+- **Trips and RFID:** saving a trip re-prices it on the server (a fee sent by the browser is ignored), deducts the toll, refuses an insufficient balance and changes nothing, keeps what's needed to plan a trip again, and keeps each motorist's trips private. Visitors can plan but not save.
+- **Admin:** only admins reach the admin API; duplicate and cross-expressway rates are rejected; classes and plazas still in use can't be deleted; every rate change is written to the change log; CSV and TRB imports change nothing on preview and log everything they apply.
+- **Accounts:** saved routes are private to their owner; Google sign-in creates one account per person and rejects tokens made for other apps, unverified emails and admin accounts.
+
+The tests use a separate database, **`smarttoll_test`**, built automatically from `database/smarttoll.sql`. They never touch the real `smarttoll` database, and each test's changes are rolled back. The routing server (OSRM) and Google are replaced by recorded answers (`tests/Fixtures/`), so the tests run offline.
 
 ---
 

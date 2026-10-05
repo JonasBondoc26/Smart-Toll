@@ -52,7 +52,13 @@ class AuthController extends Controller
     public function forgotPassword(Request $r)
     {
         $r->validate(['email' => 'required|email']);
-        Password::sendResetLink($r->only('email'));
+        try {
+            Password::sendResetLink($r->only('email'));
+        } catch (\Throwable $e) {
+            // Usually wrong MAIL_* settings in .env (e.g. a Gmail app password typo).
+            report($e);
+            return response()->json(['message' => 'We could not send the email right now. Please try again later.'], 503);
+        }
         // Same reply whether or not the email exists (avoids account enumeration).
         return response()->json(['message' => 'If the account exists, a reset link has been sent.']);
     }

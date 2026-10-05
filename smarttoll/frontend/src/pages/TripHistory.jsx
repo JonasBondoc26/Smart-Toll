@@ -69,9 +69,16 @@ export default function TripHistory() {
                         <td>{t.expressways.length ? t.expressways.join(', ') : <span className="muted">None</span>}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>{peso(t.total_toll_fee)}</td>
                         <td>
-                          <Link to={`/trip-history/${t.trip_id}`} className="btn-text" style={{ margin: 0 }}>
-                            View <Icon name="chevron" size={14} stroke={2.5} />
-                          </Link>
+                          <div className="table-actions">
+                            {t.has_route && (
+                              <Link to={`/trip-planner?again=${t.trip_id}`} className="btn-text" style={{ margin: 0 }} title="Plan this route again with today's toll rates">
+                                <Icon name="swap" size={13} stroke={2.3} />Plan Again
+                              </Link>
+                            )}
+                            <Link to={`/trip-history/${t.trip_id}`} className="btn-text" style={{ margin: 0 }}>
+                              View <Icon name="chevron" size={14} stroke={2.5} />
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}

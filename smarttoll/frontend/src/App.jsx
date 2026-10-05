@@ -38,7 +38,8 @@ export default function App() {
       <Route path="/admin/toll-matrix" element={<Protected role="admin"><TollMatrix /></Protected>} />
       <Route path="/admin/profile" element={<Protected role="admin"><AdminProfile /></Protected>} />
       <Route path="/rfid" element={<Protected><Rfid /></Protected>} />
-      <Route path="/trip-planner" element={<Protected><TripPlanner /></Protected>} />
+      {/* Open to visitors: they plan by vehicle class, and saving asks them to log in. */}
+      <Route path="/trip-planner" element={<TripPlanner />} />
       <Route path="/trip-history" element={<Protected><TripHistory /></Protected>} />
       <Route path="/trip-history/:id" element={<Protected><TripDetail /></Protected>} />
       <Route path="/profile" element={<Protected><Profile /></Protected>} />

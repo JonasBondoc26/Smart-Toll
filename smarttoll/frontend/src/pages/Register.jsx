@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout, { Headline, Lead, linkStyle } from '../components/AuthLayout.jsx';
 import Field from '../components/Field.jsx';
+import GoogleButton from '../components/GoogleButton.jsx';
 import { useAuth } from '../AuthContext.jsx';
 
 const tile = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 18, flex: 1 };
@@ -71,6 +72,7 @@ export default function Register() {
           <Field label="Confirm Password" type="password" placeholder="Re-enter password" value={form.confirm} onChange={set('confirm')} error={errors.confirm} />
         </div>
         <button className="btn btn-primary btn-block" type="submit">Create Account</button>
+        <GoogleButton text="signup_with" onSuccess={(created) => nav(created ? '/vehicles' : '/dashboard')} />
         <p className="muted" style={{ textAlign: 'center', marginTop: 20 }}>
           Already have an account? <Link to="/login" style={linkStyle}>Log In</Link>
         </p>

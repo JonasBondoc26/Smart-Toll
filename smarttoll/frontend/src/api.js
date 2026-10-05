@@ -18,3 +18,32 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
   return data;
 }
+
+const authHeader = () => {
+  const token = localStorage.getItem('st_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+/** POST a FormData (file upload). On failure the Error carries the whole answer as err.data. */
+export async function apiUpload(path, formData) {
+  const res = await fetch('/api' + path, { method: 'POST', headers: { Accept: 'application/json', ...authHeader() }, body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.message || (Array.isArray(data.errors) ? data.errors[0] : 'Something went wrong. Please try again.'));
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+/** GET a file from the API and hand it to the browser as a download. */
+export async function apiDownload(path, filename) {
+  const res = await fetch('/api' + path, { headers: authHeader() });
+  if (!res.ok) throw new Error('The download failed. Please try again.');
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

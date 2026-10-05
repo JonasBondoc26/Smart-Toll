@@ -26,11 +26,14 @@ class TripController extends Controller
             ->join('vehicles as v', 'v.vehicle_id', '=', 't.vehicle_id')
             ->where('t.user_id', $uid)
             ->orderByDesc('t.date_created')->orderByDesc('t.trip_id')
-            ->get(['t.trip_id', 't.origin', 't.destination', 't.route_distance', 't.estimated_travel_time',
-                   't.total_toll_fee', 't.topup_amount', 't.date_created', 'v.vehicle_name', 'v.plate_number']);
+            ->select(['t.trip_id', 't.origin', 't.destination', 't.route_distance', 't.estimated_travel_time',
+                      't.total_toll_fee', 't.topup_amount', 't.date_created', 'v.vehicle_name', 'v.plate_number'])
+            // Trips saved before trip_routes existed have no coordinates, so they cannot be planned again.
+            ->selectRaw('EXISTS (SELECT 1 FROM trip_routes r WHERE r.trip_id = t.trip_id) AS has_route')
+            ->get();
 
         $roads = $this->roadsByTrip($trips->pluck('trip_id')->all());
-        return ['trips' => $trips->map(fn ($t) => (array) $t + ['expressways' => $roads[$t->trip_id] ?? []])];
+        return ['trips' => $trips->map(fn ($t) => ['has_route' => (bool) $t->has_route, 'expressways' => $roads[$t->trip_id] ?? []] + (array) $t)];
     }
 
     /** GET /api/trips/{id} — one trip with its toll segments. */

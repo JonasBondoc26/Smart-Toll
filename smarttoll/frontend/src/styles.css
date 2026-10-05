@@ -150,7 +150,7 @@ svg { display: block; flex-shrink: 0; }
   font-family: 'Inter'; font-weight: 600; font-size: 14px;
   padding: 11px 20px; border-radius: var(--radius-sm);
   border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
-  transition: none;
+  transition: none; text-decoration: none;
 }
 .btn-primary { background: var(--green-deep); color: var(--white); }
 .btn-secondary { background: var(--white); color: var(--green-deep); border: 1px solid var(--concrete-line); }
@@ -165,7 +165,7 @@ svg { display: block; flex-shrink: 0; }
 }
 .btn-text { color: var(--green-deep); }
 .btn-danger-text { color: var(--red); }
-.btn-text:hover, .btn-danger-text:hover { text-decoration: underline; }
+.btn-text:hover, .btn-danger-text:hover { opacity: .75; }
 .btn-text:focus-visible, .btn-danger-text:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .btn-text:disabled, .btn-danger-text:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
 .btn-block { width: 100%; justify-content: center; padding: 13px; }
@@ -596,3 +596,31 @@ div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !impor
   .admin-filters .field { min-width: 100%; }
   .plaza-picker-map { height: 220px; }
 }
+
+/* "Continue with Google" (components/GoogleButton.jsx) */
+.google-signin { margin-top: 18px; }
+.google-signin-button { display: flex; justify-content: center; min-height: 44px; }
+.or-divider { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; color: var(--ink-faint); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.or-divider::before, .or-divider::after { content: ''; flex: 1; border-top: 1px solid var(--concrete-line); }
+
+/* Tabs (Toll Matrix: Rates | Import | Change Log) */
+.tabs { display: flex; gap: 4px; border-bottom: 1.5px solid var(--concrete-line); overflow-x: auto; }
+.tab {
+  background: none; border: none; cursor: pointer; padding: 10px 16px; margin-bottom: -1.5px;
+  font: 600 14px 'Inter', sans-serif; color: var(--ink-soft); border-bottom: 2.5px solid transparent; white-space: nowrap;
+}
+.tab:hover { color: var(--green-deep); }
+.tab.is-active { color: var(--green-deep); border-bottom-color: var(--green-deep); }
+.tab:focus-visible { outline: 2px solid var(--green-mid); outline-offset: -2px; }
+.badge-danger { background: var(--red-pale); color: var(--red); }
+/* .field label styles every label in a form as a small uppercase title; radio options must not be. */
+.field label.radio-row { display: flex; align-items: center; gap: 8px; font: 400 13.5px 'Inter', sans-serif; color: var(--ink); text-transform: none; letter-spacing: 0; margin: 6px 0 0; cursor: pointer; }
+.radio-row input { width: auto; accent-color: var(--green-deep); }
+.import-grid { align-items: start; }
+.import-preview { border-top: 1px solid var(--concrete-line); padding-top: 14px; }
+.import-preview-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.import-preview-table { max-height: 320px; overflow-y: auto; border: 1px solid var(--concrete-line); border-radius: var(--radius-sm); }
+.import-preview-table table { min-width: 0; }
+.import-preview-table th, .import-preview-table td { padding: 8px 10px; font-size: 13px; }
+code { font-family: Consolas, monospace; font-size: 12.5px; background: var(--concrete); padding: 1px 5px; border-radius: 4px; }
+

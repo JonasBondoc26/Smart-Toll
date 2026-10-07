@@ -22,6 +22,11 @@ return [
     // for an OSRM server that supports it; a toll-free route is then offered too.
     'osrm_supports_exclude' => env('OSRM_SUPPORTS_EXCLUDE', false),
 
+    // When OSRM cannot avoid tolls, the toll-free route comes from this Valhalla
+    // server instead (public FOSSGIS server: light use, about one request per
+    // second). Leave TOLLFREE_ROUTER_URL empty to turn it off.
+    'tollfree_url' => env('TOLLFREE_ROUTER_URL', 'https://valhalla1.openstreetmap.de'),
+
     // A plaza further than this from where the route joins or leaves an
     // expressway is not trusted as the entry or exit.
     'max_plaza_distance_km' => 8,

@@ -86,6 +86,68 @@ class TollComputationTest extends TestCase
 
         $this->assertCount(1, $result['routes']);
         $this->assertSame(['fastest' => 0, 'shortest' => 0, 'cheapest' => 0], $result['picks']);
+        $this->assertNull($result['tradeoff']);
         $this->assertNotEmpty($result['routes'][0]['toll_geometry']);
+    }
+
+    /** A route of named steps, each [name, [[lng, lat], ...], metres]. */
+    private function stepsRoute(array $steps): array
+    {
+        return ['legs' => [['steps' => array_map(fn ($s) => [
+            'name' => $s[0], 'distance' => $s[2],
+            'geometry' => ['coordinates' => $s[1]], 'maneuver' => ['location' => $s[1][0]],
+        ], $steps)]]];
+    }
+
+    public function test_a_short_brush_with_an_expressway_at_one_plaza_is_not_tolled(): void
+    {
+        // Starting on NLEX just south of the Balintawak barrier, then leaving it.
+        $route = $this->stepsRoute([
+            ['North Luzon Expressway', [[121.0003, 14.6577], [121.0001, 14.6595]], 200],
+            ['EDSA', [[121.0001, 14.6595], [121.0100, 14.6500]], 1500],
+        ]);
+
+        $toll = $this->planner()->priceRoute($route, 1);
+        $this->assertSame([], $toll['segments']);
+        $this->assertTrue($toll['complete']);
+        $this->assertSame([], $toll['notes']);
+    }
+
+    public function test_the_cavitex_calax_link_road_counts_as_cavitex(): void
+    {
+        $route = $this->stepsRoute([
+            ['CAVITEX–CALAX Link Road 1', [[120.9159, 14.4508], [120.9140, 14.4480]], 375],
+        ]);
+
+        $this->assertSame('CAVITEX', $this->planner()->detectTollSegments($route)[0]['system']);
+    }
+
+    public function test_a_fast_but_pricier_route_is_offered_against_a_longer_cheaper_one(): void
+    {
+        $route = fn ($m, $s, $toll) => ['distance_m' => $m, 'duration_s' => $s, 'toll' => ['total' => $toll, 'complete' => true]];
+        $routes = [$route(80000, 3600, 266.0), $route(95000, 4500, 0.0)];
+        $planner = $this->planner();
+
+        $picks = $planner->compareRoutes($routes);
+        $this->assertSame(['fastest' => 0, 'shortest' => 0, 'cheapest' => 1], $picks);
+        $this->assertSame(
+            ['fastest' => 0, 'cheapest' => 1, 'fastest_is_shortest' => true, 'extra_distance_m' => 15000,
+             'extra_duration_s' => 900, 'savings' => 266.0, 'savings_complete' => true],
+            $planner->tradeoff($routes, $picks)
+        );
+
+        // The fastest route is offered even when a slower route is shorter.
+        $shortcut = [$routes[0], $routes[1], $route(78000, 5400, 266.0)];
+        $t = $planner->tradeoff($shortcut, $planner->compareRoutes($shortcut));
+        $this->assertSame([0, 1, false], [$t['fastest'], $t['cheapest'], $t['fastest_is_shortest']]);
+
+        // A saving is not claimed against a cheap route with an unpriced section.
+        $routes[1]['toll']['complete'] = false;
+        $this->assertNull($planner->tradeoff($routes, ['fastest' => 0, 'shortest' => 0, 'cheapest' => 1]));
+        $routes[1]['toll']['complete'] = true;
+
+        // No choice to offer when the fastest route is also the cheapest.
+        $routes[1]['toll']['total'] = 300.0;
+        $this->assertNull($planner->tradeoff($routes, $planner->compareRoutes($routes)));
     }
 }

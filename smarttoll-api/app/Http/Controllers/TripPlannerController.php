@@ -84,6 +84,7 @@ class TripPlannerController extends Controller
             'rfid'        => $rfid ? ['rfid_id' => $rfid->rfid_id] + $account : null,
             'routes'      => $result['routes'],
             'picks'       => $result['picks'],
+            'tradeoff'    => $result['tradeoff'],   // fastest/shortest-but-pricier vs longer-but-cheapest, or null
         ];
     }
 

@@ -35,7 +35,7 @@ It was built as a capstone project at Holy Angel University.
 - **RFID accounts:** link one Easytrip or Autosweep account to each vehicle and record its balance.
 - **Plan a Trip** (works without an account: visitors pick a vehicle class; saving asks them to log in in a pop-up)
   - Choose an origin and destination from a list of cities and toll plazas, or **pin any spot in Luzon on the map**. Pinned spots get a real place name, e.g. "M. Roxas Avenue, Diliman, Quezon City".
-  - Compare up to four routes, with the fastest, shortest and cheapest labeled.
+  - Compare up to four routes, with the fastest, shortest and cheapest labeled. When the fastest route has a higher toll than a longer one, the planner asks which you prefer: "Fastest & shortest, but expensive" or "Longer, but cheapest", with the extra distance, time and toll saved.
   - The map shows the toll expressway parts in solid green and the ordinary roads to the entry and from the exit in blue dashes. Entry and exit plazas are marked with their fees.
   - See the toll fee breakdown per expressway, from entry plaza to exit plaza.
   - **RFID balance check:** current balance, total estimated toll, the deduction and the balance after the trip. If the balance is too low, a pop-up lets you update it.

@@ -120,7 +120,10 @@ abstract class TestCase extends BaseTestCase
     protected function fakeOsrm(): array
     {
         $route = json_decode(file_get_contents(base_path('tests/Fixtures/osrm-quezon-city-to-san-fernando.json')), true);
-        Http::fake(['router.project-osrm.org/*' => Http::response($route)]);
+        Http::fake([
+            'router.project-osrm.org/*' => Http::response($route),
+            'valhalla1.openstreetmap.de/*' => Http::response(['code' => 'NoRoute'], 400),   // no toll-free route
+        ]);
         return $route;
     }
 }

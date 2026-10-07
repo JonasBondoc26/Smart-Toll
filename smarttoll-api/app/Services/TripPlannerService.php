@@ -16,6 +16,8 @@ use RuntimeException;
  *                         entry and exit toll plazas
  *   priceRoute()          fare of each entry -> exit pair from toll_matrix
  *   compareRoutes()       pick the fastest, shortest and cheapest candidate
+ *   tradeoff()            when the fastest route costs more in toll than a
+ *                         longer one, the two options side by side
  */
 class TripPlannerService
 {
@@ -32,6 +34,8 @@ class TripPlannerService
         // Harbor Link is priced inside the NLEX matrix (its Karuhatan and Mindanao Avenue exits).
         ['key' => 'NLEX',    'test' => '/north luzon|nlex|harbor\s*link|subic.{1,3}clark.{1,3}tarlac|sctex|subic freeport express|sfex/iu'],
         ['key' => 'STAR',    'test' => '/southern tagalog arterial|star tollway|apolinario mabini/iu'],
+        // The CAVITEX-CALAX link road at Kawit is reached through CAVITEX's Kawit plaza.
+        ['key' => 'CAVITEX', 'test' => '/cavitex.{1,3}calax/iu'],
         ['key' => 'CALAX',   'test' => '/cavite.{1,3}laguna|calax/iu'],
         ['key' => 'CAVITEX', 'test' => '/manila.{1,3}cavite|cavitex|c-?5\s*(south\s*)?link/iu'],
         ['key' => 'SLEX',    'test' => '/south luzon|slex|skyway|muntinlupa.{1,3}cavite|mcx/iu'],
@@ -47,6 +51,19 @@ class TripPlannerService
     /** Philippine expressways carry refs E1, E2, E3... in OpenStreetMap. */
     private const EXPRESSWAY_REF = '/(^|;|\s)E\d+(\b|$)/';
 
+    /**
+     * Toll-free roads that still carry an expressway ref. Osmeña Highway is E2 up to
+     * Magallanes, where the tolled part begins under the name South Luzon Expressway.
+     */
+    private const FREE_ROADS = '/osme(ñ|n)a/iu';
+
+    /**
+     * A stretch of expressway shorter than this whose two ends match the same plaza
+     * is not a toll trip (a ramp, an interchange, or the free road before a barrier).
+     * Longer ones still are reported, since they point to a missing plaza.
+     */
+    private const SAME_PLAZA_FREE_M = 3000;
+
     /** @var array<string, array<int, object>>|null plazas grouped by system key */
     private ?array $plazasBySystem = null;
 
@@ -60,7 +77,7 @@ class TripPlannerService
     /**
      * @param array{lat: float, lng: float} $from
      * @param array{lat: float, lng: float} $to
-     * @return array{routes: array, picks: array}
+     * @return array{routes: array, picks: array, tradeoff: array|null}
      */
     public function plan(array $from, array $to, int $classNumber): array
     {
@@ -88,7 +105,8 @@ class TripPlannerService
             ];
         }
 
-        return ['routes' => $routes, 'picks' => $this->compareRoutes($routes)];
+        $picks = $this->compareRoutes($routes);
+        return ['routes' => $routes, 'picks' => $picks, 'tradeoff' => $this->tradeoff($routes, $picks)];
     }
 
     /* ------------------------------------------------------------------
@@ -145,7 +163,8 @@ class TripPlannerService
 
     /**
      * Asks OSRM for the fastest route plus up to 3 alternatives, and for a
-     * toll-free route when the server supports "exclude=toll".
+     * toll-free route: from OSRM itself when the server supports
+     * "exclude=toll", otherwise from Valhalla (see tollFreeRoutes()).
      *
      * @return array<int, array> OSRM route objects
      */
@@ -157,14 +176,51 @@ class TripPlannerService
 
         $routes = $this->osrm($url, $query + ['alternatives' => 3], true);
 
-        if (config('smarttoll.osrm_supports_exclude')) {
-            foreach ($this->osrm($url, $query + ['exclude' => 'toll'], false) as $r) {
-                $r['source'] = 'toll-free';
-                $routes[] = $r;
-            }
+        $tollFree = config('smarttoll.osrm_supports_exclude')
+            ? $this->osrm($url, $query + ['exclude' => 'toll'], false)
+            : $this->tollFreeRoutes($from, $to);
+        foreach ($tollFree as $r) {
+            $r['source'] = 'toll-free';
+            $routes[] = $r;
         }
 
         return $this->dedupeRoutes($routes);
+    }
+
+    /**
+     * A route that avoids toll roads, from a Valhalla server. The public OSRM
+     * server cannot avoid tolls, and its alternatives nearly always use the same
+     * expressway, so without this the planner rarely has a cheaper route to offer.
+     * Valhalla answers in OSRM's format, so the route is priced like any other
+     * (it can still use a toll road when there is no other way). Optional: any
+     * failure just means no toll-free candidate.
+     */
+    private function tollFreeRoutes(array $from, array $to): array
+    {
+        $base = config('smarttoll.tollfree_url');
+        if (!$base) {
+            return [];
+        }
+        try {
+            $res = Http::withHeaders(['User-Agent' => config('smarttoll.user_agent')])
+                ->timeout(25)
+                ->post(rtrim($base, '/') . '/route', [
+                    'locations' => [
+                        ['lat' => $from['lat'], 'lon' => $from['lng']],
+                        ['lat' => $to['lat'], 'lon' => $to['lng']],
+                    ],
+                    'costing' => 'auto',
+                    'costing_options' => ['auto' => ['use_tolls' => 0]],
+                    'format' => 'osrm',
+                    'shape_format' => 'geojson',
+                ]);
+        } catch (\Throwable $e) {
+            return [];
+        }
+        if (!$res->successful() || $res->json('code') !== 'Ok') {
+            return [];
+        }
+        return array_slice($res->json('routes') ?? [], 0, 1);
     }
 
     private function osrm(string $url, array $query, bool $required): array
@@ -347,6 +403,9 @@ class TripPlannerService
                 }
             }
         }
+        if (preg_match(self::FREE_ROADS, $name)) {
+            return null;
+        }
         if (!empty($step['ref']) && preg_match(self::EXPRESSWAY_REF, $step['ref'])) {
             // An expressway ramp, or an expressway there is no rule for.
             return ['key' => null, 'label' => $name !== '' ? $name : 'Expressway ' . $step['ref'], 'named' => false];
@@ -497,12 +556,19 @@ class TripPlannerService
         $byNetwork = [];
         $notes = [];
 
-        foreach ($segments as &$s) {
+        foreach ($segments as $k => &$s) {
+            $samePlaza = $s['known'] && $s['entry'] && $s['exit'] && $s['entry']['plaza_id'] === $s['exit']['plaza_id'];
+            if ($samePlaza && $s['distance_m'] < self::SAME_PLAZA_FREE_M) {
+                // A short brush with the expressway that never passes between two plazas,
+                // e.g. starting on NLEX just south of the Balintawak barrier: no fare.
+                unset($segments[$k]);
+                continue;
+            }
             if (!$s['known']) {
                 $s['note'] = "Toll rates for {$s['label']} are not loaded yet.";
             } elseif (!$s['entry'] || !$s['exit']) {
                 $s['note'] = "Could not match a toll plaza on {$s['label']}. Check the plaza coordinates.";
-            } elseif ($s['entry']['plaza_id'] === $s['exit']['plaza_id']) {
+            } elseif ($samePlaza) {
                 $s['note'] = "Entry and exit resolve to the same plaza ({$s['entry']['name']}) on {$s['label']}.";
             } else {
                 $rate = $this->lookupRate($classNumber, $s['entry']['plaza_id'], $s['exit']['plaza_id']);
@@ -521,6 +587,7 @@ class TripPlannerService
             unset($s['known']);
         }
         unset($s);
+        $segments = array_values($segments);
 
         return ['segments' => $segments, 'total' => $total, 'complete' => $complete, 'by_network' => $byNetwork, 'notes' => $notes];
     }
@@ -567,6 +634,43 @@ class TripPlannerService
             'shortest' => $argmin($all, fn ($a, $b) => $a['distance_m'] <=> $b['distance_m']),
             'cheapest' => $argmin($priced ?: $all, fn ($a, $b) =>
                 [$a['toll']['total'], $a['duration_s']] <=> [$b['toll']['total'], $b['duration_s']]),
+        ];
+    }
+
+    /**
+     * The choice between the fastest route (often also the shortest) that costs
+     * more in toll, and the longer route that is cheapest. Null when there is no
+     * such choice: the fastest route is already the cheapest. Only offered when
+     * the cheap route's toll is fully priced, so the saving is not overstated;
+     * when the fastest route has an unpriced section the saving is at least
+     * this much (`savings_complete` false).
+     *
+     *   fastest_is_shortest  the quick route is also the shortest one
+     *   extra_distance_m     how much farther the cheap route is (negative when shorter)
+     *   extra_duration_s     how much longer it takes
+     *   savings              toll saved by taking it
+     */
+    public function tradeoff(array $routes, array $picks): ?array
+    {
+        $f = $picks['fastest'] ?? null;
+        $c = $picks['cheapest'] ?? null;
+        if ($f === null || $c === null || $f === $c) {
+            return null;
+        }
+        $fast = $routes[$f];
+        $cheap = $routes[$c];
+        $savings = round($fast['toll']['total'] - $cheap['toll']['total'], 2);
+        if (!$cheap['toll']['complete'] || $savings <= 0) {
+            return null;
+        }
+        return [
+            'fastest'             => $f,
+            'cheapest'            => $c,
+            'fastest_is_shortest' => $f === $picks['shortest'],
+            'extra_distance_m'    => $cheap['distance_m'] - $fast['distance_m'],
+            'extra_duration_s'    => $cheap['duration_s'] - $fast['duration_s'],
+            'savings'             => $savings,
+            'savings_complete'    => $fast['toll']['complete'],
         ];
     }
 

@@ -24,6 +24,38 @@ const duration = (s) => {
 const roadsOf = (toll) => [...new Set(toll.segments.map((s) => s.label))];
 const strong = { fontWeight: 700, fontSize: 14 };
 
+// Fastest/shortest-but-pricier vs longer-but-cheapest, shown when the API finds that trade-off (TripPlannerService::tradeoff).
+function TradeoffChoice({ trip, selected, onSelect }) {
+  const t = trip.tradeoff;
+  const fast = trip.routes[t.fastest], cheap = trip.routes[t.cheapest];
+  const saving = peso(t.savings) + (t.savings_complete ? '' : '+');   // at least this much when the fastest route has an unpriced section
+  const farther = t.extra_distance_m > 0 ? `${km(t.extra_distance_m)} farther` : t.extra_distance_m < 0 ? `${km(-t.extra_distance_m)} shorter` : 'same distance';
+  const slower = t.extra_duration_s > 0 ? `${duration(t.extra_duration_s)} slower` : 'same travel time';
+  const option = (i, title, r, detail) => (
+    <button
+      type="button" aria-pressed={i === selected}
+      className={`tradeoff-option${i === selected ? ' is-selected' : ''}`} onClick={() => onSelect(i)}
+    >
+      <div className="tradeoff-title">{title}</div>
+      <div className="tradeoff-toll">
+        {r.toll.segments.length === 0 ? 'No toll' : peso(r.toll.total)}
+        {r.toll.segments.length > 0 && !r.toll.complete && <small>+ unpriced section</small>}
+      </div>
+      <div className="route-option-meta">{km(r.distance_m)} · {duration(r.duration_s)}</div>
+      <div className="tradeoff-detail">{detail}</div>
+    </button>
+  );
+  return (
+    <div className="tradeoff">
+      <div className="tradeoff-question">Faster or cheaper?</div>
+      <div className="tradeoff-options">
+        {option(t.fastest, `${t.fastest_is_shortest ? 'Fastest & shortest' : 'Fastest'}, but expensive`, fast, `${saving} more in toll`)}
+        {option(t.cheapest, `${t.extra_distance_m > 0 ? 'Longer' : 'Slower'}, but cheapest`, cheap, `${farther} · ${slower} · saves ${saving}`)}
+      </div>
+    </div>
+  );
+}
+
 // What saving the trip did to the vehicle's recorded RFID balance (see TripController::store).
 const rfidMessage = (r) => {
   if (!r) return 'No RFID account is recorded for this vehicle, so no balance was changed.';
@@ -461,6 +493,7 @@ export default function TripPlanner() {
                 {route && (
                   <>
                     <h3 style={{ fontSize: 15, margin: '24px 0 12px' }}>Route Options</h3>
+                    {trip.tradeoff && <TradeoffChoice trip={trip} selected={selected} onSelect={setSelected} />}
                     <div className="route-options">
                       {routes.map((r, i) => {
                         const via = roadsOf(r.toll);

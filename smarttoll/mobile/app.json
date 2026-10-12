@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "SmartToll",
+    "slug": "smarttoll",
+    "version": "1.0.0",
+    "scheme": "smarttoll",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ph.edu.hau.smarttoll"
+    },
+    "android": {
+      "package": "ph.edu.hau.smarttoll",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B4F3F",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#12261F"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "SmartToll uses your location to start trips from where you are and to follow your saved trip to the destination.",
+          "locationAlwaysAndWhenInUsePermission": "SmartToll keeps following your trip, with directions and toll alerts, when the phone is locked or another app is open.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9b48230a-292c-48db-9d7e-89ecdea2a230"
+      }
+    },
+    "owner": "jonasbondoc"
+  }
+}

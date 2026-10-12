@@ -1,6 +1,6 @@
 # SmartToll: Toll Route Planner with RFID Balance Tracking
 
-SmartToll is a web app for motorists in Luzon, Philippines. Choose where you're going and it shows the route on a map, every toll plaza you'll pass, the estimated toll for your vehicle class, and whether your recorded RFID (Easytrip / Autosweep) balance covers the trip before you reach the toll gate.
+SmartToll is a web app and an Android / iPhone app for motorists in Luzon, Philippines. Choose where you're going and it shows the route on a map, every toll plaza you'll pass, the estimated toll for your vehicle class, and whether your recorded RFID (Easytrip / Autosweep) balance covers the trip before you reach the toll gate.
 
 It was built as a capstone project at Holy Angel University.
 
@@ -19,6 +19,7 @@ It was built as a capstone project at Holy Angel University.
 - [The database](#the-database)
 - [Password reset emails](#password-reset-emails)
 - [Sign in with Google](#sign-in-with-google)
+- [Mobile app (React Native)](#mobile-app-react-native)
 - [Toll data commands](#toll-data-commands)
 - [Automated tests](#automated-tests)
 - [Troubleshooting](#troubleshooting)
@@ -45,6 +46,18 @@ It was built as a capstone project at Holy Angel University.
   - **Plan Again** opens a past trip in Plan a Trip with the same origin, destination and vehicle, priced with today's toll rates.
 - **Dashboard:** your vehicles, RFID balances (low ones flagged), trips planned, tolls this month and recent trips.
 
+**Mobile app** (Android and iPhone, built with React Native / Expo, see [Mobile app](#mobile-app-react-native))
+- Everything a motorist does on the website: dashboard, vehicles, RFID accounts, Plan a Trip with the map, Trip History with Plan Again, and profile.
+- **Continue with Google** with the phone's own Google account chooser (in the installed app; see [Google sign-in on the phone](#google-sign-in-on-the-phone)).
+- **My location:** start a trip from where you are, using the phone's GPS.
+- **GPS trip tracking with turn-by-turn directions:** after you save a trip (its toll is deducted then), **Start Trip** follows you with the phone's GPS along the saved route: live position, distance and time left, and the next turn ("In 400 meters, turn left onto Tandang Sora Avenue"). It warns you before and when you **enter and exit each toll plaza**, re-routes automatically after a wrong turn, and marks the trip **Completed** when you reach the destination.
+- **Alerts your way:** while driving, switch **Voice**, **Text** and **Graphic** alerts on or off (any mix, remembered on the phone).
+- **Heading-up map:** while driving, the flat 2D map turns so the direction of travel points to the top of the screen, with your arrow near the bottom-center; turns rotate it smoothly. Switch to **North up** anytime.
+- **Night mode:** a dark map and dark trip screen for night driving: **Auto** (6 PM to 6 AM), **Night** or **Day**.
+- **Keeps working with the screen off:** with "Allow all the time" location, directions and toll alerts continue when the phone is locked or another app is open.
+- **Saved routes** on the phone too: tap "Home → Office" in Plan to plan it in one step (shared with the website).
+- **Simulate Trip:** replays the saved route as if you were driving it (sped up), for demonstrations away from the expressway.
+
 **Admin** (log in at `/admin/login`)
 - **Dashboard:** counts, quick actions, and a **Needs Attention** list of plazas without coordinates, plazas without rates, and expressways without plazas.
 - **Expressways:** add, edit or delete. Each one shows whether the trip planner uses it. Deleting an expressway also deletes its plazas and rates.
@@ -63,12 +76,13 @@ It was built as a capstone project at Holy Angel University.
 | Part | Technology |
 |---|---|
 | Frontend | React 18, React Router 6, Vite 5, Leaflet (map) |
+| Mobile app | React Native 0.86 with Expo SDK 57, Expo Router, expo-location (GPS), Leaflet in a WebView |
 | Backend / API | Laravel 12 (PHP 8.2+), Laravel Sanctum (token login) |
 | Database | MySQL / MariaDB (tested on MariaDB 10.4 from XAMPP) |
 | Routing | [OSRM](https://project-osrm.org/) public server |
 | Map tiles & place names | [OpenStreetMap](https://www.openstreetmap.org/) and [Nominatim](https://nominatim.org/) |
 
-The React app talks only to the Laravel API, at `/api/...`. All toll computation happens in the API, and the React app only displays the results.
+The website and the mobile app talk only to the Laravel API, at `/api/...`. All toll computation happens in the API; the apps only display the results.
 
 ---
 
@@ -82,6 +96,7 @@ Code/
 │   │   ├── Http/Controllers/  ← Auth, Profile, Vehicles, RFID, Trip planner, Trips, Dashboard
 │   │   ├── Http/Controllers/Admin/AdminController.php   ← admin module (reference data)
 │   │   ├── Services/TripPlannerService.php   ← route → toll segments → fares
+│   │   ├── Services/TripRecorder.php   ← saves a trip and pays its toll from the RFID balance
 │   │   └── Console/Commands/  ← trb:* commands that import the TRB toll data
 │   ├── config/smarttoll.php   ← toll systems, RFID networks, supported cities, OSRM settings
 │   ├── database/
@@ -91,10 +106,14 @@ Code/
 │   ├── routes/api.php         ← every API endpoint
 │   └── .env.example           ← copy to .env
 └── smarttoll/
-    └── frontend/              ← React app (Vite)
-        ├── src/pages/         ← one file per screen (src/pages/admin/ for the admin module)
-        ├── src/components/    ← map, sidebar, location search, icons, modals
-        └── vite.config.js     ← forwards /api to http://localhost:8000
+    ├── frontend/              ← React app (Vite)
+    │   ├── src/pages/         ← one file per screen (src/pages/admin/ for the admin module)
+    │   ├── src/components/    ← map, sidebar, location search, icons, modals
+    │   └── vite.config.js     ← forwards /api to http://localhost:8000
+    └── mobile/                ← React Native app (Expo)
+        ├── src/app/           ← one file per screen (Expo Router); (tabs)/ holds the 5 tabs
+        ├── src/components/    ← map (WebView), place picker, toll cards, buttons and forms
+        └── src/lib/           ← API client, login session, GPS trip tracking, theme
 ```
 
 ---
@@ -368,6 +387,113 @@ How it behaves:
 
 ---
 
+## Mobile app (React Native)
+
+The mobile app is in `smarttoll/mobile`. It uses the same Laravel API as the website, so set up the API first ([steps 1–4](#setup-first-time)). It's for motorists; administrators use the website.
+
+### What you need
+
+- Everything from [Requirements](#requirements), plus a phone (Android or iPhone) on the **same Wi-Fi** as your computer.
+- The free **Expo Go** app on the phone: [Google Play](https://play.google.com/store/apps/details?id=host.exp.exponent) or the [App Store](https://apps.apple.com/app/expo-go/id982107779).
+
+You don't need Android Studio or Xcode to run it.
+
+### Run it on your phone
+
+1. **Start the API so the phone can reach it.** In `smarttoll-api`, add `--host 0.0.0.0` (plain `php artisan serve` only accepts connections from the computer itself):
+
+   ```bash
+   cd smarttoll-api
+   php artisan serve --host 0.0.0.0 --port 8000
+   ```
+
+   If Windows asks whether to allow PHP through the firewall, choose **Allow** (Private networks).
+
+2. **Install and start the app** in a second terminal:
+
+   ```bash
+   cd smarttoll/mobile
+   npm install
+   npx expo start
+   ```
+
+3. **Open it on the phone.** Scan the QR code in the terminal: on Android with the Expo Go app, on iPhone with the Camera app.
+
+The app finds the API on its own: it uses the computer Expo is running on, port 8000. The log-in screen shows the server address it uses (for example `Server: http://192.168.1.10:8000`). To use a different server, copy `smarttoll/mobile/.env.example` to `.env`, set `EXPO_PUBLIC_API_URL`, and restart `npx expo start`.
+
+> **Try it in a browser:** press `w` in the Expo terminal to open the app in your web browser. Everything works there too, and the browser asks for permission to use your location.
+
+### Following a trip with GPS (turn-by-turn)
+
+1. In **Plan**, choose the vehicle, origin and destination, then **Find Route**.
+2. Tap **Save Trip**. The toll is deducted from the vehicle's RFID balance (if it's too low, you can update the balance first). The route's turns are saved with the trip.
+3. Tap **Start Trip** and allow location access when the phone asks. (A saved trip can also be started later from its page in **History**.)
+4. Keep SmartToll open on screen while driving; the screen stays on and the map follows you. You get:
+   - **Directions:** each turn is announced ahead ("In 400 meters, turn right onto Mindanao Avenue"; about 1 km ahead on expressways) and again at the turn ("Turn right onto Mindanao Avenue").
+   - **Toll warnings:** "Approaching Mindanao Avenue toll plaza. You will enter NLEX / SCTEX.", then "Entering NLEX / SCTEX at Mindanao Avenue toll plaza.", and at the end "Exiting NLEX / SCTEX at San Simon toll plaza." (with the toll, which was already paid). The phone vibrates at each plaza.
+   - **Wrong turn:** after a few seconds off the route, the app says "Rerouting", gets a new route from where you are, and continues the directions. The toll already paid doesn't change.
+5. Within about 200 m of the destination, the app says **You have arrived** and the trip becomes **Completed** in Trip History. (The API checks the position: a trip can't be completed more than 1 km from its destination.)
+
+**Alerts:** at the top of the trip screen, tap **Voice**, **Text** or **Graphic** to turn each on or off at any time. Voice speaks the directions and toll warnings; Text shows them written; Graphic shows the big turn arrow and the green (entry) / orange (exit) toll-gate cards. Any mix works, and the phone remembers the choice.
+
+**No expressway nearby?** On the trip screen, tap **Simulate Trip (demo)**. The app drives the saved route at about 3 km a minute, with all directions, toll warnings and the arrival, as on a real trip.
+
+Trips go **Planned → In progress → Completed**. If you stop following a trip, it stays *In progress* and **Continue Trip** picks it up again. Trips saved before directions were added have no voice directions; use **Plan Again** to save the route again.
+
+**Heading up / North up:** while following a trip, the map is **Heading up**: it turns with the road so your direction of travel always points to the top, and your blue arrow sits near the bottom of the map so you see more road ahead. It stays a flat, top-down 2D map (no tilt). The direction comes from the road you're on (steadier than raw GPS), it's held while you're stopped, and the map turns smoothly (at most 90° a second) instead of jumping. Tap **Heading up** to switch to **North up** (map fixed with north at the top, arrow in the middle), and tap again to switch back. Touching the map stops following; **Follow my position** resumes.
+
+**Night mode:** on the trip screen, **Look** switches between **Auto** (dark from 6 PM to 6 AM), **Night** and **Day**. The phone remembers the choice.
+
+**With the screen off:** while following a trip, tap **Allow** on "Keep directions and toll alerts going when the phone is locked" and set location to **Allow all the time** (Android opens the settings page for this). From then on, SmartToll keeps following trips when the phone is locked or another app is open, and Android shows a "SmartToll is following your trip" notification. Without it, keep SmartToll open on screen. (Not available in Expo Go or a web browser.)
+
+**Saved routes:** in **Plan**, after choosing an origin and destination, tap **Save this route** and name it (e.g. Home → Office). Saved routes appear as chips at the top of Plan: tap one to plan it, long-press to delete it. They're the same saved routes as on the website.
+
+> **After updating:** voice (`expo-speech`) and screen-off tracking (`expo-task-manager`, background location) are native modules, so rebuild and reinstall the development app once (`eas build -p android --profile development`, see below).
+
+### Google sign-in on the phone
+
+**Continue with Google** works in an installed SmartToll app, not in Expo Go: Google's sign-in is native code that Expo Go doesn't include. (In Expo Go the button explains this; email and password work everywhere.) You build the app once with Expo's free cloud build service, then keep developing with `npx expo start` as before.
+
+First set up [Sign in with Google](#sign-in-with-google) for the website. The phone uses the same `GOOGLE_CLIENT_ID`: the app reads it from the API, and the API checks phone sign-ins exactly like website ones.
+
+1. **Build the development app** (one time, about 15 minutes in the cloud):
+
+   ```bash
+   cd smarttoll/mobile
+   npm install -g eas-cli
+   eas login                                      # free account at https://expo.dev
+   eas init                                       # links the project to your Expo account
+   eas build -p android --profile development
+   ```
+
+   Answer **Yes** when it offers to generate a new Android keystore.
+
+2. **Get the app's SHA-1 fingerprint.** Run `eas credentials -p android`, choose the `development` profile, and copy the **SHA1 Fingerprint** it shows (like `AB:CD:12:…`).
+
+3. **Register the Android app with Google.** In Google Cloud Console → **APIs & Services → Credentials → Create Credentials → OAuth client ID**:
+   - Application type: **Android**
+   - Package name: `ph.edu.hau.smarttoll`
+   - SHA-1 certificate fingerprint: the one from step 2
+
+   You don't copy this client's ID anywhere; Google uses it to recognise the app. Accounts that sign in must still be **Test users** on the consent screen while it's in "Testing".
+
+4. **Install and run.** Open the link from step 1 on the phone to install the APK. Start the API (`php artisan serve --host 0.0.0.0 --port 8000`) and `npx expo start`, then open the project from the SmartToll app (it lists the running server, or scan the QR code). **Continue with Google** now shows your Google accounts.
+
+If Google answers with "doesn't recognise this build" (Android's `DEVELOPER_ERROR`), the package name or SHA-1 in step 3 doesn't match the installed build.
+
+> **iPhone:** also create an **iOS** OAuth client (bundle ID `ph.edu.hau.smarttoll`), then build with `GOOGLE_IOS_URL_SCHEME` (the client's "iOS URL scheme") and `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` set. iOS builds need an Apple developer account.
+
+### Build an installable APK for demos (optional)
+
+The development app above loads its code from your computer. For a standalone APK that runs on its own (for example, for a demonstration):
+
+1. In `smarttoll/mobile/eas.json`, set `EXPO_PUBLIC_API_URL` under `preview` → `env` to the API's address, e.g. `http://192.168.1.10:8000`. An installed app isn't started from your computer, so it can't find the API by itself.
+2. Build it: `eas build -p android --profile preview`, then open the link it prints on the phone to install.
+
+Both profiles are signed with the same keystore, so the SHA-1 registered for Google sign-in works for the preview APK too.
+
+---
+
 ## Toll data commands
 
 The toll data is already in `smarttoll.sql`, so **you don't need these to run the app.** They're for refreshing the data when TRB publishes new rates. Run them inside `smarttoll-api/`.
@@ -388,7 +514,7 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 
 ## Automated tests
 
-37 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
+42 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
 
 ```bash
 php artisan test
@@ -398,6 +524,7 @@ What they cover:
 - **Toll calculation:** fares from the TRB matrix per vehicle class, fares stored one way pricing both directions, and a recorded NLEX route detected as Mindanao Avenue → San Simon (₱266 for Class 1).
 - **Trips and RFID:** saving a trip re-prices it on the server (a fee sent by the browser is ignored), deducts the toll, refuses an insufficient balance and changes nothing, keeps what's needed to plan a trip again, and keeps each motorist's trips private. Visitors can plan but not save.
 - **Admin:** only admins reach the admin API; duplicate and cross-expressway rates are rejected; classes and plazas still in use can't be deleted; every rate change is written to the change log; CSV and TRB imports change nothing on preview and log everything they apply.
+- **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions (saved with the trip), and a motorist off the route gets new directions without the toll changing.
 - **Accounts:** saved routes are private to their owner; Google sign-in creates one account per person and rejects tokens made for other apps, unverified emails and admin accounts.
 
 The tests use a separate database, **`smarttoll_test`**, built automatically from `database/smarttoll.sql`. They never touch the real `smarttoll` database, and each test's changes are rolled back. The routing server (OSRM) and Google are replaced by recorded answers (`tests/Fixtures/`), so the tests run offline.
@@ -420,6 +547,10 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 | Port 5173 is already in use | Vite picks the next free port automatically. Use the address it prints, and set `FRONTEND_URL` in `.env` to match so reset links work. |
 | The map is grey, or "The routing service could not be reached" | Check your internet connection. Map tiles and routing come from online services. |
 | "The routing service found no route" or slow routes | The public OSRM server allows about one request per second and can be busy. Wait a moment and try again. |
+| Mobile app: "Cannot reach the SmartToll server" | Start the API with `php artisan serve --host 0.0.0.0`, check that the phone and the computer are on the same Wi-Fi, and allow PHP through the Windows firewall. The log-in screen shows the address the app is using. |
+| Mobile app: "Google sign-in works in the installed SmartToll app, not in Expo Go" | Expected in Expo Go. Build and install the development app, see [Google sign-in on the phone](#google-sign-in-on-the-phone). |
+| Mobile app: "Google doesn't recognise this build of SmartToll" | The Android OAuth client's package name must be `ph.edu.hau.smarttoll` and its SHA-1 must match `eas credentials -p android`. |
+| Mobile app: Start Trip says location access is needed | Allow location for SmartToll (or Expo Go) in the phone's settings. |
 | MySQL won't start in XAMPP (port 3306 busy) | Another MySQL is running. Stop it, or change the port in XAMPP and `DB_PORT` in `.env`. |
 
 ---
@@ -429,6 +560,7 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 - **Toll rates** are the TRB matrices saved in October 2026. Check the official TRB website for the current rates before relying on them.
 - **The RFID balance is a recorded estimate.** SmartToll doesn't connect to Easytrip or Autosweep. You enter your balance, and saving a trip deducts its estimated toll from it.
 - Each vehicle has one RFID account, and a trip's whole estimated toll is deducted from it, even when the trip also uses roads on the other RFID network.
+- **GPS trip tracking** uses the phone's GPS, so a weak signal (tunnels, under elevated roads) can delay the position and plaza notices for a moment.
 - Routes come from OSRM and OpenStreetMap, so road names and interchanges can occasionally differ from the toll operators' own maps.
 
 ---
@@ -438,6 +570,6 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 - **Toll rates:** [Toll Regulatory Board](https://trb.gov.ph/) (Philippines)
 - **Map data:** © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
 - **Routing:** [OSRM](https://project-osrm.org/) · **Place names:** [Nominatim](https://nominatim.org/) · **Map display:** [Leaflet](https://leafletjs.com/)
-- Built with [Laravel](https://laravel.com/) and [React](https://react.dev/)
+- Built with [Laravel](https://laravel.com/), [React](https://react.dev/) and [React Native](https://reactnative.dev/) / [Expo](https://expo.dev/)
 
 This is an academic project made for a capstone course at Holy Angel University.

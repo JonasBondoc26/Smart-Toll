@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button, Card, CardTitle, Field, Notice, Screen } from '../components/ui';
+import { useEffect, useState } from 'react';
+import { Button, Card, CardTitle, Field, Notice, Screen, T } from '../components/ui';
 import { useSession } from '../lib/session';
 import { api } from '../lib/api';
 import { useTheme } from '../lib/theme';
@@ -13,6 +13,10 @@ export default function Profile() {
   const [pw, setPw] = useState({ current_password: '', password: '', password_confirmation: '' });
   const [pwMsg, setPwMsg] = useState({ text: '', tone: 'ok' });
   const [savingPw, setSavingPw] = useState(false);
+
+  // Google sign-ups have no password until they set one; refresh in case this changed.
+  const hasPassword = user.has_password !== false;
+  useEffect(() => { api('/profile').then((d) => updateUser(d.user)).catch(() => {}); }, []);
 
   const saveInfo = async () => {
     if (!info.full_name.trim()) return setInfoMsg({ text: 'Full name is required.', tone: 'error' });
@@ -29,13 +33,19 @@ export default function Profile() {
   };
 
   const savePw = async () => {
+    if (hasPassword && !pw.current_password) return setPwMsg({ text: 'Enter your current password.', tone: 'error' });
     if (pw.password.length < 8) return setPwMsg({ text: 'The new password needs at least 8 characters.', tone: 'error' });
     if (pw.password !== pw.password_confirmation) return setPwMsg({ text: 'The new passwords do not match.', tone: 'error' });
     setSavingPw(true);
     try {
-      await api('/profile/password', { method: 'PUT', body: pw });
+      const { current_password, ...rest } = pw;
+      const d = await api('/profile/password', { method: 'PUT', body: hasPassword ? pw : rest });
       setPw({ current_password: '', password: '', password_confirmation: '' });
-      setPwMsg({ text: 'Password updated. Other devices were logged out.', tone: 'ok' });
+      setPwMsg({
+        text: hasPassword ? 'Password updated. Other devices were logged out.' : 'Password set. You can now also log in with your email and password.',
+        tone: 'ok',
+      });
+      if (d.user) await updateUser(d.user);
     } catch (e) {
       setPwMsg({ text: e.message, tone: 'error' });
     } finally {
@@ -54,12 +64,18 @@ export default function Profile() {
       </Card>
 
       <Card>
-        <CardTitle icon="lock-closed">Change Password</CardTitle>
-        <Field label="Current Password" value={pw.current_password} onChangeText={(current_password) => setPw((x) => ({ ...x, current_password }))} secureTextEntry />
+        <CardTitle icon="lock-closed">{hasPassword ? 'Change Password' : 'Set a Password'}</CardTitle>
+        {hasPassword ? (
+          <Field label="Current Password" value={pw.current_password} onChangeText={(current_password) => setPw((x) => ({ ...x, current_password }))} secureTextEntry />
+        ) : (
+          <T.Muted style={{ marginBottom: 12 }}>
+            You signed up with Google, so your account has no password yet. Set one to also log in with your email and password.
+          </T.Muted>
+        )}
         <Field label="New Password" value={pw.password} onChangeText={(password) => setPw((x) => ({ ...x, password }))} secureTextEntry placeholder="At least 8 characters" />
         <Field label="Confirm New Password" value={pw.password_confirmation} onChangeText={(password_confirmation) => setPw((x) => ({ ...x, password_confirmation }))} secureTextEntry />
         <Notice tone={pwMsg.tone}>{pwMsg.text}</Notice>
-        <Button title="Update Password" onPress={savePw} busy={savingPw} />
+        <Button title={hasPassword ? 'Update Password' : 'Set Password'} onPress={savePw} busy={savingPw} />
       </Card>
     </Screen>
   );

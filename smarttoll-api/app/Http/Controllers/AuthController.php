@@ -12,7 +12,7 @@ class AuthController extends Controller
     {
         return [
             'token' => $u->createToken('web')->plainTextToken,
-            'user'  => ['id' => $u->user_id, 'name' => $u->full_name, 'email' => $u->email, 'role' => $u->role],
+            'user'  => $u->toApi(),
         ];
     }
 
@@ -76,7 +76,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
         $status = Password::reset($d, function (User $u, string $password) {
-            $u->update(['password_hash' => Hash::make($password)]);
+            $u->update(['password_hash' => Hash::make($password), 'has_password' => true]);
             $u->tokens()->delete();
         });
 

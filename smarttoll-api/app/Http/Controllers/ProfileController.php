@@ -8,6 +8,12 @@ use Illuminate\Validation\Rule;
 /** The signed-in user's own account: name, email and password. */
 class ProfileController extends Controller
 {
+    /** GET /api/profile: the signed-in user, fresh (e.g. whether a password is set yet). */
+    public function show(Request $r)
+    {
+        return ['user' => $r->user()->toApi()];
+    }
+
     /** PUT /api/profile   { full_name, email } */
     public function update(Request $r)
     {
@@ -20,27 +26,33 @@ class ProfileController extends Controller
         ]);
         $u->update($d);
 
-        return ['user' => ['id' => $u->user_id, 'name' => $u->full_name, 'email' => $u->email, 'role' => $u->role]];
+        return ['user' => $u->toApi()];
     }
 
     /**
      * PUT /api/profile/password   { current_password, password, password_confirmation }
-     * Signs out every other device: their tokens are revoked, this one is kept.
+     * Accounts made with Google have no password yet: they send only the new one, which
+     * sets it. Signs out every other device: their tokens are revoked, this one is kept.
      */
     public function changePassword(Request $r)
     {
         $u = $r->user();
-        $d = $r->validate([
+        $hasPassword = $u->has_password !== false;
+        $d = $r->validate($hasPassword ? [
             'current_password' => 'required|string',
             'password'         => 'required|string|min:8|confirmed|different:current_password',
+        ] : [
+            'password'         => 'required|string|min:8|confirmed',
         ], [
             'password.different' => 'The new password must be different from the current one.',
         ]);
-        abort_if(!Hash::check($d['current_password'], $u->password_hash), 422, 'The current password is incorrect.');
+        if ($hasPassword) {
+            abort_if(!Hash::check($d['current_password'], $u->password_hash), 422, 'The current password is incorrect.');
+        }
 
-        $u->update(['password_hash' => Hash::make($d['password'])]);
+        $u->update(['password_hash' => Hash::make($d['password']), 'has_password' => true]);
         $u->tokens()->where('id', '!=', $u->currentAccessToken()->id)->delete();
 
-        return ['message' => 'Password updated.'];
+        return ['message' => $hasPassword ? 'Password updated.' : 'Password set. You can now also log in with your email and password.', 'user' => $u->toApi()];
     }
 }

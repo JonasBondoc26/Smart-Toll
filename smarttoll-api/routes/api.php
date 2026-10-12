@@ -32,6 +32,7 @@ Route::get('/trip-planner/place-name', [TripPlannerController::class, 'placeName
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/dashboard', [DashboardController::class, 'show']);
+    Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'changePassword'])->middleware('throttle:10,1');
     Route::apiResource('/vehicles', VehicleController::class);

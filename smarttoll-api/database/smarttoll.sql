@@ -218,6 +218,7 @@ CREATE TABLE `users` (
   `full_name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `has_password` tinyint(1) NOT NULL DEFAULT 1,
   `role` varchar(20) NOT NULL DEFAULT 'motorist',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `email` (`email`)
@@ -2717,6 +2718,7 @@ INSERT INTO `migrations` VALUES (3,'2026_10_06_000001_create_saved_routes_table'
 INSERT INTO `migrations` VALUES (4,'2026_10_06_000002_create_toll_rate_logs_table',3);
 INSERT INTO `migrations` VALUES (5,'2026_10_12_000001_add_status_to_trips_table',4);
 INSERT INTO `migrations` VALUES (6,'2026_10_13_000001_add_steps_to_trip_routes_table',5);
+INSERT INTO `migrations` VALUES (7,'2026_10_14_000001_add_has_password_to_users_table',6);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

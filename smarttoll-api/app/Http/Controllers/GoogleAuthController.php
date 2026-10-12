@@ -57,15 +57,16 @@ class GoogleAuthController extends Controller
             $user = User::create([
                 'full_name'     => Str::limit(trim($claims['name'] ?? '') ?: Str::before($email, '@'), 100, ''),
                 'email'         => $email,
-                // Signs in with Google only; "Forgot password?" can set a real password later.
+                // Signs in with Google only; Profile or "Forgot password?" can set a real password later.
                 'password_hash' => Hash::make(Str::random(64)),
+                'has_password'  => false,
                 'role'          => 'motorist',
             ]);
         }
 
         return response()->json([
             'token'   => $user->createToken('web')->plainTextToken,
-            'user'    => ['id' => $user->user_id, 'name' => $user->full_name, 'email' => $user->email, 'role' => $user->role],
+            'user'    => $user->toApi(),
             'created' => $user->wasRecentlyCreated,
         ]);
     }

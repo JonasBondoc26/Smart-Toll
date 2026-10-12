@@ -11,6 +11,7 @@ erDiagram
         varchar full_name
         varchar email UK
         varchar password_hash
+        tinyint has_password
         varchar role
     }
     vehicles {
@@ -136,6 +137,7 @@ Motorists and administrators (role). Passwords are stored as bcrypt hashes.
 | `full_name` | varchar(100) | no |  |
 | `email` | varchar(100) | no | unique |
 | `password_hash` | varchar(255) | no |  |
+| `has_password` | tinyint(1) | no | default 1; 0 for accounts made with Google until a password is set |
 | `role` | varchar(20) | no |  |
 
 ### `vehicles`

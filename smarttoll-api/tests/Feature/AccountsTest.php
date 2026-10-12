@@ -61,6 +61,23 @@ class AccountsTest extends TestCase
         $this->assertSame(1, DB::table('users')->where('email', 'maria.google@example.com')->count());
     }
 
+    public function test_a_google_account_sets_a_password_without_a_current_one(): void
+    {
+        $this->googleSays(['email' => 'maria.google@example.com']);
+        $res = $this->postJson('/api/auth/google', ['credential' => 'token'])->assertJsonPath('user.has_password', false);
+        $auth = ['Authorization' => 'Bearer ' . $res->json('token')];
+
+        $this->getJson('/api/profile', $auth)->assertOk()->assertJsonPath('user.has_password', false);
+        $this->putJson('/api/profile/password', ['password' => 'NewPass123', 'password_confirmation' => 'NewPass123'], $auth)
+            ->assertOk()->assertJsonPath('user.has_password', true);
+        $this->postJson('/api/login', ['email' => 'maria.google@example.com', 'password' => 'NewPass123'])
+            ->assertOk()->assertJsonPath('user.has_password', true);
+
+        // Now that a password exists, changing it again needs the current one.
+        $this->putJson('/api/profile/password', ['password' => 'Other1234', 'password_confirmation' => 'Other1234'], $auth)
+            ->assertStatus(422)->assertJsonValidationErrors('current_password');
+    }
+
     public function test_google_tokens_for_another_app_are_rejected(): void
     {
         $this->googleSays(['email' => 'x@example.com', 'aud' => 'someone-elses-app.apps.googleusercontent.com']);

@@ -25,6 +25,10 @@ export default function Profile() {
   // null | 'logout' | 'change' | 'changed' | 'reset' | 'sent'  (mockups 38, 38b, 38c, 38d)
   const [modal, setModal] = useState(null);
 
+  // Google sign-ups have no password until they set one; refresh in case this changed.
+  const hasPassword = user.has_password !== false;
+  useEffect(() => { api('/profile').then((d) => updateUser(d.user)).catch(() => {}); }, []);
+
   useEffect(() => {
     api('/dashboard').then((d) => setCounts({
       vehicles: d.kpis.vehicles, rfid: d.rfid.length, trips: d.kpis.trips_planned,
@@ -111,10 +115,12 @@ export default function Profile() {
               <h3 style={{ fontSize: 15, marginBottom: 18 }}>Account Security</h3>
               <div className="field" style={{ marginBottom: 12 }}>
                 <label htmlFor="password-mask">Password</label>
-                <input id="password-mask" type="password" value="••••••••••" readOnly tabIndex={-1} />
+                {hasPassword
+                  ? <input id="password-mask" type="password" value="••••••••••" readOnly tabIndex={-1} />
+                  : <input id="password-mask" type="text" value="Not set (you sign in with Google)" readOnly tabIndex={-1} />}
               </div>
               <button type="button" className="btn-text" style={{ margin: 0 }} onClick={() => setModal('change')}>
-                Change Password <Icon name="chevron" size={14} stroke={2.5} />
+                {hasPassword ? 'Change Password' : 'Set a Password'} <Icon name="chevron" size={14} stroke={2.5} />
               </button>
             </div>
           </div>
@@ -137,11 +143,19 @@ export default function Profile() {
       </div>
 
       {modal === 'logout' && <LogoutModal onClose={() => setModal(null)} />}
-      {modal === 'change' &&<ChangePasswordModal onClose={() => setModal(null)} onDone={() => setModal('changed')} onForgot={() => setModal('reset')} />}
+      {modal === 'change' && (
+        <ChangePasswordModal hasPassword={hasPassword} onClose={() => setModal(null)} onForgot={() => setModal('reset')}
+          onDone={(u) => { setModal(hasPassword ? 'changed' : 'set'); if (u) updateUser(u); }} />
+      )}
       {modal === 'changed' && (
         <DoneModal title="Password Updated" onClose={() => setModal(null)}>
           Your password has been changed successfully. Use your new password the next time you log in.
           Any other device signed in to your account has been signed out.
+        </DoneModal>
+      )}
+      {modal === 'set' && (
+        <DoneModal title="Password Set" onClose={() => setModal(null)}>
+          You can now log in with your email and this password, or keep using Continue with Google.
         </DoneModal>
       )}
       {modal === 'reset' && <ResetLinkModal email={user.email} onBack={() => setModal('change')} onClose={() => setModal(null)} onSent={() => setModal('sent')} />}
@@ -163,7 +177,8 @@ export default function Profile() {
   );
 }
 
-export function ChangePasswordModal({ onClose, onDone, onForgot }) {
+/** Change the password; an account made with Google (hasPassword false) just sets a new one. */
+export function ChangePasswordModal({ onClose, onDone, onForgot, hasPassword = true }) {
   const [f, setF] = useState({ current_password: '', password: '', password_confirmation: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -171,14 +186,15 @@ export function ChangePasswordModal({ onClose, onDone, onForgot }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!f.current_password) return setError('Enter your current password.');
+    if (hasPassword && !f.current_password) return setError('Enter your current password.');
     if (f.password.length < 8) return setError('The new password must be at least 8 characters.');
     if (f.password !== f.password_confirmation) return setError('The new passwords do not match.');
     setBusy(true);
     setError('');
     try {
-      await api('/profile/password', { method: 'PUT', body: f });
-      onDone();
+      const { current_password, ...rest } = f;
+      const d = await api('/profile/password', { method: 'PUT', body: hasPassword ? f : rest });
+      onDone(d.user);
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -191,21 +207,27 @@ export function ChangePasswordModal({ onClose, onDone, onForgot }) {
         <div className="modal-head">
           <div>
             <div className="breadcrumb">ACCOUNT SECURITY</div>
-            <h3>Change Password</h3>
+            <h3>{hasPassword ? 'Change Password' : 'Set a Password'}</h3>
           </div>
           <button type="button" className="modal-close" onClick={onClose} disabled={busy}><Icon name="close" size={16} stroke={2.2} /></button>
         </div>
-        <p className="muted mb-16">For your security, please confirm your current password before setting a new one.</p>
-        <div className="field">
-          <label htmlFor="cur-pw">Current Password</label>
-          <input id="cur-pw" type="password" placeholder="Enter current password" value={f.current_password} onChange={set('current_password')} autoComplete="current-password" autoFocus />
-          <div className="field-hint" style={{ marginTop: 6 }}>
-            <button type="button" className="link-btn" onClick={onForgot}>Forgot your current password?</button>
-          </div>
-        </div>
+        {hasPassword ? (
+          <>
+            <p className="muted mb-16">For your security, please confirm your current password before setting a new one.</p>
+            <div className="field">
+              <label htmlFor="cur-pw">Current Password</label>
+              <input id="cur-pw" type="password" placeholder="Enter current password" value={f.current_password} onChange={set('current_password')} autoComplete="current-password" autoFocus />
+              <div className="field-hint" style={{ marginTop: 6 }}>
+                <button type="button" className="link-btn" onClick={onForgot}>Forgot your current password?</button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="muted mb-16">You signed up with Google, so your account has no password yet. Set one to also log in with your email and password.</p>
+        )}
         <div className="field">
           <label htmlFor="new-pw">New Password</label>
-          <input id="new-pw" type="password" placeholder="Create new password" value={f.password} onChange={set('password')} autoComplete="new-password" />
+          <input id="new-pw" type="password" placeholder="Create new password" value={f.password} onChange={set('password')} autoComplete="new-password" autoFocus={!hasPassword} />
           <div className="field-hint" style={{ marginTop: 6 }}>Must be at least 8 characters.</div>
         </div>
         <div className="field" style={{ marginBottom: 0 }}>
@@ -215,7 +237,7 @@ export function ChangePasswordModal({ onClose, onDone, onForgot }) {
         {error && <div className="field-hint" style={{ ...errorStyle, marginTop: 8 }}>{error}</div>}
         <div className="modal-footer">
           <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Updating…' : 'Update Password'}</button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : hasPassword ? 'Update Password' : 'Set Password'}</button>
         </div>
       </form>
     </div>

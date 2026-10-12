@@ -1,6 +1,6 @@
 # SmartToll REST API
 
-*Generated from `php artisan route:list` on October 13, 2026: 57 endpoints. Base URL: `https://<server>/api`. Requests and responses are JSON; logged-in requests send `Authorization: Bearer <token>`. The website and the mobile app use this same API; all toll computation happens here.*
+*Generated from `php artisan route:list` on October 13, 2026: 58 endpoints. Base URL: `https://<server>/api`. Requests and responses are JSON; logged-in requests send `Authorization: Bearer <token>`. The website and the mobile app use this same API; all toll computation happens here.*
 
 ## Public
 
@@ -23,8 +23,9 @@
 |---|---|---|
 | GET | `/api/dashboard` | Dashboard figures, balances, recent trips |
 | POST | `/api/logout` | Log out (revokes the token) |
+| GET | `/api/profile` | The signed-in user (incl. `has_password`) |
 | PUT | `/api/profile` | Update name and email |
-| PUT | `/api/profile/password` | Change password *(max 10 per 1 min)* |
+| PUT | `/api/profile/password` | Change password; Google accounts without one just set it (no `current_password`) *(max 10 per 1 min)* |
 | GET | `/api/rfid` | List RFID accounts |
 | POST | `/api/rfid` | Link an RFID account to a vehicle |
 | DELETE | `/api/rfid/{rfid}` | Remove an RFID account |

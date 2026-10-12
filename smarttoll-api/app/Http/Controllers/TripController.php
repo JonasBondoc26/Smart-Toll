@@ -1,8 +1,8 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\RfidAccount;
 use App\Services\TripPlannerService;
+use App\Services\TripRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\DB;
  * Uses the paper's trips + trip_toll_details tables as they are. Each toll
  * segment (closed system: fare depends on entry and exit) is stored as two
  * detail rows in order: the entry plaza at 0.00, then the exit plaza with the
- * fare, which is where the motorist pays. Reading back pairs them up again.
+ * fare, which is where the motorist pays (see TripRecorder). Reading back pairs them up again.
  */
 class TripController extends Controller
 {
-    public function __construct(private TripPlannerService $planner) {}
+    public function __construct(private TripPlannerService $planner, private TripRecorder $recorder) {}
 
     /** GET /api/trips — the user's saved trips, newest first. */
     public function index(Request $r)
@@ -27,7 +27,7 @@ class TripController extends Controller
             ->where('t.user_id', $uid)
             ->orderByDesc('t.date_created')->orderByDesc('t.trip_id')
             ->select(['t.trip_id', 't.origin', 't.destination', 't.route_distance', 't.estimated_travel_time',
-                      't.total_toll_fee', 't.topup_amount', 't.date_created', 'v.vehicle_name', 'v.plate_number'])
+                      't.total_toll_fee', 't.topup_amount', 't.status', 't.completed_at', 't.date_created', 'v.vehicle_name', 'v.plate_number'])
             // Trips saved before trip_routes existed have no coordinates, so they cannot be planned again.
             ->selectRaw('EXISTS (SELECT 1 FROM trip_routes r WHERE r.trip_id = t.trip_id) AS has_route')
             ->get();
@@ -69,6 +69,8 @@ class TripController extends Controller
             'destination'   => ['lat' => (float) $route->destination_lat, 'lng' => (float) $route->destination_lng],
             'geometry'      => json_decode($route->geometry, true),
             'toll_geometry' => json_decode($route->toll_geometry, true),
+            // Turn-by-turn maneuvers for voice guidance; null for trips saved before it existed.
+            'steps'         => $route->steps ? json_decode($route->steps, true) : null,
         ] : null;
 
         return ['trip' => (array) $trip + [
@@ -109,6 +111,8 @@ class TripController extends Controller
             'destination_lng'     => 'required|numeric|between:119.5,124.5',
             'geometry'            => 'required|array',
             'toll_geometry'       => 'present|array|max:20',
+            // Turn-by-turn maneuvers of the chosen route, for voice guidance in the mobile app.
+            'steps'               => 'nullable|array|max:3000',
         ]);
         $uid = $r->user()->user_id;
 
@@ -127,70 +131,100 @@ class TripController extends Controller
             }
         }
         $priced = [];
-        $total = 0.0;
         foreach ($d['segments'] as $s) {
             $key = $systemOf[$s['entry_id']] ?? null;
             abort_if(!$key || ($systemOf[$s['exit_id']] ?? null) !== $key, 422, 'A toll segment has plazas from different expressways.');
             $fee = $this->planner->lookupRate($class, $s['entry_id'], $s['exit_id']);
             abort_if($fee === null, 422, 'A toll segment has no published fare.');
             $priced[] = [$s['entry_id'], $s['exit_id'], $fee];
-            $total += $fee;
         }
 
-        $geometry = $this->cleanLine($d['geometry']);
+        $geometry = TripRecorder::cleanLine($d['geometry']);
         abort_if(count($geometry) < 2, 422, 'The route line is missing.');
-        $tollGeometry = array_values(array_filter(array_map(fn ($l) => $this->cleanLine(is_array($l) ? $l : []), $d['toll_geometry']), fn ($l) => count($l) >= 2));
+        $tollGeometry = array_values(array_filter(array_map(fn ($l) => TripRecorder::cleanLine(is_array($l) ? $l : []), $d['toll_geometry']), fn ($l) => count($l) >= 2));
 
-        [$tripId, $rfidResult] = DB::transaction(function () use ($uid, $vehicle, $d, $total, $priced, $geometry, $tollGeometry) {
-            // Locked so two saves at once cannot both read the same balance.
-            $rfid = RfidAccount::where('vehicle_id', $vehicle->vehicle_id)->where('user_id', $uid)->lockForUpdate()->first();
-
-            // Saving a trip pays its whole estimated toll from the vehicle's RFID account
-            // (whatever expressways it uses), and the balance must cover it: the planner
-            // asks the motorist to update a short balance before saving.
-            $rfidResult = null;
-            if ($rfid) {
-                $before = (float) $rfid->balance;
-                $deducted = round($total, 2);
-                abort_if($deducted > $before, 422, sprintf(
-                    'Insufficient %s balance: this trip needs ₱%s but the recorded balance is ₱%s. Update the balance first.',
-                    $rfid->network, number_format($deducted, 2), number_format($before, 2)
-                ));
-                $rfid->balance = round($before - $deducted, 2);
-                $rfid->save();
-                $rfidResult = ['network' => $rfid->network, 'before' => $before, 'deducted' => $deducted, 'balance' => (float) $rfid->balance];
-            }
-
-            $tripId = DB::table('trips')->insertGetId([
-                'user_id'               => $uid,
-                'vehicle_id'            => $d['vehicle_id'],
-                'origin'                => $d['origin'],
-                'destination'           => $d['destination'],
-                'route_distance'        => round($d['distance_m'] / 1000, 2),
-                'estimated_travel_time' => (int) round($d['duration_s'] / 60),
-                'total_toll_fee'        => $total,
-                'topup_amount'          => 0,   // top-up recommendations were dropped; the balance must cover the trip
-            ]);
-            $seq = 1;
-            foreach ($priced as [$entry, $exit, $fee]) {
-                DB::table('trip_toll_details')->insert([
-                    ['trip_id' => $tripId, 'plaza_id' => $entry, 'toll_fee' => 0, 'sequence' => $seq++],
-                    ['trip_id' => $tripId, 'plaza_id' => $exit, 'toll_fee' => $fee, 'sequence' => $seq++],
-                ]);
-            }
-            DB::table('trip_routes')->insert([
-                'trip_id'         => $tripId,
-                'origin_lat'      => $d['origin_lat'],
-                'origin_lng'      => $d['origin_lng'],
-                'destination_lat' => $d['destination_lat'],
-                'destination_lng' => $d['destination_lng'],
-                'geometry'        => json_encode($geometry),
-                'toll_geometry'   => json_encode($tollGeometry),
-            ]);
-            return [$tripId, $rfidResult];
-        });
+        // Pays the whole toll from the vehicle's RFID account; the planner asks the motorist
+        // to update a short balance before saving.
+        $steps = !empty($d['steps']) ? TripRecorder::cleanSteps($d['steps']) : null;
+        [$tripId, $rfidResult] = $this->recorder->save($uid, $vehicle->vehicle_id, $d, $priced, $geometry, $tollGeometry, $steps ?: null);
 
         return response()->json(['trip_id' => $tripId, 'rfid' => $rfidResult], 201);
+    }
+
+    /* ------------------------------------------------------------------
+     | GPS tracking (mobile app): planned -> in_progress -> completed
+     * ------------------------------------------------------------------ */
+
+    /** The phone must be this close to the destination for the trip to count as arrived. */
+    private const ARRIVED_KM = 1.0;
+
+    /** POST /api/trips/{id}/start — the motorist set off; the phone is now tracking the trip. */
+    public function start(Request $r, int $id)
+    {
+        $trip = $this->ownTrip($r, $id);
+        abort_if($trip->status === 'completed', 422, 'This trip is already completed.');
+        if ($trip->status !== 'in_progress') {
+            DB::table('trips')->where('trip_id', $id)->update(['status' => 'in_progress', 'started_at' => now()]);
+        }
+        return $this->status($id);
+    }
+
+    /**
+     * POST /api/trips/{id}/complete  { lat, lng }
+     * The phone's GPS reached the destination. The position is checked against the
+     * trip's saved destination, so a trip can't be marked completed from somewhere else.
+     */
+    public function complete(Request $r, int $id)
+    {
+        $d = $r->validate(['lat' => 'required|numeric|between:-90,90', 'lng' => 'required|numeric|between:-180,180']);
+        $trip = $this->ownTrip($r, $id);
+        if ($trip->status === 'completed') {
+            return $this->status($id);
+        }
+        $route = DB::table('trip_routes')->where('trip_id', $id)->first();
+        abort_if(!$route, 422, 'This trip has no saved destination to track.');
+
+        $km = TripPlannerService::haversineKm((float) $d['lat'], (float) $d['lng'], (float) $route->destination_lat, (float) $route->destination_lng);
+        abort_if($km > self::ARRIVED_KM, 422, sprintf('You are still %.1f km from %s.', $km, $trip->destination));
+
+        DB::table('trips')->where('trip_id', $id)->update([
+            'status' => 'completed', 'completed_at' => now(), 'started_at' => $trip->started_at ?? now(),
+        ]);
+        return $this->status($id);
+    }
+
+    /**
+     * POST /api/trips/{id}/reroute  { lat, lng }
+     * The motorist left the saved route: a new route with directions from where they are
+     * to the trip's destination. Guidance only; the toll paid when saving is unchanged.
+     */
+    public function reroute(Request $r, int $id)
+    {
+        $d = $r->validate(['lat' => 'required|numeric|between:12.5,18.7', 'lng' => 'required|numeric|between:119.5,124.5']);
+        $this->ownTrip($r, $id);
+        $route = DB::table('trip_routes')->where('trip_id', $id)->first();
+        abort_if(!$route, 422, 'This trip has no saved destination to route to.');
+
+        try {
+            return $this->planner->directions(
+                ['lat' => (float) $d['lat'], 'lng' => (float) $d['lng']],
+                ['lat' => (float) $route->destination_lat, 'lng' => (float) $route->destination_lng],
+            );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
+    }
+
+    private function ownTrip(Request $r, int $id): object
+    {
+        $trip = DB::table('trips')->where('trip_id', $id)->where('user_id', $r->user()->user_id)->first();
+        abort_if(!$trip, 404, 'Trip not found.');
+        return $trip;
+    }
+
+    private function status(int $id): array
+    {
+        return ['trip' => (array) DB::table('trips')->where('trip_id', $id)->first(['trip_id', 'status', 'started_at', 'completed_at'])];
     }
 
     /** DELETE /api/trips/{id} */
@@ -215,24 +249,6 @@ class TripController extends Controller
             ->orderBy('d.trip_id')->orderBy('d.sequence')
             ->get(['d.trip_id', 'd.toll_fee', 'd.sequence', 'p.plaza_name', 'p.latitude', 'p.longitude', 'e.expressway_name'])
             ->all();
-    }
-
-    /**
-     * Keeps only [lat, lng] pairs inside Luzon, rounded to 5 decimals (~1 m),
-     * capped at 20,000 points: enough for any route in the toll data.
-     */
-    private function cleanLine(array $points): array
-    {
-        $out = [];
-        foreach (array_slice($points, 0, 20000) as $p) {
-            if (is_array($p) && count($p) === 2 && is_numeric($p[0] ?? null) && is_numeric($p[1] ?? null)) {
-                [$lat, $lng] = [(float) $p[0], (float) $p[1]];
-                if ($lat >= 12.5 && $lat <= 18.7 && $lng >= 119.5 && $lng <= 124.5) {
-                    $out[] = [round($lat, 5), round($lng, 5)];
-                }
-            }
-        }
-        return $out;
     }
 
     /** trip_id => ["NLEX / SCTEX", "TPLEX"] in the order they were driven. */

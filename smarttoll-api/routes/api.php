@@ -47,6 +47,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/saved-routes', [SavedRouteController::class, 'index']);
     Route::post('/saved-routes', [SavedRouteController::class, 'store']);
     Route::delete('/saved-routes/{id}', [SavedRouteController::class, 'destroy'])->whereNumber('id');
+    // GPS tracking of a saved trip (mobile app): planned -> in_progress -> completed
+    Route::post('/trips/{id}/start', [TripController::class, 'start'])->whereNumber('id');
+    Route::post('/trips/{id}/complete', [TripController::class, 'complete'])->whereNumber('id');
+    Route::post('/trips/{id}/reroute', [TripController::class, 'reroute'])->whereNumber('id')->middleware('throttle:10,1');
 });
 
 // Admin module: reference data for route planning and toll computation

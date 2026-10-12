@@ -165,6 +165,7 @@ CREATE TABLE `trip_routes` (
   `destination_lng` decimal(10,7) NOT NULL,
   `geometry` longtext NOT NULL,
   `toll_geometry` longtext NOT NULL,
+  `steps` longtext DEFAULT NULL,
   PRIMARY KEY (`trip_id`),
   CONSTRAINT `trip_routes_trip_id_foreign` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`trip_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -198,6 +199,9 @@ CREATE TABLE `trips` (
   `estimated_travel_time` int(11) NOT NULL,
   `total_toll_fee` decimal(10,2) NOT NULL,
   `topup_amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `status` varchar(20) NOT NULL DEFAULT 'planned',
+  `started_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
   `date_created` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`trip_id`),
   KEY `user_id` (`user_id`),
@@ -2711,6 +2715,8 @@ INSERT INTO `migrations` VALUES (1,'2026_10_03_000001_create_trip_routes_table',
 INSERT INTO `migrations` VALUES (2,'2026_10_03_000002_make_vehicle_plate_number_optional',2);
 INSERT INTO `migrations` VALUES (3,'2026_10_06_000001_create_saved_routes_table',3);
 INSERT INTO `migrations` VALUES (4,'2026_10_06_000002_create_toll_rate_logs_table',3);
+INSERT INTO `migrations` VALUES (5,'2026_10_12_000001_add_status_to_trips_table',4);
+INSERT INTO `migrations` VALUES (6,'2026_10_13_000001_add_steps_to_trip_routes_table',5);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

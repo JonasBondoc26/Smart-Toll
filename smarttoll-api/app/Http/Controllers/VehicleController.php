@@ -44,6 +44,9 @@ class VehicleController extends Controller
     public function destroy(Request $r, Vehicle $vehicle)
     {
         abort_if($vehicle->user_id !== $r->user()->user_id, 403, 'Not your vehicle.');
+        // Trips keep their vehicle (no cascade), so a vehicle with trip history stays.
+        abort_if(\Illuminate\Support\Facades\DB::table('trips')->where('vehicle_id', $vehicle->vehicle_id)->exists(), 422,
+            'This vehicle has trips in your trip history, so it can\'t be deleted. Delete those trips first.');
         $vehicle->delete(); // linked rfid_accounts row cascades via FK
         return response()->json(['message' => 'Vehicle deleted.']);
     }

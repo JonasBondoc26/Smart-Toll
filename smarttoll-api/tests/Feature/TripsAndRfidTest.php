@@ -120,6 +120,83 @@ class TripsAndRfidTest extends TestCase
         $this->getJson('/api/trips')->assertJsonPath('trips.0.has_route', false);
     }
 
+    public function test_a_saved_trip_is_tracked_from_planned_to_completed(): void
+    {
+        $user = $this->motorist();
+        $tripId = $this->actingAsUser($user)->postJson('/api/trips', $this->tripBody($this->vehicle($user, 1, 1000)))->json('trip_id');
+        $this->getJson('/api/trips')->assertJsonPath('trips.0.status', 'planned');
+
+        $this->postJson("/api/trips/{$tripId}/start")->assertOk()->assertJsonPath('trip.status', 'in_progress');
+
+        // Still in Quezon City: not arrived yet, so the trip stays in progress.
+        $this->postJson("/api/trips/{$tripId}/complete", ['lat' => 14.676, 'lng' => 121.0437])
+            ->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'km from San Fernando'));
+
+        // Within a few hundred metres of the destination: completed.
+        $this->postJson("/api/trips/{$tripId}/complete", ['lat' => 15.0300, 'lng' => 120.6880])
+            ->assertOk()->assertJsonPath('trip.status', 'completed');
+        $this->getJson("/api/trips/{$tripId}")->assertJsonPath('trip.status', 'completed')
+            ->assertJsonPath('trip.completed_at', fn ($t) => $t !== null);
+
+        // A completed trip can't be started again, and the toll was deducted only once (at saving).
+        $this->postJson("/api/trips/{$tripId}/start")->assertStatus(422);
+        $this->assertEquals(734, DB::table('rfid_accounts')->where('user_id', $user->user_id)->value('balance'));
+    }
+
+    public function test_planned_routes_carry_turn_by_turn_directions_that_are_saved_with_the_trip(): void
+    {
+        $this->fakeOsrm();
+        $user = $this->motorist();
+        $vehicle = $this->vehicle($user, 1, 1000);
+
+        $route = $this->actingAsUser($user)
+            ->postJson('/api/trip-planner/route', ['vehicle_id' => $vehicle, 'origin_id' => 'place:0', 'destination_id' => 'place:13'])
+            ->assertOk()->json('routes.0');
+        // The recorded route: depart on Visayas Avenue, turn left onto Tandang Sora Avenue, ... arrive.
+        $this->assertSame(['depart', 'turn', 'left', 'Tandang Sora Avenue'], [$route['steps'][0]['type'], $route['steps'][1]['type'], $route['steps'][1]['modifier'], $route['steps'][1]['name']]);
+        $this->assertSame('arrive', end($route['steps'])['type']);
+        $this->assertContains('North Luzon Expressway', array_column($route['steps'], 'name'));
+
+        $tripId = $this->postJson('/api/trips', $this->tripBody($vehicle, ['steps' => $route['steps']]))->assertCreated()->json('trip_id');
+        $this->getJson("/api/trips/{$tripId}")->assertJsonPath('trip.map.steps.1.name', 'Tandang Sora Avenue')
+            ->assertJsonCount(count($route['steps']), 'trip.map.steps');
+    }
+
+    public function test_a_motorist_off_the_route_gets_new_directions_to_the_destination(): void
+    {
+        $user = $this->motorist();
+        $tripId = $this->actingAsUser($user)->postJson('/api/trips', $this->tripBody($this->vehicle($user, 1, 1000)))->json('trip_id');
+        $this->fakeOsrm();
+
+        $res = $this->postJson("/api/trips/{$tripId}/reroute", ['lat' => 14.70, 'lng' => 121.03])->assertOk();
+        $this->assertGreaterThan(10, count($res->json('steps')));
+        $this->assertGreaterThan(100, count($res->json('geometry')));
+        // Guidance only: the toll paid when the trip was saved is unchanged.
+        $this->assertEquals(734, DB::table('rfid_accounts')->where('user_id', $user->user_id)->value('balance'));
+        $this->actingAsUser($this->motorist())->postJson("/api/trips/{$tripId}/reroute", ['lat' => 14.70, 'lng' => 121.03])->assertNotFound();
+    }
+
+    public function test_a_vehicle_with_trip_history_cannot_be_deleted(): void
+    {
+        $user = $this->motorist();
+        $vehicle = $this->vehicle($user, 1, 1000);
+        $tripId = $this->actingAsUser($user)->postJson('/api/trips', $this->tripBody($vehicle))->json('trip_id');
+
+        $this->deleteJson("/api/vehicles/{$vehicle}")->assertStatus(422)
+            ->assertJsonPath('message', fn ($m) => str_contains($m, 'trip history'));
+        $this->deleteJson("/api/trips/{$tripId}")->assertNoContent();
+        $this->deleteJson("/api/vehicles/{$vehicle}")->assertOk();
+    }
+
+    public function test_only_the_owner_can_track_a_trip(): void
+    {
+        $owner = $this->motorist();
+        $tripId = $this->actingAsUser($owner)->postJson('/api/trips', $this->tripBody($this->vehicle($owner, 1, 1000)))->json('trip_id');
+
+        $this->actingAsUser($this->motorist())->postJson("/api/trips/{$tripId}/start")->assertNotFound();
+        $this->actingAsUser($this->motorist())->postJson("/api/trips/{$tripId}/complete", ['lat' => 15.0286, 'lng' => 120.6898])->assertNotFound();
+    }
+
     public function test_motorists_only_see_their_own_trips(): void
     {
         $owner = $this->motorist();

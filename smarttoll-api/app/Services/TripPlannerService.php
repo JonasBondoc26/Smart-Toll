@@ -102,11 +102,67 @@ class TripPlannerService
                 ),
                 'toll_geometry' => $tollGeometry,
                 'toll'       => $toll,
+                'steps'      => $this->directionsOf($route),   // turn-by-turn, for voice guidance on the phone
             ];
         }
 
         $picks = $this->compareRoutes($routes);
         return ['routes' => $routes, 'picks' => $picks, 'tradeoff' => $this->tradeoff($routes, $picks)];
+    }
+
+    /* ------------------------------------------------------------------
+     | Turn-by-turn directions (voice guidance in the mobile app)
+     * ------------------------------------------------------------------ */
+
+    /**
+     * The route's maneuvers in driving order, compact: where (lat, lng), what (OSRM's
+     * maneuver type and modifier, e.g. "turn" / "left", "off ramp" / "slight right"), onto
+     * which road (name, ref, signposted destinations) and how far until the next maneuver.
+     * The phone turns these into spoken English instructions.
+     */
+    public function directionsOf(array $route): array
+    {
+        $out = [];
+        foreach ($route['legs'] ?? [] as $leg) {
+            foreach ($leg['steps'] ?? [] as $step) {
+                $m = $step['maneuver'] ?? [];
+                if (!isset($m['location'], $m['type'])) {
+                    continue;
+                }
+                $out[] = [
+                    'lat'      => round($m['location'][1], 5),
+                    'lng'      => round($m['location'][0], 5),
+                    'type'     => $m['type'],
+                    'modifier' => $m['modifier'] ?? null,
+                    'exit'     => $m['exit'] ?? null,                 // roundabouts: which exit
+                    'name'     => trim($step['name'] ?? '') ?: null,
+                    'ref'      => trim($step['ref'] ?? '') ?: null,   // e.g. "E1"
+                    'toward'   => trim($step['destinations'] ?? '') ?: null,
+                    'distance' => round($step['distance'] ?? 0),      // metres until the next maneuver
+                ];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * A fresh route from where the motorist is now to the destination, for re-routing
+     * after a wrong turn: one OSRM route, no alternatives and no pricing (the trip's toll
+     * was settled when it was saved).
+     *
+     * @return array{distance_m: int, duration_s: int, geometry: array, steps: array}
+     */
+    public function directions(array $from, array $to): array
+    {
+        $base = rtrim(config('smarttoll.osrm_url'), '/');
+        $url = sprintf('%s/route/v1/driving/%F,%F;%F,%F', $base, $from['lng'], $from['lat'], $to['lng'], $to['lat']);
+        $route = $this->osrm($url, ['overview' => 'full', 'geometries' => 'geojson', 'steps' => 'true'], true)[0];
+        return [
+            'distance_m' => round($route['distance']),
+            'duration_s' => round($route['duration']),
+            'geometry'   => array_map(fn ($c) => [round($c[1], 5), round($c[0], 5)], $route['geometry']['coordinates'] ?? []),
+            'steps'      => $this->directionsOf($route),
+        ];
     }
 
     /* ------------------------------------------------------------------

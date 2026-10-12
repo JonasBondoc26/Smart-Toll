@@ -262,6 +262,7 @@ export default function TripPlanner() {
           origin_lat: origin.lat, origin_lng: origin.lng,
           destination_lat: destination.lat, destination_lng: destination.lng,
           geometry: r.geometry, toll_geometry: r.toll_geometry || [],
+          steps: r.steps || [],   // turn-by-turn, for voice guidance if the trip is followed in the mobile app
         },
       });
       setSaved((m) => ({ ...m, [selected]: { id: d.trip_id, rfid: d.rfid } }));

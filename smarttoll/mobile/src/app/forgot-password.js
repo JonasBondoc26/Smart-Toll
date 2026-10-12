@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { Button, Field, Notice, Screen, T } from '../components/ui';
 import { api } from '../lib/api';
+import { useTheme } from '../lib/theme';
 
 // Sends the same reset email as the website; the link in it opens the website's reset page.
 export default function ForgotPassword() {
+  useTheme();   // re-render on a light / dark switch
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [sent, setSent] = useState('');

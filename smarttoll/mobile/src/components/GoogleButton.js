@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { T } from './ui';
 import { useSession } from '../lib/session';
 import { googleAvailableHere, googleClientId, googleIdToken, inExpoGo } from '../lib/google';
-import { colors, fonts } from '../lib/theme';
+import { colors, fonts, themed } from '../lib/theme';
 
 /**
  * "Continue with Google" with an "or" divider above it. Shows nothing when the server has no
@@ -68,13 +68,13 @@ function GoogleG({ size }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
   line: { flex: 1, height: 1, backgroundColor: colors.line },
   or: { fontFamily: fonts.bold, fontSize: 11, color: colors.inkFaint, letterSpacing: 1 },
   button: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 48,
-    borderRadius: 10, borderWidth: 1, borderColor: '#DADCE0', backgroundColor: colors.white,
+    borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface,
   },
-  label: { fontFamily: fonts.semibold, fontSize: 15, color: '#1F1F1F' },
-});
+  label: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+}));

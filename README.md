@@ -56,6 +56,7 @@ It was built as a capstone project at Holy Angel University.
 - **Heading-up map:** while driving, the flat 2D map turns so the direction of travel points to the top of the screen, with your arrow near the bottom-center; turns rotate it smoothly. Switch to **North up** anytime.
 - **Night mode:** a dark map and dark trip screen for night driving: **Auto** (6 PM to 6 AM), **Night** or **Day**.
 - **Keeps working with the screen off:** with "Allow all the time" location, directions and toll alerts continue when the phone is locked or another app is open.
+- **Light / Dark appearance:** Account → Appearance: **Light**, **Dark** or **System** (follows the phone), remembered on the phone.
 - **Saved routes** on the phone too: tap "Home → Office" in Plan to plan it in one step (shared with the website).
 - **Simulate Trip:** replays the saved route as if you were driving it (sped up), for demonstrations away from the expressway.
 

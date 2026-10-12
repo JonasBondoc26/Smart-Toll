@@ -7,9 +7,10 @@ import { useSession } from '../../lib/session';
 import { useTrackingStatus } from '../../lib/tracking';
 import { API_URL } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
-import { colors, fonts } from '../../lib/theme';
+import { colors, fonts, useTheme } from '../../lib/theme';
 
 export default function Account() {
+  const theme = useTheme();   // re-renders on a light / dark switch
   const { user, logout } = useSession();
   const tracking = useTrackingStatus();
   const initials = user.name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -31,6 +32,28 @@ export default function Account() {
         </View>
       </Card>
 
+      <Card>
+        <Text style={[s.label, { marginBottom: 10 }]}>Appearance</Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {APPEARANCE.map((a) => {
+            const on = theme.preference === a.key;
+            return (
+              <Pressable key={a.key} onPress={() => theme.setPreference(a.key)} accessibilityRole="radio" accessibilityState={{ checked: on }}
+                style={({ pressed }) => [{
+                  flex: 1, alignItems: 'center', gap: 4, paddingVertical: 12, borderRadius: 12, borderWidth: 1,
+                  borderColor: on ? colors.greenDeep : colors.line, backgroundColor: on ? colors.greenPale : colors.surface,
+                }, pressed && { opacity: 0.8 }]}>
+                <Ionicons name={a.icon} size={20} color={on ? colors.greenDeep : colors.inkFaint} />
+                <Text style={[s.strong, { fontSize: 13, color: on ? colors.greenDeep : colors.inkSoft }]}>{a.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <T.Small style={{ marginTop: 8 }}>
+          {theme.preference === 'system' ? `Follows your phone's setting (now ${theme.dark ? 'dark' : 'light'}).` : `Always ${theme.preference}.`}
+        </T.Small>
+      </Card>
+
       <Card style={{ paddingVertical: 4 }}>
         <Item icon="car" label="Vehicles" sub="Your vehicles and their toll class" onPress={() => router.navigate('/vehicles')} />
         <Item icon="card" label="RFID Accounts" sub="Easytrip and Autosweep balances" onPress={() => router.navigate('/rfid')} />
@@ -45,6 +68,13 @@ export default function Account() {
     </Screen>
   );
 }
+
+// Light, Dark, or follow the phone's own setting. Remembered on the phone.
+const APPEARANCE = [
+  { key: 'light', label: 'Light', icon: 'sunny-outline' },
+  { key: 'dark', label: 'Dark', icon: 'moon-outline' },
+  { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
+];
 
 function Item({ icon, label, sub, onPress, danger, last }) {
   return (

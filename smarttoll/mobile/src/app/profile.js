@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Button, Card, CardTitle, Field, Notice, Screen } from '../components/ui';
 import { useSession } from '../lib/session';
 import { api } from '../lib/api';
+import { useTheme } from '../lib/theme';
 
 export default function Profile() {
+  useTheme();   // re-render on a light / dark switch
   const { user, updateUser } = useSession();
   const [info, setInfo] = useState({ full_name: user.name, email: user.email });
   const [infoMsg, setInfoMsg] = useState({ text: '', tone: 'ok' });

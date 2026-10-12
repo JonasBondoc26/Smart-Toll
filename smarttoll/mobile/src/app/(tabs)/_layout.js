@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Brand from '../../components/Brand';
 import { useSession } from '../../lib/session';
 import { useTrackingStatus } from '../../lib/tracking';
-import { colors, fonts, headerOptions, shadow } from '../../lib/theme';
+import { colors, fonts, headerOptions, shadow, themed, useTheme } from '../../lib/theme';
 
 const icon = (name) => ({ color, focused }) => <Ionicons name={focused ? name : `${name}-outline`} size={23} color={color} />;
 
@@ -15,6 +15,7 @@ const icon = (name) => ({ color, focused }) => <Ionicons name={focused ? name : 
  * the header (top-right), like the website's top bar.
  */
 export default function TabLayout() {
+  useTheme();   // re-render on a light / dark switch
   const { status } = useTrackingStatus();
   const insets = useSafeAreaInsets();
   return (
@@ -26,7 +27,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.greenDeep,
         tabBarInactiveTintColor: colors.inkFaint,
         tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
-        tabBarStyle: { borderTopColor: colors.line, backgroundColor: colors.white, height: 64 + insets.bottom, paddingTop: 6, paddingBottom: Math.max(insets.bottom, 8) },
+        tabBarStyle: { borderTopColor: colors.line, backgroundColor: colors.surface, height: 64 + insets.bottom, paddingTop: 6, paddingBottom: Math.max(insets.bottom, 8) },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home', headerTitle: () => <Brand size={28} />, tabBarIcon: icon('home') }} />
@@ -82,11 +83,11 @@ function HeaderAvatar() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   planSlot: { flex: 1, alignItems: 'center', justifyContent: 'flex-start' },
   planCircle: {
     width: 58, height: 58, borderRadius: 29, marginTop: -26, backgroundColor: colors.amber,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: colors.white, ...shadow, elevation: 6,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: colors.surface, ...shadow, elevation: 6,
   },
   planCircleOn: { backgroundColor: colors.greenDeep },
   planLabel: { fontFamily: fonts.semibold, fontSize: 11, color: colors.inkFaint, marginTop: 2 },
@@ -95,4 +96,4 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)',
   },
   avatarText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
-});
+}));

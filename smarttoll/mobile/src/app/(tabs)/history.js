@@ -6,10 +6,11 @@ import StatusBadge from '../../components/StatusBadge';
 import { Button, Card, EmptyState, Loading, Notice, T, s } from '../../components/ui';
 import { api } from '../../lib/api';
 import { day, peso } from '../../lib/format';
-import { colors } from '../../lib/theme';
+import { colors, useTheme } from '../../lib/theme';
 
 // A virtualized list: only the trips on screen are drawn, so a long history scrolls smoothly.
 export default function History() {
+  useTheme();   // re-render on a light / dark switch
   const [trips, setTrips] = useState(null);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -48,6 +49,7 @@ export default function History() {
 }
 
 const TripRow = memo(function TripRow({ trip: t }) {
+  useTheme();   // re-render on a light / dark switch
   return (
     <Card onPress={() => router.push(`/trip/${t.trip_id}`)} style={{ padding: 14 }}>
       <View style={s.row}>

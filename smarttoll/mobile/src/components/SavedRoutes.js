@@ -6,7 +6,7 @@ import { pinPlace } from './PlacePicker';
 import { Button, Field, Sheet, T } from './ui';
 import { api } from '../lib/api';
 import { confirm } from '../lib/confirm';
-import { colors, fonts } from '../lib/theme';
+import { colors, fonts, themed } from '../lib/theme';
 
 /**
  * Saved routes in Plan a Trip (the same ones as on the website): tap one to plan it,
@@ -88,12 +88,12 @@ export default function SavedRoutes({ locations, origin, destination, onApply })
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   label: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase' },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: 220, paddingVertical: 9, paddingHorizontal: 12,
-    borderRadius: 100, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line,
+    borderRadius: 100, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
   },
   chipText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.ink, flexShrink: 1 },
-});
+}));

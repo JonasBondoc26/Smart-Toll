@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, fonts, radius, shadow } from '../lib/theme';
+import { colors, fonts, radius, shadow, themed } from '../lib/theme';
 
 /* ---------- Layout ---------- */
 
@@ -81,17 +81,18 @@ export const T = {
 
 /* ---------- Controls ---------- */
 
-const BUTTON = {
+// Read at render time (functions), so they follow the light / dark theme.
+const BUTTON = () => ({
   primary: { bg: colors.greenDeep, fg: colors.white, border: colors.greenDeep },
   amber: { bg: colors.amber, fg: colors.greenDark, border: colors.amber },
   ghost: { bg: 'transparent', fg: colors.inkSoft, border: colors.line },
-  secondary: { bg: colors.white, fg: colors.greenDeep, border: colors.line },
+  secondary: { bg: colors.surface, fg: colors.greenDeep, border: colors.line },
   danger: { bg: colors.red, fg: colors.white, border: colors.red },
   text: { bg: 'transparent', fg: colors.greenDeep, border: 'transparent' },
-};
+});
 
 export function Button({ title, onPress, variant = 'primary', icon, busy, disabled, style, small, textColor }) {
-  const v = textColor ? { ...BUTTON[variant], fg: textColor } : BUTTON[variant];
+  const v = textColor ? { ...BUTTON()[variant], fg: textColor } : BUTTON()[variant];
   const off = disabled || busy;
   return (
     <Pressable
@@ -151,14 +152,14 @@ export function SelectField({ label, value, options, onChange, placeholder = 'Se
   );
 }
 
-const BADGE = {
+const BADGE = () => ({
   ok: { bg: colors.greenPale, fg: colors.greenDeep },
   warn: { bg: colors.amberPale, fg: colors.amberDark },
   danger: { bg: colors.redPale, fg: colors.red },
   neutral: { bg: colors.concrete, fg: colors.inkSoft },
-};
+});
 export function Badge({ children, tone = 'neutral', style }) {
-  const b = BADGE[tone];
+  const b = BADGE()[tone];
   return (
     <View style={[s.badge, { backgroundColor: b.bg }, style]}>
       <View style={[s.badgeDot, { backgroundColor: b.fg }]} />
@@ -167,15 +168,15 @@ export function Badge({ children, tone = 'neutral', style }) {
   );
 }
 
-const NOTICE = {
+const NOTICE = () => ({
   ok: { bg: colors.greenPale, fg: colors.greenDeep, icon: 'checkmark-circle' },
   warn: { bg: colors.amberPale, fg: colors.amberDark, icon: 'warning' },
   error: { bg: colors.redPale, fg: colors.red, icon: 'alert-circle' },
-  info: { bg: '#EAF1FB', fg: '#2F6FD6', icon: 'information-circle' },
-};
+  info: { bg: colors.bluePale, fg: colors.blue, icon: 'information-circle' },
+});
 export function Notice({ tone = 'info', children, style }) {
   if (!children) return null;
-  const n = NOTICE[tone];
+  const n = NOTICE()[tone];
   return (
     <View style={[s.notice, { backgroundColor: n.bg }, style]}>
       <Ionicons name={n.icon} size={18} color={n.fg} style={{ marginTop: 1 }} />
@@ -231,7 +232,7 @@ export function Sheet({ visible, onClose, kicker, title, children, footer, busy 
 
 /* ---------- Styles ---------- */
 
-export const s = StyleSheet.create({
+export const s = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   rowLine: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line },
   h1: { fontFamily: fonts.signHeavy, fontSize: 28, color: colors.ink, textTransform: 'uppercase', letterSpacing: 0.3 },
@@ -246,9 +247,9 @@ export const s = StyleSheet.create({
   kicker: { fontFamily: fonts.bold, fontSize: 11, color: colors.inkFaint, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 },
   label: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 },
   error: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.red, marginTop: 4 },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: colors.line, ...shadow },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: colors.line, ...shadow },
   input: {
-    backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md,
     paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 13 : 10, fontFamily: fonts.regular, fontSize: 15, color: colors.ink, minHeight: 48,
   },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.md, borderWidth: 1, paddingVertical: 13, paddingHorizontal: 18, minHeight: 48 },
@@ -258,12 +259,12 @@ export const s = StyleSheet.create({
   badgeDot: { width: 6, height: 6, borderRadius: 3 },
   badgeText: { fontFamily: fonts.semibold, fontSize: 12 },
   notice: { flexDirection: 'row', gap: 10, borderRadius: radius.md, padding: 12, marginBottom: 14 },
-  empty: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.line, padding: 28, alignItems: 'center' },
+  empty: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.line, padding: 28, alignItems: 'center' },
   emptyIcon: { width: 60, height: 60, borderRadius: 16, backgroundColor: colors.greenPale, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(11,38,31,0.45)' },
-  sheet: { backgroundColor: colors.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingTop: 10 },
+  backdrop: { flex: 1, backgroundColor: colors.backdrop },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingTop: 10 },
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 12 },
   close: { width: 32, height: 32, borderRadius: 8, backgroundColor: colors.concrete, alignItems: 'center', justifyContent: 'center' },
   option: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, marginBottom: 8 },
   optionOn: { borderColor: colors.greenDeep, backgroundColor: colors.greenPale },
-});
+}));

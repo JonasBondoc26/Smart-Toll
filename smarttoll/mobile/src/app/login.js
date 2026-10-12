@@ -7,9 +7,10 @@ import GoogleButton from '../components/GoogleButton';
 import { Button, Field, T } from '../components/ui';
 import { useSession } from '../lib/session';
 import { API_URL } from '../lib/api';
-import { colors, fonts } from '../lib/theme';
+import { colors, fonts, themed, useTheme } from '../lib/theme';
 
 export default function Login() {
+  useTheme();   // re-render on a light / dark switch
   const { login } = useSession();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.white }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.surface }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
         <View style={[styles.hero, { paddingTop: insets.top + 36 }]}>
           <View style={styles.ring} />
@@ -60,7 +61,7 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   hero: { backgroundColor: colors.greenDark, paddingHorizontal: 24, paddingBottom: 32, overflow: 'hidden' },
   ring: { position: 'absolute', right: -90, bottom: -110, width: 260, height: 260, borderRadius: 130, borderWidth: 34, borderColor: 'rgba(232,163,61,0.10)' },
   headline: { fontFamily: fonts.signHeavy, fontSize: 34, lineHeight: 38, color: colors.white, textTransform: 'uppercase', marginTop: 28 },
@@ -68,4 +69,4 @@ const styles = StyleSheet.create({
   form: { padding: 24, flex: 1 },
   link: { fontFamily: fonts.semibold, color: colors.greenDeep, fontSize: 14 },
   muted: { fontFamily: fonts.regular, color: colors.inkSoft, fontSize: 14 },
-});
+}));

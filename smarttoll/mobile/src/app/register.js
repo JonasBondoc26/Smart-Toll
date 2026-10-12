@@ -2,8 +2,10 @@ import { useState } from 'react';
 import GoogleButton from '../components/GoogleButton';
 import { Button, Field, Screen, T } from '../components/ui';
 import { useSession } from '../lib/session';
+import { useTheme } from '../lib/theme';
 
 export default function Register() {
+  useTheme();   // re-render on a light / dark switch
   const { register } = useSession();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState({});

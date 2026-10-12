@@ -12,13 +12,14 @@ import { BarlowCondensed_700Bold } from '@expo-google-fonts/barlow-condensed/700
 import { BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed/800ExtraBold';
 import { SessionProvider, useSession } from '../lib/session';
 import { TrackingProvider, useTrackingStatus } from '../lib/tracking';
-import { colors, headerOptions } from '../lib/theme';
+import { colors, headerOptions, ThemeProvider, useTheme } from '../lib/theme';
 
 SplashScreen.preventAutoHideAsync();
 
-const header = { ...headerOptions, contentStyle: { backgroundColor: colors.concrete } };
+const header = () => ({ ...headerOptions, contentStyle: { backgroundColor: colors.concrete } });
 
 function Routes() {
+  useTheme();   // re-render (page background) on a light / dark switch
   const { user, loading } = useSession();
   const tracking = useTrackingStatus();
   // Logged out for any reason (e.g. the session expired mid-trip): stop following the trip.
@@ -33,7 +34,7 @@ function Routes() {
   if (loading || !fontsLoaded) return null;
 
   return (
-    <Stack screenOptions={header}>
+    <Stack screenOptions={header()}>
       {/* Logged out: only the account screens exist. */}
       <Stack.Protected guard={!user}>
         <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -53,11 +54,13 @@ function Routes() {
 
 export default function RootLayout() {
   return (
-    <SessionProvider>
-      <TrackingProvider>
-        <StatusBar style="light" />
-        <Routes />
-      </TrackingProvider>
-    </SessionProvider>
+    <ThemeProvider>
+      <SessionProvider>
+        <TrackingProvider>
+          <StatusBar style="light" />
+          <Routes />
+        </TrackingProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

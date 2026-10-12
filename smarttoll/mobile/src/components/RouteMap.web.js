@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { colors } from '../lib/theme';
+import { colors, themed } from '../lib/theme';
 import { MAP_HTML } from './mapHtml';
 
 // Web version of RouteMap (react-native-webview has no web support): the same Leaflet
@@ -39,6 +39,6 @@ export default function RouteMap({ data, position, follow = false, heading = nul
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   box: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.line, backgroundColor: colors.concrete, marginBottom: 14 },
-});
+}));

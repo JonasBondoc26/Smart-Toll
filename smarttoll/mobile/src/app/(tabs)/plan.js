@@ -9,9 +9,10 @@ import { BalanceCard, BalanceSheet, TollBreakdown } from '../../components/Toll'
 import { Badge, Button, Card, EmptyState, Loading, Notice, Screen, SelectField, T, s } from '../../components/ui';
 import { api } from '../../lib/api';
 import { km, minutes, peso, roadsOf } from '../../lib/format';
-import { colors, fonts } from '../../lib/theme';
+import { colors, fonts, themed, useTheme } from '../../lib/theme';
 
 export default function Plan() {
+  const theme = useTheme();   // re-renders on a light / dark switch
   const params = useLocalSearchParams();          // ?again=<trip_id> from Trip Details ("Plan Again")
   const [vehicles, setVehicles] = useState(null);
   const [locations, setLocations] = useState([]);
@@ -163,7 +164,7 @@ export default function Plan() {
       </View>
 
       {pinFor && <Notice tone="info">{`Tap the map to set the ${pinFor}.`}</Notice>}
-      <RouteMap data={mapData} height={pinFor ? 380 : 280} picking={!!pinFor} onPick={onMapPick} onSelect={setSelected} onTouching={setTouchingMap} />
+      <RouteMap data={mapData} height={pinFor ? 380 : 280} picking={!!pinFor} onPick={onMapPick} onSelect={setSelected} onTouching={setTouchingMap} night={theme.dark} />
 
       <Button title={busy ? 'Finding routes…' : 'Find Route'} icon="search" onPress={() => findRoute()} busy={busy} />
       <Notice tone={status.tone} style={{ marginTop: 14 }}>{status.text}</Notice>
@@ -253,12 +254,12 @@ function Summary({ icon, value, label }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   places: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  swap: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  swap: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
   letter: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.greenDeep, alignItems: 'center', justifyContent: 'center' },
   letterText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12 },
   summary: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  sumBox: { flex: 1, backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 12, gap: 2 },
+  sumBox: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 12, gap: 2 },
   sumValue: { fontFamily: fonts.signHeavy, fontSize: 20, color: colors.ink, marginTop: 4 },
-});
+}));

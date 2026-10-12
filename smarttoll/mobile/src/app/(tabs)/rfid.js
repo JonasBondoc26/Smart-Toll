@@ -6,7 +6,7 @@ import { BalanceSheet } from '../../components/Toll';
 import { Badge, Button, Card, EmptyState, Field, Loading, Notice, Screen, SelectField, Sheet, T, s } from '../../components/ui';
 import { api } from '../../lib/api';
 import { peso } from '../../lib/format';
-import { colors, fonts } from '../../lib/theme';
+import { colors, fonts, useTheme } from '../../lib/theme';
 
 // Easytrip: NLEX / SCTEX, CALAX, CAVITEX, NAIAX ... Autosweep: Skyway / SLEX, STAR, TPLEX ...
 const NETWORKS = [
@@ -15,6 +15,7 @@ const NETWORKS = [
 ];
 
 export default function Rfid() {
+  useTheme();   // re-render on a light / dark switch
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(null);   // the account whose balance is being updated

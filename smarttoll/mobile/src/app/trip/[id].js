@@ -7,9 +7,10 @@ import { Badge, Button, Card, CardTitle, Loading, Notice, Row, Screen, T } from 
 import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
 import { day, minutes, peso, time } from '../../lib/format';
-import { colors } from '../../lib/theme';
+import { colors, useTheme } from '../../lib/theme';
 
 export default function TripDetails() {
+  const theme = useTheme();   // re-renders on a light / dark switch
   const { id } = useLocalSearchParams();
   const [trip, setTrip] = useState(null);
   const [error, setError] = useState('');
@@ -51,7 +52,7 @@ export default function TripDetails() {
       </View>
       <Notice tone="error">{error}</Notice>
 
-      {mapData ? <RouteMap data={mapData} height={260} /> : <Notice tone="warn">No map for this trip: it was saved before SmartToll kept each trip's route.</Notice>}
+      {mapData ? <RouteMap data={mapData} height={260} night={theme.dark} /> : <Notice tone="warn">No map for this trip: it was saved before SmartToll kept each trip's route.</Notice>}
 
       <Card>
         <CardTitle icon="information-circle">Trip</CardTitle>

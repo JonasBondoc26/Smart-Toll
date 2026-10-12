@@ -12,7 +12,7 @@ import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
 import { km, minutes, peso, time } from '../../lib/format';
 import { shortDistance } from '../../lib/directions';
-import { colors, fonts } from '../../lib/theme';
+import { colors, fonts, themed, useTheme } from '../../lib/theme';
 
 /**
  * GPS tracking of a saved trip: the phone follows the motorist along the saved route to the
@@ -20,6 +20,7 @@ import { colors, fonts } from '../../lib/theme';
  * after a wrong turn, and marks the trip completed on arrival.
  */
 export default function TrackTrip() {
+  const theme = useTheme();   // re-renders on a light / dark switch
   const { id } = useLocalSearchParams();
   const tracking = useTracking();
   const [trip, setTrip] = useState(null);
@@ -76,8 +77,8 @@ export default function TrackTrip() {
   } : null), [trip, mine, tracking.routeVersion]);   // the live position is passed separately, so GPS updates don't redraw the route
 
   const driving = mine && tracking.status === 'tracking';
-  // Night mode applies while driving: dark map, dark cards.
-  const dark = driving && nightMode.night;
+  // Dark look: the app is in Dark appearance, or night mode applies while driving.
+  const dark = theme.dark || (driving && nightMode.night);
   const P = useMemo(() => tripPalette(dark), [dark]);
 
   if (!trip) return <Screen>{error ? <Notice tone="error">{error}</Notice> : <Loading />}</Screen>;
@@ -207,6 +208,7 @@ const ALERT_MODES = [
 ];
 
 const AlertChoice = memo(function AlertChoice({ alerts, onChange, P }) {
+  useTheme();   // re-render on a light / dark switch
   return (
     <View style={styles.modes}>
       <Text style={[styles.modesLabel, { color: P.soft }]}>Alerts</Text>
@@ -232,6 +234,7 @@ const NIGHT_MODES = [
 ];
 
 const NightChoice = memo(function NightChoice({ mode, onChange, P }) {
+  useTheme();   // re-render on a light / dark switch
   return (
     <View style={styles.modes}>
       <Text style={[styles.modesLabel, { color: P.soft }]}>Look</Text>
@@ -323,6 +326,7 @@ const plazasOf = (trip) => trip.segments.flatMap((s, i) => [
 ]);
 
 const PlazaList = memo(function PlazaList({ plazas, passed, P }) {
+  useTheme();   // re-render on a light / dark switch
   return (
     <Card style={{ backgroundColor: P.card, borderColor: P.line }}>
       <View style={[styles.row, { marginBottom: 12 }]}>
@@ -345,6 +349,7 @@ const PlazaList = memo(function PlazaList({ plazas, passed, P }) {
 });
 
 const Stat = memo(function Stat({ label, value, P }) {
+  useTheme();   // re-render on a light / dark switch
   return (
     <View style={[styles.stat, { backgroundColor: P.card, borderColor: P.line }]}>
       <Text style={[styles.statValue, { color: P.text }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
@@ -353,10 +358,10 @@ const Stat = memo(function Stat({ label, value, P }) {
   );
 });
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   stats: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  stat: { flex: 1, backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.line, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center' },
+  stat: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center' },
   statValue: { fontFamily: fonts.signHeavy, fontSize: 22, color: colors.ink },
   statLabel: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.inkSoft },
   next: { backgroundColor: colors.greenDark, borderColor: colors.greenDark },
@@ -370,10 +375,10 @@ const styles = StyleSheet.create({
   plazaFee: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
   modes: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
   modesLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginRight: 2 },
-  mode: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white },
+  mode: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
   modeOn: { backgroundColor: colors.greenDeep, borderColor: colors.greenDeep },
   modeText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.inkFaint },
-  toll: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.white, borderWidth: 2, borderRadius: 16, padding: 12, marginBottom: 10 },
+  toll: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderWidth: 2, borderRadius: 16, padding: 12, marginBottom: 10 },
   tollIcon: { width: 62, height: 62, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   tollKicker: { fontFamily: fonts.bold, fontSize: 11.5, letterSpacing: 0.8 },
   tollName: { fontFamily: fonts.signHeavy, fontSize: 26, color: colors.ink, textTransform: 'uppercase' },
@@ -383,4 +388,4 @@ const styles = StyleSheet.create({
   bannerText: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 23, color: colors.white },
   bannerSub: { fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 17, color: colors.mint, marginTop: 2 },
   arrived: { fontFamily: fonts.signHeavy, fontSize: 28, color: colors.greenDeep, textTransform: 'uppercase', marginVertical: 6 },
-});
+}));

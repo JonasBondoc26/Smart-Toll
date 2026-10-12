@@ -7,9 +7,10 @@ import { useSession } from '../../lib/session';
 import { useTracking, useTrackingStatus } from '../../lib/tracking';
 import { api } from '../../lib/api';
 import { day, km, peso } from '../../lib/format';
-import { colors, fonts } from '../../lib/theme';
+import { colors, fonts, themed, useTheme } from '../../lib/theme';
 
 export default function Home() {
+  useTheme();   // re-render on a light / dark switch
   const { user } = useSession();
   const tracking = useTrackingStatus();
   const [data, setData] = useState(null);
@@ -114,7 +115,7 @@ function Action({ icon, label, onPress, amber }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   tripName: { fontFamily: fonts.signHeavy, fontSize: 21, color: colors.white, textTransform: 'uppercase' },
   tripMeta: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.amber },
@@ -122,9 +123,9 @@ const styles = StyleSheet.create({
   action: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.greenDeep, borderRadius: 12, paddingVertical: 14 },
   actionText: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.white },
   kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
-  kpi: { width: '48%', flexGrow: 1, backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14 },
+  kpi: { width: '48%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 14 },
   kpiIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: colors.greenPale, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   kpiValue: { fontFamily: fonts.signHeavy, fontSize: 24, color: colors.ink },
   kpiLabel: { fontFamily: fonts.medium, fontSize: 12, color: colors.inkSoft },
   link: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.greenDeep },
-});
+}));

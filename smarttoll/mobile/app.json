@@ -6,7 +6,7 @@
     "scheme": "smarttoll",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ph.edu.hau.smarttoll"

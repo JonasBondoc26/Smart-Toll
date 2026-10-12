@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { colors } from '../lib/theme';
+import { colors, themed } from '../lib/theme';
 import { MAP_HTML } from './mapHtml';
 
 /**
@@ -64,6 +64,6 @@ export default function RouteMap({ data, position, follow = false, heading = nul
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   box: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.line, backgroundColor: colors.concrete, marginBottom: 14 },
-});
+}));

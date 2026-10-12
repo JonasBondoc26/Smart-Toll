@@ -5,11 +5,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Button, Card, EmptyState, Field, Loading, Notice, Screen, SelectField, Sheet, T, s } from '../../components/ui';
 import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
-import { colors } from '../../lib/theme';
+import { colors, useTheme } from '../../lib/theme';
 
 const EMPTY = { vehicle_name: '', classification_id: '' };
 
 export default function Vehicles() {
+  useTheme();   // re-render on a light / dark switch
   const [vehicles, setVehicles] = useState(null);
   const [classes, setClasses] = useState([]);
   const [error, setError] = useState('');

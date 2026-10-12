@@ -10,8 +10,10 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "symfony/brevo-mailer": "^7.4",
         "symfony/css-selector": "^7.4",
-        "symfony/dom-crawler": "^7.4"
+        "symfony/dom-crawler": "^7.4",
+        "symfony/http-client": "^7.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

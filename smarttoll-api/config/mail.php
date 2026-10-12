@@ -37,6 +37,12 @@ return [
 
     'mailers' => [
 
+        // Brevo's HTTPS API (MAIL_MAILER=brevo + BREVO_API_KEY): for hosts that block outgoing
+        // SMTP, such as Railway's Trial/Hobby plans. Registered in AppServiceProvider.
+        'brevo' => [
+            'transport' => 'brevo',
+        ],
+
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
@@ -45,7 +51,9 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            // Give up after 10 s, so a blocked or unreachable mail server answers quickly with an
+            // error instead of hanging the request (some hosts block outgoing SMTP).
+            'timeout' => env('MAIL_TIMEOUT', 10),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 

@@ -19,6 +19,11 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
     ],
 
+    // Email over HTTPS (MAIL_MAILER=brevo): https://app.brevo.com → SMTP & API → API keys
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

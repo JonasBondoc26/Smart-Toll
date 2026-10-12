@@ -1,0 +1,16 @@
+# Not needed in the server image (and never ship local secrets)
+.git
+**/node_modules
+smarttoll-api/vendor
+smarttoll-api/.env
+smarttoll-api/.env.*
+!smarttoll-api/.env.example
+smarttoll-api/storage/logs/*
+smarttoll-api/storage/framework/cache/*
+smarttoll-api/storage/framework/sessions/*
+smarttoll-api/storage/framework/views/*
+smarttoll-api/storage/app/private/*
+smarttoll-api/bootstrap/cache/*.php
+smarttoll/frontend/dist
+smarttoll/mobile
+docs

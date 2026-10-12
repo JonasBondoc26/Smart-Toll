@@ -22,3 +22,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# The website, copied in by the Dockerfile on the server (never commit a local build)
+/public/spa.html
+/public/assets
+/public/favicon.svg
+/public/favicon-32.png
+/public/apple-touch-icon.png

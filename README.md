@@ -20,6 +20,7 @@ It was built as a capstone project at Holy Angel University.
 - [Password reset emails](#password-reset-emails)
 - [Sign in with Google](#sign-in-with-google)
 - [Mobile app (React Native)](#mobile-app-react-native)
+- [Put SmartToll online (Railway)](#put-smarttoll-online-railway)
 - [Toll data commands](#toll-data-commands)
 - [Automated tests](#automated-tests)
 - [Troubleshooting](#troubleshooting)
@@ -214,7 +215,7 @@ Bring the database up to date. With a fresh import this should say "Nothing to m
 php artisan migrate
 ```
 
-**Optional: add demo accounts.** This creates an admin and a motorist with vehicles, RFID accounts and trips:
+**Optional: add demo accounts.** This creates an admin and a motorist with three vehicles, RFID balances, two saved routes and three real trips (planned through the routing server, so it needs internet): two completed, with their maps and toll breakdowns, and one ready to start in the mobile app (Quezon City → Tarlac City).
 
 ```bash
 php artisan db:seed
@@ -225,7 +226,7 @@ php artisan db:seed
 | Motorist | `juan.delacruz@email.com` | `Password123` |
 | Admin | `admin@smarttoll.system` | `Admin@12345` |
 
-> Run `db:seed` only once. A second run fails because the emails already exist. Never run it on a database that has real users.
+> Run `db:seed` only once. A second run fails because the emails already exist. Never run it on a database that has real users. `php artisan smarttoll:install --demo` does the same but skips it when the demo accounts already exist.
 
 **Create an administrator account.** There's no sign-up page for admins:
 
@@ -487,10 +488,41 @@ If Google answers with "doesn't recognise this build" (Android's `DEVELOPER_ERRO
 
 The development app above loads its code from your computer. For a standalone APK that runs on its own (for example, for a demonstration):
 
-1. In `smarttoll/mobile/eas.json`, set `EXPO_PUBLIC_API_URL` under `preview` → `env` to the API's address, e.g. `http://192.168.1.10:8000`. An installed app isn't started from your computer, so it can't find the API by itself.
+1. In `smarttoll/mobile/eas.json`, set `EXPO_PUBLIC_API_URL` under `preview` → `env` to the API's address: the online one from [Put SmartToll online](#put-smarttoll-online-railway) (e.g. `https://smarttoll.up.railway.app`), or a computer on your Wi-Fi (e.g. `http://192.168.1.10:8000`). An installed app isn't started from your computer, so it can't find the API by itself.
 2. Build it: `eas build -p android --profile preview`, then open the link it prints on the phone to install.
 
 Both profiles are signed with the same keystore, so the SHA-1 registered for Google sign-in works for the preview APK too.
+
+---
+
+## Put SmartToll online (Railway)
+
+Online, the website and the mobile app work from anywhere (not only on your Wi-Fi), over https. The repository is ready for [Railway](https://railway.com): the `Dockerfile` builds the website and the API into one service at one address, and on every start it sets up the database by itself (`smarttoll:install` loads `smarttoll.sql` into an empty database and runs newer migrations).
+
+**Cost:** Railway gives trial credit; after that, about US$5 a month for this project.
+
+1. **Create the project.** Sign in at https://railway.com with GitHub → **New Project** → **Deploy from GitHub repo** → choose `Smart-Toll`. Railway finds the `Dockerfile` and `railway.json` and starts building (the first build takes a few minutes; it fails until step 3 is done, that's expected).
+2. **Add the database.** In the project: **+ Create** → **Database** → **MySQL**.
+3. **Set the variables.** Open the `Smart-Toll` service → **Variables** → add:
+
+   | Variable | Value |
+   |---|---|
+   | `APP_KEY` | run `php artisan key:generate --show` in `smarttoll-api` and paste the result (`base64:…`) |
+   | `DB_URL` | `${{MySQL.MYSQL_URL}}` (Railway fills in the database address) |
+   | `SEED_DEMO` | `1` for the first start (adds the demo accounts once), then delete it |
+   | `GOOGLE_CLIENT_ID` | the same as in your local `.env` (optional) |
+   | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | the same as in your local `.env`, for password-reset emails |
+
+   Debug mode is off and cache/sessions use files by default (set in the `Dockerfile`).
+4. **Get the address.** Service → **Settings** → **Networking** → **Generate Domain**, e.g. `smarttoll-production.up.railway.app`. Add two more variables with it: `APP_URL` and `FRONTEND_URL`, both `https://` + that domain. Railway redeploys.
+   For faster responses from the Philippines, set **Settings** → **Region** to Southeast Asia (Singapore).
+5. **Check it.** `https://<your domain>/up` shows a green "Application up" page, and `https://<your domain>` is the website. Log in as the demo motorist or admin (see [Setup step 4](#4-set-up-the-laravel-api)).
+6. **Google sign-in online.** In Google Cloud Console → your **Web** OAuth client → **Authorized JavaScript origins** → add `https://<your domain>`.
+7. **The mobile app.** Put `https://<your domain>` in `smarttoll/mobile/eas.json` (`preview` → `env` → `EXPO_PUBLIC_API_URL`) and build the installable APK: `eas build -p android --profile preview` (see [Build an installable APK](#build-an-installable-apk-for-demos-optional)). The app then works anywhere with mobile data.
+
+**Updating:** push to GitHub; Railway rebuilds and redeploys automatically, and new migrations run on start. Your data stays in the MySQL service.
+
+**Logs:** service → **Deployments** → the latest one → **View logs** (errors show here, since debug mode is off on the site).
 
 ---
 
@@ -547,6 +579,8 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 | Port 5173 is already in use | Vite picks the next free port automatically. Use the address it prints, and set `FRONTEND_URL` in `.env` to match so reset links work. |
 | The map is grey, or "The routing service could not be reached" | Check your internet connection. Map tiles and routing come from online services. |
 | "The routing service found no route" or slow routes | The public OSRM server allows about one request per second and can be busy. Wait a moment and try again. |
+| Railway: the deploy fails at start with a database error | Check `DB_URL` is `${{MySQL.MYSQL_URL}}` and that the MySQL service is running in the same project. |
+| Railway: "No application encryption key has been specified" | Add `APP_KEY` (from `php artisan key:generate --show`). |
 | Mobile app: "Cannot reach the SmartToll server" | Start the API with `php artisan serve --host 0.0.0.0`, check that the phone and the computer are on the same Wi-Fi, and allow PHP through the Windows firewall. The log-in screen shows the address the app is using. |
 | Mobile app: "Google sign-in works in the installed SmartToll app, not in Expo Go" | Expected in Expo Go. Build and install the development app, see [Google sign-in on the phone](#google-sign-in-on-the-phone). |
 | Mobile app: "Google doesn't recognise this build of SmartToll" | The Android OAuth client's package name must be `ph.edu.hau.smarttoll` and its SHA-1 must match `eas credentials -p android`. |

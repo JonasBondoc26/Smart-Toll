@@ -41,6 +41,7 @@
           "locationAlwaysAndWhenInUsePermission": "SmartToll keeps following your trip, with directions and toll alerts, when the phone is locked or another app is open.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true,
+          "androidForegroundServiceIcon": "./assets/notification-icon.png",
           "isIosBackgroundLocationEnabled": true
         }
       ],

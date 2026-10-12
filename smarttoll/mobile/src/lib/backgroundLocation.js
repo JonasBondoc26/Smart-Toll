@@ -21,7 +21,12 @@ export const setBackgroundListener = (fn) => { listener = fn; };
 if (backgroundAvailable) {
   TaskManager.defineTask(TASK, ({ data, error }) => {
     if (error || !data?.locations) return;
-    for (const loc of data.locations) listener?.(loc);
+    // A mistake here must not crash the app (an installed APK closes on any uncaught error).
+    try {
+      for (const loc of data.locations) listener?.(loc);
+    } catch (e) {
+      console.warn('Background location fix failed', e);
+    }
   });
 }
 

@@ -1,0 +1,63 @@
+diff --git a/node_modules/expo-location/android/src/main/java/expo/modules/location/services/LocationTaskService.kt b/node_modules/expo-location/android/src/main/java/expo/modules/location/services/LocationTaskService.kt
+index 0019485..15f8610 100644
+--- a/node_modules/expo-location/android/src/main/java/expo/modules/location/services/LocationTaskService.kt
++++ b/node_modules/expo-location/android/src/main/java/expo/modules/location/services/LocationTaskService.kt
+@@ -32,13 +32,16 @@ class LocationTaskService : Service() {
+   }
+ 
+   @TargetApi(26)
+-  override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+-    val extras = intent.extras
++  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
++    val extras = intent?.extras
+     if (extras != null) {
+       mChannelId = extras.getString("appId") + ":" + extras.getString("taskName")
+       mKillService = extras.getBoolean("killService", false)
+     }
+-    return START_REDELIVER_INTENT
++    // SmartToll: never let Android re-create this service on its own after the app process
++    // dies. Nothing binds to it then, so it never calls startForeground() and the app crashes
++    // on every launch. The app starts it again itself when a trip is followed.
++    return START_NOT_STICKY
+   }
+ 
+   fun setParentContext(context: Context) {
+@@ -60,8 +63,16 @@ class LocationTaskService : Service() {
+   }
+ 
+   fun startForeground(serviceOptions: Bundle) {
+-    val notification = buildServiceNotification(serviceOptions)
+-    startForeground(mServiceId, notification)
++    // SmartToll: Android 12+ can refuse a location foreground service (app not in the
++    // foreground, permission just changed). Stop quietly instead of crashing the app;
++    // the trip then keeps following with on-screen GPS.
++    try {
++      val notification = buildServiceNotification(serviceOptions)
++      startForeground(mServiceId, notification)
++    } catch (e: Exception) {
++      android.util.Log.e("expo-location", "Could not start the location foreground service.", e)
++      stopSelf()
++    }
+   }
+ 
+   //region private
+diff --git a/node_modules/expo-location/android/src/main/java/expo/modules/location/taskConsumers/LocationTaskConsumer.kt b/node_modules/expo-location/android/src/main/java/expo/modules/location/taskConsumers/LocationTaskConsumer.kt
+index b4f6c06..2029a93 100644
+--- a/node_modules/expo-location/android/src/main/java/expo/modules/location/taskConsumers/LocationTaskConsumer.kt
++++ b/node_modules/expo-location/android/src/main/java/expo/modules/location/taskConsumers/LocationTaskConsumer.kt
+@@ -211,7 +211,14 @@ class LocationTaskConsumer(context: Context, taskManagerUtils: TaskManagerUtilsI
+       extras.putString("taskName", task.name)
+       extras.putBoolean("killService", serviceOptions.getBoolean("killServiceOnDestroy", false))
+       serviceIntent.putExtras(extras)
+-      context.startForegroundService(serviceIntent)
++      // SmartToll: Android 12+ throws here when it won't allow the service right now;
++      // without the try the whole app crashes (also when the task is restored at launch).
++      try {
++        context.startForegroundService(serviceIntent)
++      } catch (e: Exception) {
++        Log.e(TAG, "Could not start the location foreground service.", e)
++        return
++      }
+       context.bindService(
+         serviceIntent,
+         object : ServiceConnection {

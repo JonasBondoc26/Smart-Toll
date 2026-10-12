@@ -76,6 +76,9 @@ export function TrackingProvider({ children }) {
   const lastFix = useRef(null);     // previous position, for the heading off the route
 
   useEffect(() => () => stopper.current?.(), []);
+  // The app always opens with no trip being followed, so background GPS left over from before
+  // (the app was closed or crashed mid-trip) is switched off, or Android would restore it.
+  useEffect(() => { stopBackground(); }, []);
   useEffect(() => {
     getItem(ALERTS_KEY).then((v) => {
       if (!v) return;

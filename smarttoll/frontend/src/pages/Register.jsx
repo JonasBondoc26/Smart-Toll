@@ -65,8 +65,8 @@ export default function Register() {
       <form onSubmit={submit} noValidate>
         <h2 style={{ fontSize: 26, marginBottom: 6 }}>Create Account</h2>
         <p className="muted mb-24">Takes less than a minute.</p>
-        <Field label="Full Name" placeholder="Juan Dela Cruz" value={form.name} onChange={set('name')} error={errors.name} />
-        <Field label="Email Address" type="email" placeholder="juan.delacruz@email.com" value={form.email} onChange={set('email')} error={errors.email} />
+        <Field label="Full Name" placeholder="Name" value={form.name} onChange={set('name')} error={errors.name} />
+        <Field label="Email Address" type="email" placeholder="@email.com" value={form.email} onChange={set('email')} error={errors.email} />
         <div className="grid-2">
           <Field label="Password" type="password" placeholder="Create password" value={form.password} onChange={set('password')} error={errors.password} />
           <Field label="Confirm Password" type="password" placeholder="Re-enter password" value={form.confirm} onChange={set('confirm')} error={errors.confirm} />

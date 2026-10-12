@@ -48,7 +48,7 @@ export default function Login() {
       <form onSubmit={submit} noValidate>
         <h2 style={{ fontSize: 26, marginBottom: 6 }}>Log In</h2>
         <p className="muted mb-24">Access your trips, vehicles, and RFID accounts.</p>
-        <Field label="Email Address" type="email" placeholder="juan.delacruz@email.com" value={form.email} onChange={set('email')} />
+        <Field label="Email Address" type="email" placeholder="@email.com" value={form.email} onChange={set('email')} />
         <Field
           label="Password" type="password" placeholder="••••••••••" value={form.password} onChange={set('password')} error={error}
           hint={<div className="field-hint" style={{ textAlign: 'right', marginTop: 8 }}><Link to="/forgot-password" style={linkStyle}>Forgot password?</Link></div>}

@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import Sidebar from '../components/Sidebar.jsx';
 import { useAuth } from '../AuthContext.jsx';
 import Icon from '../components/Icon.jsx';
+import Brand from '../components/Brand.jsx';
 
 const NAV = [
   ['/dashboard', 'grid', 'Home'], ['/vehicles', 'car', 'Vehicles'], ['/rfid', 'card', 'RFID'],
@@ -49,7 +50,7 @@ export default function Dashboard() {
   return (
     <>
       <div className="topbar">
-        <div className="brand"><span className="mark"><Icon name="menu" size={18} stroke={2.5} /></span>SmartToll</div>
+        <Brand />
         <div className="topbar-user">{user.name} <div className="avatar">{initials}</div></div>
       </div>
 

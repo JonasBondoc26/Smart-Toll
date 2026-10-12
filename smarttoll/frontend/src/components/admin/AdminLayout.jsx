@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../AuthContext.jsx';
 import Sidebar from '../Sidebar.jsx';
 import Icon from '../Icon.jsx';
+import Brand from '../Brand.jsx';
 
 const NAV = [
   ['/admin/dashboard', 'grid', 'Home'], ['/admin/expressways', 'road', 'Express'], ['/admin/toll-plazas', 'plaza', 'Plazas'],
@@ -17,7 +18,7 @@ export default function AdminLayout({ title, subtitle, action, children }) {
   return (
     <>
       <div className="topbar admin-bar">
-        <div className="brand"><span className="mark"><Icon name="menu" size={18} stroke={2.5} /></span>SmartToll <span className="brand-tag">Admin</span></div>
+        <Brand admin />
         <Link to="/admin/profile" className="topbar-user" style={{ textDecoration: 'none', color: 'inherit' }}>
           {user.name} <div className="avatar admin">{initialsOf(user.name)}</div>
         </Link>

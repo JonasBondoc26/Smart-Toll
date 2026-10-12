@@ -73,13 +73,8 @@ svg { display: block; flex-shrink: 0; }
   align-items: center;
   gap: 11px;
 }
-.brand .mark {
-  width: 32px; height: 32px;
-  background: var(--amber);
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--green-dark);
-}
+.brand .mark { width: 32px; height: 32px; }
+.brand-accent { color: var(--amber); }
 .brand-tag {
   font-family: 'Inter'; text-transform: none; font-weight: 600; font-size: 12px;
   color: #A9CDBB; background: rgba(255,255,255,0.08); padding: 3px 9px; border-radius: 100px; margin-left: 6px;
@@ -324,6 +319,10 @@ tr:hover td { background: #FAFBF8; }
   display: flex; flex-direction: column; justify-content: center;
   padding: 64px; color: var(--white); position: relative; overflow: hidden;
 }
+/* Log in / Register / Admin log in: the logo is the hero of the panel, so it's larger than in the top bar. */
+.auth-visual .brand { font-size: 34px; gap: 14px; }
+.auth-visual .brand .mark { width: 52px; height: 52px; }
+.auth-visual .brand-tag { font-size: 14px; padding: 4px 12px; }
 .auth-visual::after {
   content: ''; position: absolute; right: -100px; bottom: -100px; width: 380px; height: 380px;
   border: 46px solid rgba(232,163,61,0.10); border-radius: 50%;
@@ -538,6 +537,8 @@ div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !impor
 .auth-visual h1 { font-size: 26px !important; }
 .auth-visual p { display: none; } /* tagline copy hidden on mobile to save vertical space */
 .auth-visual .gantry { display: none; } /* the sample-route illustration is desktop-only flourish */
+.auth-visual .brand { font-size: 26px; gap: 11px; margin-bottom: 28px !important; }
+.auth-visual .brand .mark { width: 40px; height: 40px; }
 .auth-form-side { width: 100%; padding: 28px 20px 40px; box-sizing: border-box; }
 .auth-box { width: 100%; }
 

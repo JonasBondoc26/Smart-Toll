@@ -4,8 +4,10 @@ import { api } from '../api.js';
 import { useAuth } from '../AuthContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Icon from '../components/Icon.jsx';
+import Brand from '../components/Brand.jsx';
 import LocationSelect from '../components/LocationSelect.jsx';
 import LoginModal from '../components/LoginModal.jsx';
+import RegisterModal from '../components/RegisterModal.jsx';
 import { FormModal } from '../components/admin/Modals.jsx';
 import RouteMap from '../components/RouteMap.jsx';
 import '../trip-planner.css';
@@ -84,6 +86,8 @@ export default function TripPlanner() {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [loginModal, setLoginModal] = useState(false);
+  const [registerModal, setRegisterModal] = useState(false);
+  const [vehicleModal, setVehicleModal] = useState(null);  // a new account's first vehicle: { vehicle_name, classification_id }
   const [notice, setNotice] = useState('');         // shown after logging in from this page
   const [savedRoutes, setSavedRoutes] = useState([]);  // motorists: "Home → Office" shortcuts
   const [params, setParams] = useSearchParams();       // ?again=<trip_id>: plan a saved trip again
@@ -181,11 +185,26 @@ export default function TripPlanner() {
   // and plan again, so the fares and the RFID balance are theirs before they save.
   const afterLogin = async () => {
     setLoginModal(false);
+    setRegisterModal(false);
     const v = await api('/vehicles');
     setVehicles(v.vehicles);
     loadSavedRoutes();
-    if (!v.vehicles.length) return;   // the "Add a vehicle first" screen takes over
-    const match = v.vehicles.find((x) => x.class_name === trip?.class_name) || v.vehicles[0];
+    // A new account has no vehicle yet: add it here (in the class being planned) so the trip isn't lost.
+    if (!v.vehicles.length) return setVehicleModal({ vehicle_name: '', classification_id: classId });
+    await switchToVehicle(v.vehicles);
+  };
+
+  const addFirstVehicle = async () => {
+    if (!vehicleModal.vehicle_name.trim()) throw new Error('Enter the vehicle name or model.');
+    await api('/vehicles', { method: 'POST', body: vehicleModal });
+    const v = await api('/vehicles');
+    setVehicles(v.vehicles);
+    setVehicleModal(null);
+    await switchToVehicle(v.vehicles);
+  };
+
+  const switchToVehicle = async (list) => {
+    const match = list.find((x) => x.class_name === trip?.class_name) || list[0];
     setVehicleId(String(match.vehicle_id));
     // The visitor's result (no RFID account, maybe another class) must not linger while re-planning.
     const hadTrip = !!trip;
@@ -324,11 +343,11 @@ export default function TripPlanner() {
   return (
     <>
       <div className="topbar">
-        <div className="brand"><span className="mark"><Icon name="menu" size={18} stroke={2.5} /></span>SmartToll</div>
+        <Brand />
         {guest ? (
           <div className="topbar-guest">
             <button type="button" className="topbar-login" onClick={() => setLoginModal(true)}>Log In</button>
-            <Link to="/register" className="btn btn-amber topbar-register">Register</Link>
+            <button type="button" className="btn btn-amber topbar-register" onClick={() => setRegisterModal(true)}>Register</button>
           </div>
         ) : (
           <div className="topbar-user">{user.name} <div className="avatar">{initials}</div></div>
@@ -361,7 +380,9 @@ export default function TripPlanner() {
               <div className="empty-icon"><Icon name="car" size={30} /></div>
               <h3>Add a vehicle first</h3>
               <p>Toll fees depend on the vehicle's class, so SmartToll needs a vehicle before it can plan a trip.</p>
-              <Link to="/vehicles" className="btn btn-primary"><Icon name="plus" stroke={2.5} />Add a Vehicle</Link>
+              <button type="button" className="btn btn-primary" onClick={() => setVehicleModal({ vehicle_name: '', classification_id: classId })}>
+                <Icon name="plus" stroke={2.5} />Add a Vehicle
+              </button>
             </div>
           )}
 
@@ -578,7 +599,7 @@ export default function TripPlanner() {
                       </div>
 
                       {guest ? (
-                        <GuestBalanceCard toll={toll} onLogin={() => setLoginModal(true)} />
+                        <GuestBalanceCard toll={toll} onLogin={() => setLoginModal(true)} onRegister={() => setRegisterModal(true)} />
                       ) : (
                         <BalanceCard
                           rfid={rfid} toll={toll} deduction={deduction} paid={saved[selected]?.rfid}
@@ -616,7 +637,36 @@ export default function TripPlanner() {
         <LoginModal
           reason={route ? 'Log in to check this trip against your RFID balance and save it to your trip history.' : 'Log in to use your saved vehicles and RFID balance.'}
           onClose={() => setLoginModal(false)} onLoggedIn={afterLogin}
+          onRegister={() => { setLoginModal(false); setRegisterModal(true); }}
         />
+      )}
+
+      {registerModal && (
+        <RegisterModal
+          onClose={() => setRegisterModal(false)} onRegistered={afterLogin}
+          onLogin={() => { setRegisterModal(false); setLoginModal(true); }}
+        />
+      )}
+
+      {vehicleModal && (
+        <FormModal kicker="ONE MORE STEP" title="Add Your Vehicle" submitLabel="Save Vehicle" onClose={() => setVehicleModal(null)} onSubmit={addFirstVehicle}>
+          <p className="muted mb-16">Toll fees depend on the vehicle's class. Add your vehicle and this trip will be priced for it.</p>
+          <div className="field">
+            <label htmlFor="fv-name">Vehicle Name / Model</label>
+            <input
+              id="fv-name" placeholder="e.g. Toyota Vios" value={vehicleModal.vehicle_name} autoFocus
+              onChange={(e) => setVehicleModal({ ...vehicleModal, vehicle_name: e.target.value })}
+            />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="fv-class">Vehicle Classification</label>
+            <select id="fv-class" value={vehicleModal.classification_id} onChange={(e) => setVehicleModal({ ...vehicleModal, classification_id: e.target.value })}>
+              {classes.map((c) => (
+                <option key={c.classification_id} value={c.classification_id}>{c.class_name}: {c.description}</option>
+              ))}
+            </select>
+          </div>
+        </FormModal>
       )}
 
       {!guest && (
@@ -633,7 +683,7 @@ export default function TripPlanner() {
 }
 
 // Visitors see the toll, and why logging in helps, where motorists see their RFID balance.
-function GuestBalanceCard({ toll, onLogin }) {
+function GuestBalanceCard({ toll, onLogin, onRegister }) {
   return (
     <div className="card balance-card">
       <div className="flex gap-8" style={{ marginBottom: 16 }}>
@@ -649,7 +699,7 @@ function GuestBalanceCard({ toll, onLogin }) {
       </p>
       <button type="button" className="btn btn-primary btn-block mt-16" onClick={onLogin}>Log In</button>
       <p className="muted" style={{ textAlign: 'center', marginTop: 12 }}>
-        New to SmartToll? <Link to="/register" style={{ color: 'var(--green-deep)', fontWeight: 600 }}>Create an account</Link>
+        New to SmartToll? <button type="button" className="link-btn" onClick={onRegister}>Create an account</button>
       </p>
     </div>
   );

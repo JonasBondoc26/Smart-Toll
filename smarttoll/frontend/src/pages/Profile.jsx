@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { useAuth } from '../AuthContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Icon from '../components/Icon.jsx';
+import Brand from '../components/Brand.jsx';
 import LogoutModal from '../components/LogoutModal.jsx';
 
 const NAV = [
@@ -61,7 +62,7 @@ export default function Profile() {
   return (
     <>
       <div className="topbar">
-        <div className="brand"><span className="mark"><Icon name="menu" size={18} stroke={2.5} /></span>SmartToll</div>
+        <Brand />
         <div className="topbar-user">{user.name} <div className="avatar">{initialsOf(user.name)}</div></div>
       </div>
 

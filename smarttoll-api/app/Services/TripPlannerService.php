@@ -365,22 +365,22 @@ class TripPlannerService
                 'geometry'   => $this->stepsGeometry($steps, $run['first_step'], $run['last_step']),
             ];
             if ($known) {
-                $a = $this->nearestPlaza($run['system'], $run['start']);
-                $b = $this->nearestPlaza($run['system'], $run['end']);
-                if ($a && $a['km'] <= $maxKm) {
-                    $seg['entry'] = $a['plaza'];
-                }
-                if ($b && $b['km'] <= $maxKm) {
-                    $seg['exit'] = $b['plaza'];
-                }
+                // Plazas a little further than the nearest one are kept as fallbacks: ramps
+                // can sit close together (Quirino and Plaza Dilao on Skyway Stage 3 are
+                // ~500 m apart) and the nearest may be one-way, with no fare for this trip.
+                $seg['entry_options'] = $this->nearbyPlazas($run['system'], $run['start'], $maxKm);
+                $seg['exit_options'] = $this->nearbyPlazas($run['system'], $run['end'], $maxKm);
+                $seg['entry'] = $seg['entry_options'][0] ?? null;
+                $seg['exit'] = $seg['exit_options'][0] ?? null;
 
                 // TRB's Skyway-SLEX-MCX matrix has a separate "SKY" column for trips that
                 // use the elevated Skyway, priced higher than the at-grade road beside it.
                 // The two cannot be told apart by distance, so when the route drove on the
                 // Skyway, its Manila-side (northern) end is charged as the Skyway plaza.
                 if ($run['skyway'] && ($sky = $this->skywayPlaza($run['system']))) {
-                    $northIsStart = $run['start'][1] >= $run['end'][1];
-                    $seg[$northIsStart ? 'entry' : 'exit'] = $sky;
+                    $side = $run['start'][1] >= $run['end'][1] ? 'entry' : 'exit';
+                    $seg[$side] = $sky;
+                    $seg[$side . '_options'] = [$sky];
                 }
             }
             $segments[] = $seg;
@@ -506,19 +506,25 @@ class TripPlannerService
         return $c ? $c[count($c) - 1] : $step['maneuver']['location'];
     }
 
-    /** Nearest plaza of one toll system to a point [lng, lat]. */
-    private function nearestPlaza(string $system, array $lngLat): ?array
+    /** How much further than the nearest plaza a fallback plaza may be. */
+    private const PLAZA_FALLBACK_KM = 1.5;
+
+    /**
+     * Plazas of one toll system near a point [lng, lat], nearest first: the nearest
+     * one (if within $maxKm) and any others at most PLAZA_FALLBACK_KM further.
+     */
+    private function nearbyPlazas(string $system, array $lngLat, float $maxKm): array
     {
-        $best = null;
-        $bestKm = INF;
+        $byKm = [];
         foreach ($this->plazasBySystem()[$system] ?? [] as $p) {
-            $km = self::haversineKm($lngLat[1], $lngLat[0], $p['lat'], $p['lng']);
-            if ($km < $bestKm) {
-                $bestKm = $km;
-                $best = $p;
-            }
+            $byKm[] = ['plaza' => $p, 'km' => self::haversineKm($lngLat[1], $lngLat[0], $p['lat'], $p['lng'])];
         }
-        return $best ? ['plaza' => $best, 'km' => $bestKm] : null;
+        usort($byKm, fn ($a, $b) => $a['km'] <=> $b['km']);
+        if (!$byKm || $byKm[0]['km'] > $maxKm) {
+            return [];
+        }
+        $limit = min($maxKm, $byKm[0]['km'] + self::PLAZA_FALLBACK_KM);
+        return array_column(array_filter($byKm, fn ($c) => $c['km'] <= $limit), 'plaza');
     }
 
     /** The plaza TRB labels "SKY" (stored as "Skyway (Elevated)"), if this system has one. */
@@ -572,6 +578,16 @@ class TripPlannerService
                 $s['note'] = "Entry and exit resolve to the same plaza ({$s['entry']['name']}) on {$s['label']}.";
             } else {
                 $rate = $this->lookupRate($classNumber, $s['entry']['plaza_id'], $s['exit']['plaza_id']);
+                // No fare for the nearest pair: try the nearby fallback plazas, nearest first.
+                foreach ($rate === null ? $s['entry_options'] : [] as $in) {
+                    foreach ($s['exit_options'] as $out) {
+                        if ($in['plaza_id'] !== $out['plaza_id']
+                            && ($r = $this->lookupRate($classNumber, $in['plaza_id'], $out['plaza_id'])) !== null) {
+                            [$s['entry'], $s['exit'], $rate] = [$in, $out, $r];
+                            break 2;
+                        }
+                    }
+                }
                 if ($rate === null) {
                     $s['note'] = "TRB publishes no fare for {$s['entry']['name']} → {$s['exit']['name']}.";
                 } else {
@@ -584,7 +600,7 @@ class TripPlannerService
                 $complete = false;
                 $notes[] = $s['note'];
             }
-            unset($s['known']);
+            unset($s['known'], $s['entry_options'], $s['exit_options']);
         }
         unset($s);
         $segments = array_values($segments);

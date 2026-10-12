@@ -10,8 +10,9 @@ const linkStyle = { color: 'var(--green-deep)', fontWeight: 600, textDecoration:
  * Motorist log-in without leaving the page (used by Plan a Trip for visitors).
  * `reason` is the line under the title, e.g. why logging in is needed right now.
  * onLoggedIn runs after a successful log-in; the page keeps its state.
+ * onRegister (optional) switches to a register pop-up instead of the Register page.
  */
-export default function LoginModal({ reason, onClose, onLoggedIn }) {
+export default function LoginModal({ reason, onClose, onLoggedIn, onRegister }) {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -46,7 +47,7 @@ export default function LoginModal({ reason, onClose, onLoggedIn }) {
 
         <div className="field">
           <label htmlFor="lm-email">Email Address</label>
-          <input id="lm-email" type="email" placeholder="juan.delacruz@email.com" value={form.email} onChange={set('email')} autoComplete="email" autoFocus />
+          <input id="lm-email" type="email" placeholder="@email.com" value={form.email} onChange={set('email')} autoComplete="email" autoFocus />
         </div>
         <div className="field" style={{ marginBottom: 0 }}>
           <label htmlFor="lm-password">Password</label>
@@ -63,7 +64,10 @@ export default function LoginModal({ reason, onClose, onLoggedIn }) {
         </div>
         <GoogleButton onSuccess={onLoggedIn} />
         <p className="muted" style={{ textAlign: 'center', marginTop: 16 }}>
-          Don't have an account? <Link to="/register" style={linkStyle}>Register</Link>
+          Don't have an account?{' '}
+          {onRegister
+            ? <button type="button" className="link-btn" onClick={onRegister} disabled={busy}>Register</button>
+            : <Link to="/register" style={linkStyle}>Register</Link>}
         </p>
       </form>
     </div>

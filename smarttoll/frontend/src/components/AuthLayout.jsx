@@ -1,14 +1,11 @@
-import Icon from './Icon.jsx';
+import Brand from './Brand.jsx';
 
 // Shared two-column shell for Log In / Register / Forgot Password / Admin Log In.
 export default function AuthLayout({ visual, visualStyle, admin = false, children }) {
   return (
     <div className="auth-shell">
       <div className="auth-visual" style={visualStyle}>
-        <div className="brand" style={{ marginBottom: 48, position: 'relative' }}>
-          <span className="mark"><Icon name="menu" size={18} stroke={2.5} /></span>
-          SmartToll {admin && <span className="brand-tag">Admin</span>}
-        </div>
+        <Brand admin={admin} style={{ marginBottom: 48, position: 'relative' }} />
         {visual}
       </div>
       <div className="auth-form-side">

@@ -113,6 +113,21 @@ class TollComputationTest extends TestCase
         $this->assertSame([], $toll['notes']);
     }
 
+    public function test_a_nearby_plaza_is_used_when_the_nearest_one_has_no_fare(): void
+    {
+        // Joining Skyway Stage 3 by Plaza Dilao, which only has a fare to Buendia;
+        // Plaza Azul/Nagtahan, ~500 m away, has one to Quezon Avenue.
+        $route = $this->stepsRoute([
+            ['Skyway Stage 3', [[121.0000, 14.5800], [121.0086, 14.6365]], 8500],
+        ]);
+
+        $toll = $this->planner()->priceRoute($route, 1);
+        $this->assertTrue($toll['complete']);
+        $this->assertSame('Plaza Azul/Nagtahan', $toll['segments'][0]['entry']['name']);
+        $this->assertSame('Quezon Avenue', $toll['segments'][0]['exit']['name']);
+        $this->assertNotNull($toll['segments'][0]['fee']);
+    }
+
     public function test_the_cavitex_calax_link_road_counts_as_cavitex(): void
     {
         $route = $this->stepsRoute([

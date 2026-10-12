@@ -12,7 +12,7 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "http://192.168.100.69:8000" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://smart-toll-production.up.railway.app" }
     }
   }
 }

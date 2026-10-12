@@ -31,7 +31,8 @@ COPY docker/start.sh /usr/local/bin/smarttoll-start
 RUN chmod +x /usr/local/bin/smarttoll-start
 # Production defaults (override any of them in the host's variables). Cache and sessions in
 # files and jobs run immediately, so no extra database tables are needed.
-ENV APP_ENV=production APP_DEBUG=false LOG_CHANNEL=stderr \
+# DB_CONNECTION: Laravel's own default is SQLite; SmartToll uses MySQL (address in DB_URL).
+ENV APP_NAME=SmartToll APP_ENV=production APP_DEBUG=false LOG_CHANNEL=stderr DB_CONNECTION=mysql \
     CACHE_STORE=file SESSION_DRIVER=file QUEUE_CONNECTION=sync APP_TIMEZONE=Asia/Manila
 EXPOSE 8080
 CMD ["smarttoll-start"]

@@ -29,7 +29,7 @@ flowchart LR
         NOM["Nominatim<br/>place names"]
         OSM["OpenStreetMap<br/>map tiles"]
         GOO["Google Identity<br/>sign-in"]
-        SMTP["Gmail SMTP<br/>reset emails"]
+        SMTP["Brevo email API<br/>reset emails"]
         TRB["TRB website<br/>published rates"]
     end
     W -- "HTTPS + token" --> API

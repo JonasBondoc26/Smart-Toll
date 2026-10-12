@@ -32,7 +32,7 @@ It was built as a capstone project at Holy Angel University.
 ## Features
 
 **Motorist**
-- **Accounts:** register, log in (email and password, or **Continue with Google**), forgot password / reset by email, and a profile page to edit your name, email and password. Logging out asks for confirmation.
+- **Accounts:** register, log in (email and password, or **Continue with Google**), forgot password / reset by email, and a profile page to edit your name, email and password. Accounts made with Google have no password at first, so Profile asks only for a new one (no "current password"). Logging out asks for confirmation.
 - **Vehicles:** add, edit or delete vehicles with their toll class (Class 1, 2 or 3).
 - **RFID accounts:** link one Easytrip or Autosweep account to each vehicle and record its balance.
 - **Plan a Trip** (works without an account: visitors pick a vehicle class; saving asks them to log in in a pop-up)
@@ -360,6 +360,25 @@ php artisan smarttoll:test-mail you@example.com --reset    # the actual "Reset y
 
 Reset links expire after **30 minutes**. The email design is in `smarttoll-api/resources/views/emails/reset-password.blade.php`.
 
+### Emails from the online server (Brevo)
+
+Railway (and most free hosts) block the SMTP ports, so Gmail SMTP only works on your own computer. Online, SmartToll sends emails through **Brevo's web API** instead (free plan: 300 emails a day, no card needed):
+
+1. Sign up at https://www.brevo.com and choose the **Free** plan.
+2. **Senders, Domains & Dedicated IPs → Senders → Add a sender** with your email, then click the link Brevo emails you so it shows **Verified**.
+3. **SMTP & API → API Keys → Generate a new API key.** It starts with `xkeysib-` (a key starting with `xsmtpsib-` is the SMTP key and won't work).
+4. **Security → Authorized IPs:** turn the restriction off. Railway's address changes, and Brevo would reject it.
+5. Set the variables (on Railway, or in `.env` to try it locally):
+
+```env
+MAIL_MAILER=brevo
+BREVO_API_KEY=xkeysib-...
+MAIL_FROM_ADDRESS=the.sender@you.verified
+MAIL_FROM_NAME="SmartToll"
+```
+
+Brevo → **Transactional → Logs** shows every email the server sent and whether it was delivered.
+
 ---
 
 ## Sign in with Google
@@ -512,7 +531,7 @@ Online, the website and the mobile app work from anywhere (not only on your Wi-F
    | `DB_URL` | `${{MySQL.MYSQL_URL}}` (Railway fills in the database address) |
    | `SEED_DEMO` | `1` for the first start (adds the demo accounts once), then delete it |
    | `GOOGLE_CLIENT_ID` | the same as in your local `.env` (optional) |
-   | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | the same as in your local `.env`, for password-reset emails |
+   | `MAIL_MAILER`, `BREVO_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | `brevo` and your Brevo details, for password-reset emails (Railway blocks SMTP; see [Emails from the online server](#emails-from-the-online-server-brevo)) |
 
    Debug mode is off and cache/sessions use files by default (set in the `Dockerfile`).
 4. **Get the address.** Service → **Settings** → **Networking** → **Generate Domain**, e.g. `smarttoll-production.up.railway.app`. Add two more variables with it: `APP_URL` and `FRONTEND_URL`, both `https://` + that domain. Railway redeploys.
@@ -547,7 +566,7 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 
 ## Automated tests
 
-42 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
+43 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
 
 ```bash
 php artisan test
@@ -558,7 +577,7 @@ What they cover:
 - **Trips and RFID:** saving a trip re-prices it on the server (a fee sent by the browser is ignored), deducts the toll, refuses an insufficient balance and changes nothing, keeps what's needed to plan a trip again, and keeps each motorist's trips private. Visitors can plan but not save.
 - **Admin:** only admins reach the admin API; duplicate and cross-expressway rates are rejected; classes and plazas still in use can't be deleted; every rate change is written to the change log; CSV and TRB imports change nothing on preview and log everything they apply.
 - **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions (saved with the trip), and a motorist off the route gets new directions without the toll changing.
-- **Accounts:** saved routes are private to their owner; Google sign-in creates one account per person and rejects tokens made for other apps, unverified emails and admin accounts.
+- **Accounts:** saved routes are private to their owner; Google sign-in creates one account per person and rejects tokens made for other apps, unverified emails and admin accounts; a Google account sets its first password without a current one, and needs it from then on.
 
 The tests use a separate database, **`smarttoll_test`**, built automatically from `database/smarttoll.sql`. They never touch the real `smarttoll` database, and each test's changes are rolled back. The routing server (OSRM) and Google are replaced by recorded answers (`tests/Fixtures/`), so the tests run offline.
 
@@ -582,10 +601,13 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 | "The routing service found no route" or slow routes | The public OSRM server allows about one request per second and can be busy. Wait a moment and try again. |
 | Railway: the deploy fails at start with a database error | Check `DB_URL` is `${{MySQL.MYSQL_URL}}` and that the MySQL service is running in the same project. |
 | Railway: "No application encryption key has been specified" | Add `APP_KEY` (from `php artisan key:generate --show`). |
+| Forgot password says the link was sent, but no email arrives | The reply is the same for any email (so nobody can test which accounts exist); use an account with a real inbox. Online, check `MAIL_MAILER=brevo`, an `xkeysib-` API key, a **verified** sender and Brevo's Authorized IPs turned off, then look in Brevo → Transactional → Logs and your spam folder. |
+| Forgot password: "We could not send the email right now" | The mail settings are wrong or the mail service refused it. The reason is in the logs (Railway: Deployments → View logs). |
 | Mobile app: "Cannot reach the SmartToll server" | Start the API with `php artisan serve --host 0.0.0.0`, check that the phone and the computer are on the same Wi-Fi, and allow PHP through the Windows firewall. The log-in screen shows the address the app is using. |
 | Mobile app: "Google sign-in works in the installed SmartToll app, not in Expo Go" | Expected in Expo Go. Build and install the development app, see [Google sign-in on the phone](#google-sign-in-on-the-phone). |
 | Mobile app: "Google doesn't recognise this build of SmartToll" | The Android OAuth client's package name must be `ph.edu.hau.smarttoll` and its SHA-1 must match `eas credentials -p android`. |
 | Mobile app: Start Trip says location access is needed | Allow location for SmartToll (or Expo Go) in the phone's settings. |
+| Mobile app closes at once after choosing "Allow all the time" (older APKs) | Fixed in the current code (a patch to expo-location in `smarttoll/mobile/patches/`, applied on every install). Clear the app's storage (Settings → Apps → SmartToll → Storage) or reinstall, then build a new APK. |
 | MySQL won't start in XAMPP (port 3306 busy) | Another MySQL is running. Stop it, or change the port in XAMPP and `DB_PORT` in `.env`. |
 
 ---

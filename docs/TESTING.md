@@ -1,22 +1,23 @@
 # SmartToll automated tests
 
-*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **42 of 42 passed**, 172 assertions.*
+*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **43 of 43 passed**, 182 assertions.*
 
 The tests use a separate database (`smarttoll_test`) built from `database/smarttoll.sql`; every test runs in a transaction that is rolled back. Outside services are replaced by recorded answers (a real OSRM route for Quezon City → San Fernando via NLEX, Google token checks), so the results are repeatable and run offline.
 
 | Area | Tests | Passed |
 |---|---|---|
-| Accounts: saved routes, Google sign-in | 5 | 5 |
+| Accounts: saved routes, Google sign-in, passwords | 6 | 6 |
 | Administration: access, rate rules, change log, CSV/TRB import | 10 | 10 |
 | Toll computation: TRB fares, segment detection, route comparison | 12 | 12 |
 | Trips and RFID: planning, saving, deduction, tracking, directions | 15 | 15 |
-| **Total** | **42** | **42** |
+| **Total** | **43** | **43** |
 
-## Accounts: saved routes, Google sign-in
+## Accounts: saved routes, Google sign-in, passwords
 
 - ✅ A motorist can save list and delete routes
 - ✅ Saved routes are private
 - ✅ Google sign in creates a motorist once
+- ✅ A google account sets a password without a current one
 - ✅ Google tokens for another app are rejected
 - ✅ Google sign in is refused for unverified emails and admins
 

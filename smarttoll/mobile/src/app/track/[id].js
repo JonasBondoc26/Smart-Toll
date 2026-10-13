@@ -174,6 +174,14 @@ export default function TrackTrip() {
       <Button title="Stop Following" icon="stop-circle" variant="danger" onPress={stop} />
     </>
   );
+  // Before starting: portrait reads top to bottom (plazas and how it works, then Start);
+  // landscape puts Start right under the trip details so it's visible without scrolling.
+  const startButtons = (
+    <>
+      <Button title="Start Trip" icon="navigate" variant="amber" onPress={() => start(false)} busy={starting} />
+      <Button title="Simulate Trip (demo)" icon="play-circle" variant="text" onPress={() => start(true)} disabled={starting} style={{ marginTop: 8, marginBottom: landscape ? 14 : 0 }} />
+    </>
+  );
   const notStarted = (
     <>
       <Card>
@@ -182,12 +190,12 @@ export default function TrackTrip() {
         <Row label="Travel time" value={minutes(trip.estimated_travel_time)} />
         <Row label="Toll (already deducted)" value={peso(trip.total_toll_fee)} />
       </Card>
-      <Button title="Start Trip" icon="navigate" variant="amber" onPress={() => start(false)} busy={starting} />
-      <Button title="Simulate Trip (demo)" icon="play-circle" variant="text" onPress={() => start(true)} disabled={starting} style={{ marginTop: 8, marginBottom: 14 }} />
+      {landscape && startButtons}
       <PlazaList plazas={plazasOf(trip)} passed={{}} />
       <T.Muted style={{ marginBottom: 12 }}>
         SmartToll follows you with GPS along this route, gives turn-by-turn directions, warns you before you enter and exit each toll plaza, and marks the trip completed when you reach {trip.destination}. Choose voice, text and/or graphic alerts while driving. Keep the app open on screen.
       </T.Muted>
+      {!landscape && startButtons}
     </>
   );
 

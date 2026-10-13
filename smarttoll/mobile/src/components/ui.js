@@ -9,13 +9,17 @@ import { colors, fonts, radius, shadow, themed } from '../lib/theme';
 
 /* ---------- Layout ---------- */
 
-/** A scrolling page on the concrete background, with optional pull-to-refresh. */
+/**
+ * A scrolling page on the concrete background, with optional pull-to-refresh. In landscape the
+ * sides get extra padding where the camera cut-out or the navigation buttons are.
+ */
 export function Screen({ children, onRefresh, refreshing = false, padded = true, style, scrollEnabled = true, background = colors.concrete }) {
+  const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         scrollEnabled={scrollEnabled}
-        contentContainerStyle={[padded && { padding: 16, paddingBottom: 32 }, style]}
+        contentContainerStyle={[padded && { padding: 16, paddingBottom: 32 }, { paddingLeft: (padded ? 16 : 0) + insets.left, paddingRight: (padded ? 16 : 0) + insets.right }, style]}
         keyboardShouldPersistTaps="handled"
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.greenDeep} colors={[colors.greenDeep]} /> : undefined}
       >

@@ -27,7 +27,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.greenDeep,
         tabBarInactiveTintColor: colors.inkFaint,
         tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
-        tabBarStyle: { borderTopColor: colors.line, backgroundColor: colors.surface, height: 64 + insets.bottom, paddingTop: 6, paddingBottom: Math.max(insets.bottom, 8) },
+        tabBarStyle: { borderTopColor: colors.line, backgroundColor: colors.surface, height: 64 + insets.bottom, paddingTop: 6, paddingBottom: Math.max(insets.bottom, 8), paddingLeft: insets.left, paddingRight: insets.right },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home', headerTitle: () => <Brand size={28} />, tabBarIcon: icon('home') }} />

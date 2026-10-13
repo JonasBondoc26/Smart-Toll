@@ -1,6 +1,7 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import RouteMap from '../../components/RouteMap';
@@ -19,6 +20,10 @@ import { colors, fonts, themed, useTheme } from '../../lib/theme';
  * destination with spoken turn-by-turn directions, shows the next toll plaza, re-routes
  * after a wrong turn, and marks the trip completed on arrival.
  *
+ * Portrait: one scrolling column. Landscape (when the phone is turned and auto-rotate is on):
+ * the map fills the left side and a driver panel on the right shows the next turn, distance,
+ * time and arrival first. Turning the phone only changes the layout; the trip keeps going.
+ *
  * The screen itself only follows the trip session (status, alerts, errors). The parts that
  * change on every GPS fix (Live… components below) read the live values themselves, so a fix
  * redraws them and not the whole screen.
@@ -34,8 +39,15 @@ export default function TrackTrip() {
   const [headingUp, setHeadingUp] = useState(true);   // map turns with the direction of travel
   const [touchingMap, setTouchingMap] = useState(false);   // pause page scrolling while a finger is on the map
   const [bgNote, setBgNote] = useState('');
+  const { width, height } = useWindowDimensions();
+  const landscape = width > height;
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const mine = tracking.active && String(tracking.tripId) === String(id);
+  // Landscape uses the whole screen for the map and panel (the panel has its own back button).
+  const fullScreen = landscape && !!trip?.map;
+  useLayoutEffect(() => { navigation.setOptions({ headerShown: !fullScreen }); }, [navigation, fullScreen]);
   const load = useCallback(() => api(`/trips/${id}`).then((d) => setTrip(d.trip)).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (tracking.status === 'arrived' && mine) load(); }, [tracking.status]);
@@ -93,39 +105,42 @@ export default function TrackTrip() {
     if (!ok) setBgNote('Set location to "Allow all the time" for SmartToll in the phone settings. Until then, keep SmartToll open on screen.');
   };
 
-  return (
-    <Screen scrollEnabled={!touchingMap}>
-      <T.H2>{trip.origin} → {trip.destination}</T.H2>
+  // ---- Pieces shared by both layouts ----
+  const title = (
+    <>
+      <T.H2 numberOfLines={landscape ? 1 : undefined}>{trip.origin} → {trip.destination}</T.H2>
       <View style={[styles.row, { marginBottom: 12 }]}>
         <StatusBadge status={arrived ? 'completed' : mine ? 'in_progress' : trip.status} />
-        <T.Small>{trip.vehicle_name} · {peso(trip.total_toll_fee)} toll (paid when saved)</T.Small>
+        <T.Small style={{ flexShrink: 1 }} numberOfLines={1}>{trip.vehicle_name} · {peso(trip.total_toll_fee)} toll (paid when saved)</T.Small>
       </View>
-
+    </>
+  );
+  const notices = (
+    <>
       <Notice tone="error">{error || (mine ? tracking.error : '')}</Notice>
       {mine && tracking.status === 'tracking' && !tracking.hasPosition && (
         <Notice tone="info">Waiting for a GPS signal… Make sure location is on.</Notice>
       )}
-
-      {driving && (
-        <>
-          <AlertChoice alerts={tracking.alerts} onChange={tracking.setAlerts} />
-          <LiveTollAlert alerts={tracking.alerts} />
-          <DirectionBanner />
-        </>
-      )}
-      <LiveMap
-        mine={mine} data={mapData} height={arrived ? 240 : 330} headingUp={headingUp}
-        follow={driving && follow && tracking.hasPosition}
-        onUserMove={stopFollowing} onTouching={setTouchingMap} night={dark}
-      />
-      {driving && (
-        <View style={[styles.row, { marginTop: -6, marginBottom: 14, flexWrap: 'wrap', gap: 8 }]}>
-          <Button small variant="secondary" icon={follow ? 'lock-closed' : 'locate'} title={follow ? 'Following you' : 'Follow my position'}
-            onPress={() => setFollow((f) => !f)} />
-          <Button small variant="secondary" icon={headingUp ? 'navigate' : 'compass'} title={headingUp ? 'Heading up' : 'North up'}
-            onPress={() => setHeadingUp((h) => !h)} />
-        </View>
-      )}
+    </>
+  );
+  const map = (
+    <LiveMap
+      mine={mine} data={mapData} headingUp={headingUp}
+      height={landscape ? null : arrived ? 240 : 330} style={landscape ? styles.mapLandscape : undefined}
+      follow={driving && follow && tracking.hasPosition}
+      onUserMove={stopFollowing} onTouching={setTouchingMap} night={dark}
+    />
+  );
+  const mapButtons = driving && (
+    <View style={[styles.row, landscape ? styles.mapButtonsOver : { marginTop: -6, marginBottom: 14 }, { flexWrap: 'wrap', gap: 8 }]}>
+      <Button small variant="secondary" icon={follow ? 'lock-closed' : 'locate'} title={follow ? 'Following you' : 'Follow my position'}
+        onPress={() => setFollow((f) => !f)} />
+      <Button small variant="secondary" icon={headingUp ? 'navigate' : 'compass'} title={headingUp ? 'Heading up' : 'North up'}
+        onPress={() => setHeadingUp((h) => !h)} />
+    </View>
+  );
+  const screenOff = (
+    <>
       {driving && !tracking.simulated && tracking.backgroundAvailable && (
         tracking.background ? (
           <View style={[styles.row, { marginBottom: 12 }]}>
@@ -140,39 +155,102 @@ export default function TrackTrip() {
         )
       )}
       {bgNote ? <Notice tone="warn">{bgNote}</Notice> : null}
+    </>
+  );
+  const arrivedCard = (
+    <Card style={{ alignItems: 'center', paddingVertical: 22 }}>
+      <Ionicons name="flag" size={40} color={colors.greenDeep} />
+      <Text style={styles.arrived}>You have arrived</Text>
+      <T.Muted style={{ textAlign: 'center' }}>
+        {trip.destination}{trip.completed_at ? ` · ${time(trip.completed_at)}` : ''}{'\n'}The trip is marked completed in your trip history.
+      </T.Muted>
+      <Button title="View Trip" icon="document-text" variant="secondary" onPress={() => router.replace(`/trip/${id}`)} style={{ marginTop: 16, alignSelf: 'stretch' }} />
+      {mine && <Button title="Done" onPress={() => { tracking.stop(); router.back(); }} style={{ marginTop: 10, alignSelf: 'stretch' }} />}
+    </Card>
+  );
+  const stopButton = (
+    <>
+      {tracking.simulated && <Badge tone="warn" style={{ marginBottom: 12 }}>Simulated trip</Badge>}
+      <Button title="Stop Following" icon="stop-circle" variant="danger" onPress={stop} />
+    </>
+  );
+  const notStarted = (
+    <>
+      <Card>
+        <CardTitle icon="information-circle">Your trip</CardTitle>
+        <Row first label="Distance" value={`${Number(trip.route_distance).toFixed(1)} km`} />
+        <Row label="Travel time" value={minutes(trip.estimated_travel_time)} />
+        <Row label="Toll (already deducted)" value={peso(trip.total_toll_fee)} />
+      </Card>
+      <Button title="Start Trip" icon="navigate" variant="amber" onPress={() => start(false)} busy={starting} />
+      <Button title="Simulate Trip (demo)" icon="play-circle" variant="text" onPress={() => start(true)} disabled={starting} style={{ marginTop: 8, marginBottom: 14 }} />
+      <PlazaList plazas={plazasOf(trip)} passed={{}} />
+      <T.Muted style={{ marginBottom: 12 }}>
+        SmartToll follows you with GPS along this route, gives turn-by-turn directions, warns you before you enter and exit each toll plaza, and marks the trip completed when you reach {trip.destination}. Choose voice, text and/or graphic alerts while driving. Keep the app open on screen.
+      </T.Muted>
+    </>
+  );
 
-      {arrived ? (
-        <Card style={{ alignItems: 'center', paddingVertical: 22 }}>
-          <Ionicons name="flag" size={40} color={colors.greenDeep} />
-          <Text style={styles.arrived}>You have arrived</Text>
-          <T.Muted style={{ textAlign: 'center' }}>
-            {trip.destination}{trip.completed_at ? ` · ${time(trip.completed_at)}` : ''}{'\n'}The trip is marked completed in your trip history.
-          </T.Muted>
-          <Button title="View Trip" icon="document-text" variant="secondary" onPress={() => router.replace(`/trip/${id}`)} style={{ marginTop: 16, alignSelf: 'stretch' }} />
-          {mine && <Button title="Done" onPress={() => { tracking.stop(); router.back(); }} style={{ marginTop: 10, alignSelf: 'stretch' }} />}
-        </Card>
-      ) : mine ? (
+  // ---- Landscape: the map fills the left, a driver panel on the right ----
+  // Glanceable order while driving: next turn, toll alert, distance / time / arrival, next plaza;
+  // the settings and the plaza checklist are further down. The header is hidden for more map.
+  if (landscape) {
+    return (
+      <View style={[styles.landscape, { paddingLeft: insets.left, paddingRight: insets.right }]}>
+        <View style={[styles.mapPane, { paddingTop: 10 + insets.top, paddingBottom: 10 + insets.bottom }]}>
+          {map}
+          {mapButtons}
+        </View>
+        <ScrollView style={styles.panel} contentContainerStyle={{ paddingTop: 10 + insets.top, paddingBottom: 16 + insets.bottom, paddingRight: 10 }}>
+          <View style={[styles.row, { gap: 8, marginBottom: 2 }]}>
+            <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back" style={styles.back}>
+              <Ionicons name="arrow-back" size={20} color={colors.ink} />
+            </Pressable>
+            <View style={{ flex: 1 }}>{title}</View>
+          </View>
+          {notices}
+          {driving && (
+            <>
+              <DirectionBanner />
+              <LiveTollAlert alerts={tracking.alerts} />
+            </>
+          )}
+          {arrived ? arrivedCard : mine ? (
+            <>
+              <LiveProgress route={r} list={false} />
+              {stopButton}
+              <View style={{ height: 14 }} />
+              {driving && <AlertChoice alerts={tracking.alerts} onChange={tracking.setAlerts} />}
+              {screenOff}
+              <LivePlazaList route={r} />
+            </>
+          ) : notStarted}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ---- Portrait ----
+  return (
+    <Screen scrollEnabled={!touchingMap}>
+      {title}
+      {notices}
+      {driving && (
         <>
-          <LiveProgress route={r} />
-          {tracking.simulated && <Badge tone="warn" style={{ marginBottom: 12 }}>Simulated trip</Badge>}
-          <Button title="Stop Following" icon="stop-circle" variant="danger" onPress={stop} />
-        </>
-      ) : (
-        <>
-          <Card>
-            <CardTitle icon="information-circle">Your trip</CardTitle>
-            <Row first label="Distance" value={`${Number(trip.route_distance).toFixed(1)} km`} />
-            <Row label="Travel time" value={minutes(trip.estimated_travel_time)} />
-            <Row label="Toll (already deducted)" value={peso(trip.total_toll_fee)} />
-          </Card>
-          <PlazaList plazas={plazasOf(trip)} passed={{}} />
-          <T.Muted style={{ marginBottom: 12 }}>
-            SmartToll follows you with GPS along this route, gives turn-by-turn directions, warns you before you enter and exit each toll plaza, and marks the trip completed when you reach {trip.destination}. Choose voice, text and/or graphic alerts while driving. Keep the app open on screen.
-          </T.Muted>
-          <Button title="Start Trip" icon="navigate" variant="amber" onPress={() => start(false)} busy={starting} />
-          <Button title="Simulate Trip (demo)" icon="play-circle" variant="text" onPress={() => start(true)} disabled={starting} style={{ marginTop: 8 }} />
+          <AlertChoice alerts={tracking.alerts} onChange={tracking.setAlerts} />
+          <LiveTollAlert alerts={tracking.alerts} />
+          <DirectionBanner />
         </>
       )}
+      {map}
+      {mapButtons}
+      {screenOff}
+      {arrived ? arrivedCard : mine ? (
+        <>
+          <LiveProgress route={r} />
+          {stopButton}
+        </>
+      ) : notStarted}
     </Screen>
   );
 }
@@ -285,14 +363,16 @@ function LiveMap({ mine, ...props }) {
 }
 
 /** Distance and time left, plazas passed, the next toll plaza and the plaza checklist. */
-function LiveProgress({ route: r }) {
+function LiveProgress({ route: r, list = true }) {
   const { remaining, passed, travelled } = useTracking();
   const nextPlaza = r.plazas.find((p) => !passed[p.key] && p.along != null && p.along >= travelled);
+  const minsLeft = (r.durationS / 60) * (r.total ? remaining / r.total : 0);
+  const eta = new Date(Date.now() + minsLeft * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   return (
     <>
       <View style={styles.stats}>
         <Stat label="Distance left" value={km(remaining)} />
-        <Stat label="Time left" value={minutes((r.durationS / 60) * (r.total ? remaining / r.total : 0))} />
+        <Stat label={`Arrive ${eta}`} value={minutes(minsLeft)} />
         <Stat label="Plazas" value={`${Object.keys(passed).length}/${r.plazas.length}`} />
       </View>
 
@@ -306,9 +386,15 @@ function LiveProgress({ route: r }) {
         </Card>
       )}
 
-      <PlazaList plazas={r.plazas} passed={passed} />
+      {list && <PlazaList plazas={r.plazas} passed={passed} />}
     </>
   );
+}
+
+/** The toll plaza checklist on its own (landscape shows it below the trip controls). */
+function LivePlazaList({ route: r }) {
+  const { passed } = useTracking();
+  return <PlazaList plazas={r.plazas} passed={passed} />;
 }
 
 const plazasOf = (trip) => trip.segments.flatMap((s, i) => [
@@ -351,6 +437,12 @@ const Stat = memo(function Stat({ label, value }) {
 
 const styles = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  landscape: { flex: 1, flexDirection: 'row', backgroundColor: colors.concrete },
+  mapPane: { flex: 1.35, paddingLeft: 10, paddingRight: 8 },
+  mapLandscape: { flex: 1, marginBottom: 0 },
+  mapButtonsOver: { position: 'absolute', left: 20, bottom: 20 },
+  panel: { flex: 1, paddingLeft: 2 },
+  back: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, alignSelf: 'flex-start' },
   stats: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   stat: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line, paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center' },
   statValue: { fontFamily: fonts.signHeavy, fontSize: 22, color: colors.ink },

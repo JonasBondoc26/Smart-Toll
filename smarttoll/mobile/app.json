@@ -4,7 +4,7 @@
     "slug": "smarttoll",
     "version": "1.0.0",
     "scheme": "smarttoll",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {

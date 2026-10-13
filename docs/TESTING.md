@@ -69,4 +69,4 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 
 ## Manual and end-to-end checks
 
-Besides the automated tests, the website and the mobile app (Expo web build at phone size) were exercised end to end in Chrome during development: registering, adding vehicles and RFID accounts, planning and saving Quezon City → San Fernando (₱266 deducted), GPS trip tracking in simulation (37 spoken directions, toll entry/exit warnings, arrival marks the trip completed), heading-up map rotation and night mode, and map smoothness with the CPU slowed 4× (full map refreshes cut from 154/s to 2.8/s).
+Besides the automated tests, the website and the mobile app (Expo web build at phone size) were exercised end to end in Chrome during development: registering, adding vehicles and RFID accounts, planning and saving Quezon City → San Fernando (₱266 deducted), GPS trip tracking in simulation (37 spoken directions, toll entry/exit warnings, arrival marks the trip completed), heading-up map rotation, light and dark mode, and map smoothness with the CPU slowed 4× (full map refreshes cut from 154/s to 2.8/s).

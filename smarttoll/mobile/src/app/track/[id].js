@@ -7,7 +7,6 @@ import RouteMap from '../../components/RouteMap';
 import StatusBadge from '../../components/StatusBadge';
 import { Badge, Button, Card, CardTitle, Loading, Notice, Row, Screen, T } from '../../components/ui';
 import { useTracking } from '../../lib/tracking';
-import { tripPalette, useNightMode } from '../../lib/night';
 import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
 import { km, minutes, peso, time } from '../../lib/format';
@@ -29,7 +28,6 @@ export default function TrackTrip() {
   const [follow, setFollow] = useState(true);
   const [headingUp, setHeadingUp] = useState(true);   // map turns with the direction of travel
   const [touchingMap, setTouchingMap] = useState(false);   // pause page scrolling while a finger is on the map
-  const nightMode = useNightMode();
   const [bgNote, setBgNote] = useState('');
 
   const mine = tracking.active && String(tracking.tripId) === String(id);
@@ -77,9 +75,8 @@ export default function TrackTrip() {
   } : null), [trip, mine, tracking.routeVersion]);   // the live position is passed separately, so GPS updates don't redraw the route
 
   const driving = mine && tracking.status === 'tracking';
-  // Dark look: the app is in Dark appearance, or night mode applies while driving.
-  const dark = theme.dark || (driving && nightMode.night);
-  const P = useMemo(() => tripPalette(dark), [dark]);
+  // Light or Dark comes from Account → Appearance, like every other screen (the map goes dark too).
+  const dark = theme.dark;
 
   if (!trip) return <Screen>{error ? <Notice tone="error">{error}</Notice> : <Loading />}</Screen>;
   if (!trip.map) return <Screen><Notice tone="warn">This trip was saved before SmartToll kept trip routes, so it can't be followed with GPS.</Notice></Screen>;
@@ -93,11 +90,11 @@ export default function TrackTrip() {
   };
 
   return (
-    <Screen scrollEnabled={!touchingMap} background={P.bg}>
-      <T.H2 style={{ color: P.text }}>{trip.origin} → {trip.destination}</T.H2>
+    <Screen scrollEnabled={!touchingMap}>
+      <T.H2>{trip.origin} → {trip.destination}</T.H2>
       <View style={[styles.row, { marginBottom: 12 }]}>
         <StatusBadge status={arrived ? 'completed' : mine ? 'in_progress' : trip.status} />
-        <T.Small style={{ color: P.faint }}>{trip.vehicle_name} · {peso(trip.total_toll_fee)} toll (paid when saved)</T.Small>
+        <T.Small>{trip.vehicle_name} · {peso(trip.total_toll_fee)} toll (paid when saved)</T.Small>
       </View>
 
       <Notice tone="error">{error || (mine ? tracking.error : '')}</Notice>
@@ -107,9 +104,8 @@ export default function TrackTrip() {
 
       {driving && (
         <>
-          <AlertChoice alerts={tracking.alerts} onChange={tracking.setAlerts} P={P} />
-          <NightChoice mode={nightMode.mode} onChange={nightMode.setMode} P={P} />
-          <TollAlert alert={tracking.tollAlert} alerts={tracking.alerts} P={P} />
+          <AlertChoice alerts={tracking.alerts} onChange={tracking.setAlerts} />
+          <TollAlert alert={tracking.tollAlert} alerts={tracking.alerts} />
           <DirectionBanner tracking={tracking} />
         </>
       )}
@@ -123,22 +119,20 @@ export default function TrackTrip() {
       {driving && (
         <View style={[styles.row, { marginTop: -6, marginBottom: 14, flexWrap: 'wrap', gap: 8 }]}>
           <Button small variant="secondary" icon={follow ? 'lock-closed' : 'locate'} title={follow ? 'Following you' : 'Follow my position'}
-            onPress={() => setFollow((f) => !f)} textColor={dark ? colors.amber : undefined}
-            style={dark && { backgroundColor: P.card, borderColor: P.line }} />
+            onPress={() => setFollow((f) => !f)} />
           <Button small variant="secondary" icon={headingUp ? 'navigate' : 'compass'} title={headingUp ? 'Heading up' : 'North up'}
-            onPress={() => setHeadingUp((h) => !h)} textColor={dark ? colors.amber : undefined}
-            style={dark && { backgroundColor: P.card, borderColor: P.line }} />
+            onPress={() => setHeadingUp((h) => !h)} />
         </View>
       )}
       {driving && !tracking.simulated && tracking.backgroundAvailable && (
         tracking.background ? (
           <View style={[styles.row, { marginBottom: 12 }]}>
             <Ionicons name="lock-closed" size={15} color={colors.greenMid} />
-            <Text style={[styles.bgText, { color: P.soft }]}>Keeps following with the screen off</Text>
+            <Text style={[styles.bgText, { color: colors.inkSoft }]}>Keeps following with the screen off</Text>
           </View>
         ) : (
-          <View style={[styles.bgCard, { backgroundColor: P.card, borderColor: P.line }]}>
-            <Text style={[styles.bgText, { color: P.text, flex: 1 }]}>Keep directions and toll alerts going when the phone is locked or another app is open.</Text>
+          <View style={styles.bgCard}>
+            <Text style={[styles.bgText, { flex: 1 }]}>Keep directions and toll alerts going when the phone is locked or another app is open.</Text>
             <Button small title="Allow" variant="amber" onPress={keepWithScreenOff} />
           </View>
         )
@@ -158,13 +152,13 @@ export default function TrackTrip() {
       ) : mine ? (
         <>
           <View style={styles.stats}>
-            <Stat label="Distance left" value={km(tracking.remaining)} P={P} />
-            <Stat label="Time left" value={minutes((r.durationS / 60) * (r.total ? tracking.remaining / r.total : 0))} P={P} />
-            <Stat label="Plazas" value={`${Object.keys(tracking.passed).length}/${r.plazas.length}`} P={P} />
+            <Stat label="Distance left" value={km(tracking.remaining)} />
+            <Stat label="Time left" value={minutes((r.durationS / 60) * (r.total ? tracking.remaining / r.total : 0))} />
+            <Stat label="Plazas" value={`${Object.keys(tracking.passed).length}/${r.plazas.length}`} />
           </View>
 
           {nextPlaza && (
-            <Card style={[styles.next, dark && { borderColor: P.line }]}>
+            <Card style={styles.next}>
               <T.Kicker style={{ color: colors.mint }}>Next toll plaza</T.Kicker>
               <Text style={styles.nextName}>{nextPlaza.name}</Text>
               <Text style={styles.nextMeta}>
@@ -173,7 +167,7 @@ export default function TrackTrip() {
             </Card>
           )}
 
-          <PlazaList plazas={r.plazas} passed={tracking.passed} P={P} />
+          <PlazaList plazas={r.plazas} passed={tracking.passed} />
           {tracking.simulated && <Badge tone="warn" style={{ marginBottom: 12 }}>Simulated trip</Badge>}
           <Button title="Stop Following" icon="stop-circle" variant="danger" onPress={stop} />
         </>
@@ -185,7 +179,7 @@ export default function TrackTrip() {
             <Row label="Travel time" value={minutes(trip.estimated_travel_time)} />
             <Row label="Toll (already deducted)" value={peso(trip.total_toll_fee)} />
           </Card>
-          <PlazaList plazas={plazasOf(trip)} passed={{}} P={P} />
+          <PlazaList plazas={plazasOf(trip)} passed={{}} />
           <T.Muted style={{ marginBottom: 12 }}>
             SmartToll follows you with GPS along this route, gives turn-by-turn directions, warns you before you enter and exit each toll plaza, and marks the trip completed when you reach {trip.destination}. Choose voice, text and/or graphic alerts while driving. Keep the app open on screen.
           </T.Muted>
@@ -207,44 +201,18 @@ const ALERT_MODES = [
   { key: 'graphic', label: 'Graphic', icon: 'image-outline' },
 ];
 
-const AlertChoice = memo(function AlertChoice({ alerts, onChange, P }) {
+const AlertChoice = memo(function AlertChoice({ alerts, onChange }) {
   useTheme();   // re-render on a light / dark switch
   return (
     <View style={styles.modes}>
-      <Text style={[styles.modesLabel, { color: P.soft }]}>Alerts</Text>
+      <Text style={styles.modesLabel}>Alerts</Text>
       {ALERT_MODES.map((m) => {
         const on = alerts[m.key];
         return (
           <Pressable key={m.key} onPress={() => onChange({ [m.key]: !on })} accessibilityRole="switch" accessibilityState={{ checked: on }}
-            style={[styles.mode, { backgroundColor: P.chip, borderColor: P.line }, on && styles.modeOn]}>
-            <MaterialCommunityIcons name={on ? m.icon : 'close-circle-outline'} size={16} color={on ? colors.white : P.faint} />
-            <Text style={[styles.modeText, { color: P.faint }, on && { color: colors.white }]}>{m.label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-});
-
-/** Night mode: Auto (dark from 6 PM to 6 AM), Night or Day. Remembered on the phone. */
-const NIGHT_MODES = [
-  { key: 'auto', label: 'Auto', icon: 'theme-light-dark' },
-  { key: 'on', label: 'Night', icon: 'weather-night' },
-  { key: 'off', label: 'Day', icon: 'white-balance-sunny' },
-];
-
-const NightChoice = memo(function NightChoice({ mode, onChange, P }) {
-  useTheme();   // re-render on a light / dark switch
-  return (
-    <View style={styles.modes}>
-      <Text style={[styles.modesLabel, { color: P.soft }]}>Look</Text>
-      {NIGHT_MODES.map((m) => {
-        const on = mode === m.key;
-        return (
-          <Pressable key={m.key} onPress={() => onChange(m.key)} accessibilityRole="radio" accessibilityState={{ checked: on }}
-            style={[styles.mode, { backgroundColor: P.chip, borderColor: P.line }, on && styles.modeOn]}>
-            <MaterialCommunityIcons name={m.icon} size={16} color={on ? colors.white : P.faint} />
-            <Text style={[styles.modeText, { color: P.faint }, on && { color: colors.white }]}>{m.label}</Text>
+            style={[styles.mode, on && styles.modeOn]}>
+            <MaterialCommunityIcons name={on ? m.icon : 'close-circle-outline'} size={16} color={on ? colors.white : colors.inkFaint} />
+            <Text style={[styles.modeText, on && { color: colors.white }]}>{m.label}</Text>
           </Pressable>
         );
       })}
@@ -253,13 +221,13 @@ const NightChoice = memo(function NightChoice({ mode, onChange, P }) {
 });
 
 /** Toll entry / exit warnings on screen (shown for 12 s): written, as a graphic card, or both. */
-function TollAlert({ alert, alerts, P }) {
+function TollAlert({ alert, alerts }) {
   if (!alert || Date.now() - alert.at > 12000 || (!alerts.text && !alerts.graphic)) return null;
   const entry = alert.plaza.role === 'entry';
   const tint = entry ? colors.entry : colors.exit;
   if (!alerts.graphic) return <Notice tone={entry ? 'ok' : 'warn'}>{alert.text}</Notice>;
   return (
-    <View style={[styles.toll, { borderColor: tint, backgroundColor: P.card }]}>
+    <View style={[styles.toll, { borderColor: tint }]}>
       <View style={[styles.tollIcon, { backgroundColor: tint }]}>
         <MaterialCommunityIcons name={alert.stage === 'approach' ? 'boom-gate-alert' : entry ? 'boom-gate-arrow-up' : 'boom-gate-up'} size={38} color={colors.white} />
       </View>
@@ -267,10 +235,10 @@ function TollAlert({ alert, alerts, P }) {
         <Text style={[styles.tollKicker, { color: tint }]}>
           {alert.stage === 'approach' ? (entry ? 'TOLL ENTRY AHEAD' : 'TOLL EXIT AHEAD') : entry ? 'ENTERING EXPRESSWAY' : 'EXITING EXPRESSWAY'}
         </Text>
-        <Text style={[styles.tollName, { color: P.text }]}>{alert.plaza.name}</Text>
+        <Text style={styles.tollName}>{alert.plaza.name}</Text>
         {alerts.text
-          ? <Text style={[styles.tollText, { color: P.soft }]}>{alert.text}</Text>
-          : <Text style={[styles.tollText, { color: P.soft }]}>{alert.plaza.road}{!entry && alert.plaza.fee ? ` · ${peso(alert.plaza.fee)} paid` : ''}</Text>}
+          ? <Text style={styles.tollText}>{alert.text}</Text>
+          : <Text style={styles.tollText}>{alert.plaza.road}{!entry && alert.plaza.fee ? ` · ${peso(alert.plaza.fee)} paid` : ''}</Text>}
       </View>
     </View>
   );
@@ -325,35 +293,35 @@ const plazasOf = (trip) => trip.segments.flatMap((s, i) => [
   { key: `${i}:exit`, role: 'exit', name: s.exit, road: s.label, fee: s.fee },
 ]);
 
-const PlazaList = memo(function PlazaList({ plazas, passed, P }) {
+const PlazaList = memo(function PlazaList({ plazas, passed }) {
   useTheme();   // re-render on a light / dark switch
   return (
-    <Card style={{ backgroundColor: P.card, borderColor: P.line }}>
+    <Card>
       <View style={[styles.row, { marginBottom: 12 }]}>
         <Ionicons name="flag" size={17} color={colors.greenMid} />
-        <Text style={[styles.plazaTitle, { color: P.text }]}>Toll plazas on this route</Text>
+        <Text style={styles.plazaTitle}>Toll plazas on this route</Text>
       </View>
-      {plazas.length === 0 && <T.Muted style={{ color: P.soft }}>This route uses no toll road.</T.Muted>}
+      {plazas.length === 0 && <T.Muted>This route uses no toll road.</T.Muted>}
       {plazas.map((p, i) => (
-        <View key={p.key} style={[styles.row, styles.plaza, { borderTopColor: P.line }, i === 0 && { borderTopWidth: 0 }]}>
-          <Ionicons name={passed[p.key] ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={passed[p.key] ? colors.greenMid : P.faint} />
+        <View key={p.key} style={[styles.row, styles.plaza, i === 0 && { borderTopWidth: 0 }]}>
+          <Ionicons name={passed[p.key] ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={passed[p.key] ? colors.greenMid : colors.inkFaint} />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.plazaName, { color: P.text }]}>{p.name}</Text>
-            <T.Small style={{ color: P.faint }}>{p.road} · {p.role === 'entry' ? 'Entry' : 'Exit'}</T.Small>
+            <Text style={styles.plazaName}>{p.name}</Text>
+            <T.Small>{p.road} · {p.role === 'entry' ? 'Entry' : 'Exit'}</T.Small>
           </View>
-          {p.role === 'exit' && <Text style={[styles.plazaFee, { color: P.text }]}>{peso(p.fee)}</Text>}
+          {p.role === 'exit' && <Text style={styles.plazaFee}>{peso(p.fee)}</Text>}
         </View>
       ))}
     </Card>
   );
 });
 
-const Stat = memo(function Stat({ label, value, P }) {
+const Stat = memo(function Stat({ label, value }) {
   useTheme();   // re-render on a light / dark switch
   return (
-    <View style={[styles.stat, { backgroundColor: P.card, borderColor: P.line }]}>
-      <Text style={[styles.statValue, { color: P.text }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
-      <Text style={[styles.statLabel, { color: P.soft }]}>{label}</Text>
+    <View style={styles.stat}>
+      <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 });
@@ -368,9 +336,9 @@ const styles = themed(() => StyleSheet.create({
   nextName: { fontFamily: fonts.signHeavy, fontSize: 26, color: colors.white, textTransform: 'uppercase' },
   nextMeta: { fontFamily: fonts.medium, fontSize: 13, color: colors.amber, marginTop: 2 },
   plaza: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line },
-  plazaTitle: { fontFamily: fonts.bold, fontSize: 15 },
-  bgCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 12 },
-  bgText: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
+  plazaTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  bgCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 12, backgroundColor: colors.surface, borderColor: colors.line },
+  bgText: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: colors.ink },
   plazaName: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
   plazaFee: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
   modes: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },

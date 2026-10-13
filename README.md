@@ -54,9 +54,8 @@ It was built as a capstone project at Holy Angel University.
 - **GPS trip tracking with turn-by-turn directions:** after you save a trip (its toll is deducted then), **Start Trip** follows you with the phone's GPS along the saved route: live position, distance and time left, and the next turn ("In 400 meters, turn left onto Tandang Sora Avenue"). It warns you before and when you **enter and exit each toll plaza**, re-routes automatically after a wrong turn, and marks the trip **Completed** when you reach the destination.
 - **Alerts your way:** while driving, switch **Voice**, **Text** and **Graphic** alerts on or off (any mix, remembered on the phone).
 - **Heading-up map:** while driving, the flat 2D map turns so the direction of travel points to the top of the screen, with your arrow near the bottom-center; turns rotate it smoothly. Switch to **North up** anytime.
-- **Night mode:** a dark map and dark trip screen for night driving: **Auto** (6 PM to 6 AM), **Night** or **Day**.
 - **Keeps working with the screen off:** with "Allow all the time" location, directions and toll alerts continue when the phone is locked or another app is open.
-- **Light / Dark appearance:** Account → Appearance: **Light**, **Dark** or **System** (follows the phone), remembered on the phone.
+- **Light / Dark appearance:** Account → Appearance: **Light**, **Dark** or **System** (follows the phone), remembered on the phone. The trip screen and its map go dark too, for less glare at night.
 - **Saved routes** on the phone too: tap "Home → Office" in Plan to plan it in one step (shared with the website).
 - **Simulate Trip:** replays the saved route as if you were driving it (sped up), for demonstrations away from the expressway.
 
@@ -463,7 +462,7 @@ Trips go **Planned → In progress → Completed**. If you stop following a trip
 
 **Heading up / North up:** while following a trip, the map is **Heading up**: it turns with the road so your direction of travel always points to the top, and your blue arrow sits near the bottom of the map so you see more road ahead. It stays a flat, top-down 2D map (no tilt). The direction comes from the road you're on (steadier than raw GPS), it's held while you're stopped, and the map turns smoothly (at most 90° a second) instead of jumping. Tap **Heading up** to switch to **North up** (map fixed with north at the top, arrow in the middle), and tap again to switch back. Touching the map stops following; **Follow my position** resumes.
 
-**Night mode:** on the trip screen, **Look** switches between **Auto** (dark from 6 PM to 6 AM), **Night** and **Day**. The phone remembers the choice.
+**At night:** the trip screen and map follow the app's look (Account → Appearance). Choose **Dark**, or **System** to follow the phone's own dark mode.
 
 **With the screen off:** while following a trip, tap **Allow** on "Keep directions and toll alerts going when the phone is locked" and set location to **Allow all the time** (Android opens the settings page for this). From then on, SmartToll keeps following trips when the phone is locked or another app is open, and Android shows a "SmartToll is following your trip" notification. Without it, keep SmartToll open on screen. (Not available in Expo Go or a web browser.)
 

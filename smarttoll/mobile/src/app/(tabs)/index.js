@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Badge, Card, CardTitle, EmptyState, Loading, Notice, Row, Screen, T } from '../../components/ui';
+import { Badge, Card, CardTitle, EmptyState, Notice, Row, Screen, T } from '../../components/ui';
+import { SkeletonHome } from '../../components/Skeleton';
 import { useSession } from '../../lib/session';
 import { useTracking, useTrackingStatus } from '../../lib/tracking';
 import { api } from '../../lib/api';
@@ -30,7 +31,7 @@ export default function Home() {
       <T.Muted style={{ marginBottom: 16 }}>Here's your toll overview.</T.Muted>
       <Notice tone="error">{error}</Notice>
       {tracking.status === 'tracking' && <TripInProgress />}
-      {!data && !error && <Loading />}
+      {!data && !error && <SkeletonHome />}
 
       {data && (
         <>

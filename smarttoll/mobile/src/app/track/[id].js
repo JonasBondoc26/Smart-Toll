@@ -5,8 +5,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import RouteMap from '../../components/RouteMap';
 import StatusBadge from '../../components/StatusBadge';
-import { Badge, Button, Card, CardTitle, Loading, Notice, Row, Screen, T } from '../../components/ui';
-import { useTracking } from '../../lib/tracking';
+import { Badge, Button, Card, CardTitle, Notice, Row, Screen, T } from '../../components/ui';
+import { SkeletonTrip } from '../../components/Skeleton';
+import { useTracking, useTrackingSession } from '../../lib/tracking';
 import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
 import { km, minutes, peso, time } from '../../lib/format';
@@ -17,11 +18,15 @@ import { colors, fonts, themed, useTheme } from '../../lib/theme';
  * GPS tracking of a saved trip: the phone follows the motorist along the saved route to the
  * destination with spoken turn-by-turn directions, shows the next toll plaza, re-routes
  * after a wrong turn, and marks the trip completed on arrival.
+ *
+ * The screen itself only follows the trip session (status, alerts, errors). The parts that
+ * change on every GPS fix (Live… components below) read the live values themselves, so a fix
+ * redraws them and not the whole screen.
  */
 export default function TrackTrip() {
   const theme = useTheme();   // re-renders on a light / dark switch
   const { id } = useLocalSearchParams();
-  const tracking = useTracking();
+  const tracking = useTrackingSession();
   const [trip, setTrip] = useState(null);
   const [error, setError] = useState('');
   const [starting, setStarting] = useState(false);
@@ -59,8 +64,7 @@ export default function TrackTrip() {
   const stop = () => confirm('Stop following this trip?', 'The trip stays in progress in your history, and you can start following it again later.', 'Stop', tracking.stop, { cancelLabel: 'Keep Going' });
 
   const r = mine ? tracking.route() : null;
-  const nextPlaza = r ? r.plazas.find((p) => !tracking.passed[p.key] && p.along != null && p.along >= tracking.travelled) : null;
-  const travelled = tracking.travelled;
+  const stopFollowing = useCallback(() => setFollow(false), []);
 
   const mapData = useMemo(() => (trip?.map ? {
     origin: { name: trip.origin, ...trip.map.origin },
@@ -78,7 +82,7 @@ export default function TrackTrip() {
   // Light or Dark comes from Account → Appearance, like every other screen (the map goes dark too).
   const dark = theme.dark;
 
-  if (!trip) return <Screen>{error ? <Notice tone="error">{error}</Notice> : <Loading />}</Screen>;
+  if (!trip) return <Screen>{error ? <Notice tone="error">{error}</Notice> : <SkeletonTrip />}</Screen>;
   if (!trip.map) return <Screen><Notice tone="warn">This trip was saved before SmartToll kept trip routes, so it can't be followed with GPS.</Notice></Screen>;
 
   const arrived = (mine && tracking.status === 'arrived') || trip.status === 'completed';
@@ -98,23 +102,21 @@ export default function TrackTrip() {
       </View>
 
       <Notice tone="error">{error || (mine ? tracking.error : '')}</Notice>
-      {mine && tracking.status === 'tracking' && !tracking.position && (
+      {mine && tracking.status === 'tracking' && !tracking.hasPosition && (
         <Notice tone="info">Waiting for a GPS signal… Make sure location is on.</Notice>
       )}
 
       {driving && (
         <>
           <AlertChoice alerts={tracking.alerts} onChange={tracking.setAlerts} />
-          <TollAlert alert={tracking.tollAlert} alerts={tracking.alerts} />
-          <DirectionBanner tracking={tracking} />
+          <LiveTollAlert alerts={tracking.alerts} />
+          <DirectionBanner />
         </>
       )}
-      <RouteMap
-        data={mapData} height={arrived ? 240 : 330}
-        position={mine ? tracking.position : null}
-        heading={mine ? tracking.heading : null} headingUp={headingUp}
-        follow={mine && tracking.status === 'tracking' && follow && !!tracking.position}
-        onUserMove={() => setFollow(false)} onTouching={setTouchingMap} night={dark}
+      <LiveMap
+        mine={mine} data={mapData} height={arrived ? 240 : 330} headingUp={headingUp}
+        follow={driving && follow && tracking.hasPosition}
+        onUserMove={stopFollowing} onTouching={setTouchingMap} night={dark}
       />
       {driving && (
         <View style={[styles.row, { marginTop: -6, marginBottom: 14, flexWrap: 'wrap', gap: 8 }]}>
@@ -151,23 +153,7 @@ export default function TrackTrip() {
         </Card>
       ) : mine ? (
         <>
-          <View style={styles.stats}>
-            <Stat label="Distance left" value={km(tracking.remaining)} />
-            <Stat label="Time left" value={minutes((r.durationS / 60) * (r.total ? tracking.remaining / r.total : 0))} />
-            <Stat label="Plazas" value={`${Object.keys(tracking.passed).length}/${r.plazas.length}`} />
-          </View>
-
-          {nextPlaza && (
-            <Card style={styles.next}>
-              <T.Kicker style={{ color: colors.mint }}>Next toll plaza</T.Kicker>
-              <Text style={styles.nextName}>{nextPlaza.name}</Text>
-              <Text style={styles.nextMeta}>
-                {nextPlaza.road} · {nextPlaza.role === 'entry' ? 'entry' : `exit · ${peso(nextPlaza.fee)}`} · in {shortDistance(Math.max(0, nextPlaza.along - travelled))}
-              </Text>
-            </Card>
-          )}
-
-          <PlazaList plazas={r.plazas} passed={tracking.passed} />
+          <LiveProgress route={r} />
           {tracking.simulated && <Badge tone="warn" style={{ marginBottom: 12 }}>Simulated trip</Badge>}
           <Button title="Stop Following" icon="stop-circle" variant="danger" onPress={stop} />
         </>
@@ -221,7 +207,8 @@ const AlertChoice = memo(function AlertChoice({ alerts, onChange }) {
 });
 
 /** Toll entry / exit warnings on screen (shown for 12 s): written, as a graphic card, or both. */
-function TollAlert({ alert, alerts }) {
+function LiveTollAlert({ alerts }) {
+  const alert = useTracking().tollAlert;
   if (!alert || Date.now() - alert.at > 12000 || (!alerts.text && !alerts.graphic)) return null;
   const entry = alert.plaza.role === 'entry';
   const tint = entry ? colors.entry : colors.exit;
@@ -245,7 +232,8 @@ function TollAlert({ alert, alerts }) {
 }
 
 /** The next maneuver: arrow + distance (graphic) and the instruction (text); spoken if Voice is on. */
-function DirectionBanner({ tracking }) {
+function DirectionBanner() {
+  const tracking = useTracking();
   const { text: showText, graphic: showGraphic } = tracking.alerts;
   if (tracking.rerouting || tracking.offRoute) {
     return (
@@ -285,6 +273,39 @@ function DirectionBanner({ tracking }) {
         </View>
       )}
     </View>
+  );
+}
+
+/** The map with the live position and heading (the route itself only redraws after a re-route). */
+function LiveMap({ mine, ...props }) {
+  const { position, heading } = useTracking();
+  return <RouteMap {...props} position={mine ? position : null} heading={mine ? heading : null} />;
+}
+
+/** Distance and time left, plazas passed, the next toll plaza and the plaza checklist. */
+function LiveProgress({ route: r }) {
+  const { remaining, passed, travelled } = useTracking();
+  const nextPlaza = r.plazas.find((p) => !passed[p.key] && p.along != null && p.along >= travelled);
+  return (
+    <>
+      <View style={styles.stats}>
+        <Stat label="Distance left" value={km(remaining)} />
+        <Stat label="Time left" value={minutes((r.durationS / 60) * (r.total ? remaining / r.total : 0))} />
+        <Stat label="Plazas" value={`${Object.keys(passed).length}/${r.plazas.length}`} />
+      </View>
+
+      {nextPlaza && (
+        <Card style={styles.next}>
+          <T.Kicker style={{ color: colors.mint }}>Next toll plaza</T.Kicker>
+          <Text style={styles.nextName}>{nextPlaza.name}</Text>
+          <Text style={styles.nextMeta}>
+            {nextPlaza.road} · {nextPlaza.role === 'entry' ? 'entry' : `exit · ${peso(nextPlaza.fee)}`} · in {shortDistance(Math.max(0, nextPlaza.along - travelled))}
+          </Text>
+        </Card>
+      )}
+
+      <PlazaList plazas={r.plazas} passed={passed} />
+    </>
   );
 }
 

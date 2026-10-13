@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Button, Card, EmptyState, Field, Loading, Notice, Screen, SelectField, Sheet, T, s } from '../../components/ui';
+import { Button, Card, EmptyState, Field, Notice, Screen, SelectField, Sheet, T, s } from '../../components/ui';
+import { SkeletonList } from '../../components/Skeleton';
 import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
 import { colors, useTheme } from '../../lib/theme';
@@ -50,7 +51,7 @@ export default function Vehicles() {
     <Screen>
       <T.Muted style={{ marginBottom: 14 }}>The vehicle's classification sets the toll rate used for every trip.</T.Muted>
       <Notice tone="error">{error}</Notice>
-      {!vehicles && !error && <Loading />}
+      {!vehicles && !error && <SkeletonList count={3} />}
       {vehicles && vehicles.length === 0 && (
         <EmptyState icon="car" title="No vehicles yet" action={<Button title="Add Vehicle" icon="add" onPress={() => open(null)} />}>
           Add a vehicle and its classification so SmartToll can compute the right toll rate.

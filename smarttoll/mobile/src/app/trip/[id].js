@@ -3,7 +3,8 @@ import { View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import RouteMap from '../../components/RouteMap';
 import StatusBadge from '../../components/StatusBadge';
-import { Badge, Button, Card, CardTitle, Loading, Notice, Row, Screen, T } from '../../components/ui';
+import { Badge, Button, Card, CardTitle, Notice, Row, Screen, T } from '../../components/ui';
+import { SkeletonTrip } from '../../components/Skeleton';
 import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
 import { day, minutes, peso, time } from '../../lib/format';
@@ -40,7 +41,7 @@ export default function TripDetails() {
     }
   });
 
-  if (!trip) return <Screen>{error ? <Notice tone="error">{error}</Notice> : <Loading />}</Screen>;
+  if (!trip) return <Screen>{error ? <Notice tone="error">{error}</Notice> : <SkeletonTrip />}</Screen>;
 
   return (
     <Screen>

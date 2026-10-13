@@ -3,7 +3,8 @@ import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import StatusBadge from '../../components/StatusBadge';
-import { Button, Card, EmptyState, Loading, Notice, T, s } from '../../components/ui';
+import { Button, Card, EmptyState, Notice, T, s } from '../../components/ui';
+import { SkeletonList } from '../../components/Skeleton';
 import { api } from '../../lib/api';
 import { day, peso } from '../../lib/format';
 import { colors, useTheme } from '../../lib/theme';
@@ -35,7 +36,7 @@ export default function History() {
       ListHeaderComponent={(
         <>
           <Notice tone="error">{error}</Notice>
-          {!trips && !error && <Loading />}
+          {!trips && !error && <SkeletonList count={4} />}
           {trips && trips.length > 0 && <T.Muted style={{ marginBottom: 12 }}>{trips.length} trips · {peso(total)} in tolls</T.Muted>}
         </>
       )}

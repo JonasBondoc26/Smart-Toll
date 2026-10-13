@@ -30,8 +30,18 @@ import { askBackgroundPermission, backgroundAvailable, hasBackgroundPermission, 
  */
 const TrackingContext = createContext(null);
 const TrackingStatusContext = createContext(null);
-/** Everything about the trip being followed; changes on every GPS fix (the trip screen). */
+const TrackingSessionContext = createContext(null);
+/**
+ * Everything about the trip being followed; changes on every GPS fix. Only for the small live
+ * parts of the trip screen (map position, next turn, distance left, toll alerts).
+ */
 export const useTracking = () => useContext(TrackingContext);
+/**
+ * The trip being followed without the per-fix values (position, heading, distance, next turn):
+ * status, trip, alert choices, errors and the actions. Changes a few times per trip, so the
+ * trip screen around the live parts doesn't redraw on every GPS fix.
+ */
+export const useTrackingSession = () => useContext(TrackingSessionContext);
 /**
  * Only whether a trip is being followed ({ status, tripId, destination, stop }): changes when a
  * trip starts, arrives or stops, not on every GPS fix. For screens that only need to know that
@@ -365,9 +375,21 @@ export function TrackingProvider({ children }) {
     status: state.status, tripId: state.tripId, destination: state.trip?.destination ?? null, stop: actions.stop,
   }), [state.status, state.tripId, state.trip, actions]);
 
+  const hasPosition = !!state.position;
+  const sessionValue = useMemo(() => ({
+    status: state.status, tripId: state.tripId, trip: state.trip, simulated: state.simulated, alerts: state.alerts,
+    background: state.background, error: state.error, hasDirections: state.hasDirections, rerouting: state.rerouting,
+    routeVersion: state.routeVersion, hasPosition,
+    active: state.status === 'tracking' || state.status === 'arrived',
+    ...actions,
+  }), [state.status, state.tripId, state.trip, state.simulated, state.alerts, state.background, state.error,
+    state.hasDirections, state.rerouting, state.routeVersion, hasPosition, actions]);
+
   return (
     <TrackingStatusContext.Provider value={statusValue}>
-      <TrackingContext.Provider value={value}>{children}</TrackingContext.Provider>
+      <TrackingSessionContext.Provider value={sessionValue}>
+        <TrackingContext.Provider value={value}>{children}</TrackingContext.Provider>
+      </TrackingSessionContext.Provider>
     </TrackingStatusContext.Provider>
   );
 }

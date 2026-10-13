@@ -3,7 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import { Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BalanceSheet } from '../../components/Toll';
-import { Badge, Button, Card, EmptyState, Field, Loading, Notice, Screen, SelectField, Sheet, T, s } from '../../components/ui';
+import { Badge, Button, Card, EmptyState, Field, Notice, Screen, SelectField, Sheet, T, s } from '../../components/ui';
+import { SkeletonList } from '../../components/Skeleton';
 import { api } from '../../lib/api';
 import { peso } from '../../lib/format';
 import { colors, fonts, useTheme } from '../../lib/theme';
@@ -52,7 +53,7 @@ export default function Rfid() {
     <Screen>
       <T.Muted style={{ marginBottom: 14 }}>One RFID account per vehicle. Saving a trip deducts its toll from the vehicle's balance.</T.Muted>
       <Notice tone="error">{error}</Notice>
-      {!data && !error && <Loading />}
+      {!data && !error && <SkeletonList count={2} />}
       {data && data.accounts.length === 0 && (
         <EmptyState icon="card" title="No RFID accounts" action={data.available_vehicles.length ? <Button title="Add RFID Account" icon="add" onPress={openAdd} /> : null}>
           {data.available_vehicles.length ? 'Record your Easytrip or Autosweep balance to check it against each trip.' : 'Add a vehicle first, then link its RFID account here.'}

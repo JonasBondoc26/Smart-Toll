@@ -6,7 +6,8 @@ import RouteMap from '../../components/RouteMap';
 import PlacePicker, { pinPlace, placeNameOf } from '../../components/PlacePicker';
 import SavedRoutes from '../../components/SavedRoutes';
 import { BalanceCard, BalanceSheet, TollBreakdown } from '../../components/Toll';
-import { Badge, Button, Card, EmptyState, Loading, Notice, Screen, SelectField, T, s } from '../../components/ui';
+import { Badge, Button, Card, EmptyState, Notice, Screen, SelectField, T, s } from '../../components/ui';
+import { SkeletonForm } from '../../components/Skeleton';
 import { api } from '../../lib/api';
 import { km, minutes, peso, roadsOf } from '../../lib/format';
 import { colors, fonts, themed, useTheme } from '../../lib/theme';
@@ -126,7 +127,7 @@ export default function Plan() {
     fitKey: trip ? `${origin?.id}|${destination?.id}|${trip.routes.length}` : `${origin?.id}|${destination?.id}`,
   }), [origin, destination, trip, selected]);
 
-  if (!vehicles) return <Screen><Loading /></Screen>;
+  if (!vehicles) return <Screen><SkeletonForm /></Screen>;
   if (vehicles.length === 0) {
     return (
       <Screen>

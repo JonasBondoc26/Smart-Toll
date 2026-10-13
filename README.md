@@ -53,7 +53,7 @@ It was built as a capstone project at Holy Angel University.
 - **My location:** start a trip from where you are, using the phone's GPS.
 - **GPS trip tracking with turn-by-turn directions:** after you save a trip (its toll is deducted then), **Start Trip** follows you with the phone's GPS along the saved route: live position, distance and time left, and the next turn ("In 400 meters, turn left onto Tandang Sora Avenue"). It warns you before and when you **enter and exit each toll plaza**, re-routes automatically after a wrong turn, and marks the trip **Completed** when you reach the destination.
 - **Alerts your way:** while driving, switch **Voice**, **Text** and **Graphic** alerts on or off (any mix, remembered on the phone).
-- **Heading-up map:** while driving, the flat 2D map turns so the direction of travel points to the top of the screen, with your arrow near the bottom-center; turns rotate it smoothly. Switch to **North up** anytime.
+- **Heading-up map:** while driving, the flat 2D map turns so the direction of travel points to the top of the screen, with your arrow near the bottom-center; turns rotate it smoothly. Switch to **North up** anytime. It zooms in automatically approaching each turn and back out after it.
 - **Keeps working with the screen off:** with "Allow all the time" location, directions and toll alerts continue when the phone is locked or another app is open.
 - **Light / Dark appearance:** Account → Appearance: **Light**, **Dark** or **System** (follows the phone), remembered on the phone. The trip screen and its map go dark too, for less glare at night.
 - **Saved routes** on the phone too: tap "Home → Office" in Plan to plan it in one step (shared with the website).
@@ -461,6 +461,8 @@ The app finds the API on its own: it uses the computer Expo is running on, port 
 Trips go **Planned → In progress → Completed**. If you stop following a trip, it stays *In progress* and **Continue Trip** picks it up again. Trips saved before directions were added have no voice directions; use **Plan Again** to save the route again.
 
 **Heading up / North up:** while following a trip, the map is **Heading up**: it turns with the road so your direction of travel always points to the top, and your blue arrow sits near the bottom of the map so you see more road ahead. It stays a flat, top-down 2D map (no tilt). The direction comes from the road you're on (steadier than raw GPS), it's held while you're stopped, and the map turns smoothly (at most 90° a second) instead of jumping. Tap **Heading up** to switch to **North up** (map fixed with north at the top, arrow in the middle), and tap again to switch back. Touching the map stops following; **Follow my position** resumes.
+
+**Dynamic zoom:** while following, the map zooms by itself: closer in town and wider on the expressway (from your speed). About 12 seconds before a turn (150–450 m) it zooms in so the turn is clear, holds the close-up for a moment after you make the turn, then eases back out. Zoom changes are smooth (gradual, never a jump) and work with Heading up and North up. Pinching the map stops following, so your own zoom is kept until you tap **Follow my position**.
 
 **At night:** the trip screen and map follow the app's look (Account → Appearance). Choose **Dark**, or **System** to follow the phone's own dark mode.
 

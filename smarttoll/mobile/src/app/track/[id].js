@@ -278,8 +278,10 @@ function DirectionBanner() {
 
 /** The map with the live position and heading (the route itself only redraws after a re-route). */
 function LiveMap({ mine, ...props }) {
-  const { position, heading } = useTracking();
-  return <RouteMap {...props} position={mine ? position : null} heading={mine ? heading : null} />;
+  const { position, heading, guidance } = useTracking();
+  // The next turn drives the map's dynamic zoom (closer approaching it, back out after).
+  const turn = mine && guidance && guidance.step != null ? { step: guidance.step, distance: guidance.distance } : null;
+  return <RouteMap {...props} position={mine ? position : null} heading={mine ? heading : null} turn={turn} />;
 }
 
 /** Distance and time left, plazas passed, the next toll plaza and the plaza checklist. */

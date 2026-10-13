@@ -220,7 +220,7 @@ export function TrackingProvider({ children }) {
       const words = instruction(step);
       const toGo = step.along - travelled;
       if (words) {
-        guidance = { ...words, distance: toGo, road: step.name || step.ref || null };
+        guidance = { ...words, distance: toGo, road: step.name || step.ref || null, step: k };
         const far = isHighway(step) ? 1000 : 400;
         const near = isHighway(step) ? 150 : 60;
         const roomBefore = step.along - (r.steps[k - 1].along ?? 0);   // only warn early if there's time to

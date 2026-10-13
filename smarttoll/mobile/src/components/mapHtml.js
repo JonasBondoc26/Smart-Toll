@@ -124,19 +124,71 @@ export const MAP_HTML = `<!doctype html><html><head>
   const MAX_TURN_DEG_S = 90;       // fastest the map may rotate
   let headingUp = true;
   let goal = null;                 // { lat, lng, heading } latest from the phone
-  let cam = null;                  // { lat, lng, bearing } what is on screen now
+  let cam = null;                  // { lat, lng, bearing, zoom } what is on screen now
   let heading = null;              // last known direction of travel (degrees from north)
-  let rafId = null, lastT = 0, lastRefresh = 0, dirty = false;
+  let rafId = null, lastT = 0, lastRefresh = 0, dirty = false, zoomDirty = false;
   const REFRESH_MS = 350;          // while moving, redraw the route and fetch tiles at most this often
 
   const norm = (a) => ((a % 360) + 540) % 360 - 180;            // -180..180
   const toRad = (d) => (d * Math.PI) / 180;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const smooth = (x) => x * x * (3 - 2 * x);                      // 0..1, eased at both ends
   // The point a number of metres away from (lat, lng) in a direction (flat-earth: fine for < 1 km).
   const ahead = (lat, lng, deg, metres) => [
     lat + (metres * Math.cos(toRad(deg))) / 111320,
     lng + (metres * Math.sin(toRad(deg))) / (111320 * Math.cos(toRad(lat))),
   ];
-  const metresPerPixel = (lat) => (156543.03392 * Math.cos(toRad(lat))) / Math.pow(2, map.getZoom());
+  const metresPerPixel = (lat, zoom = map.getZoom()) => (156543.03392 * Math.cos(toRad(lat))) / Math.pow(2, zoom);
+
+  /* ---------------------------------------------------------------------------------
+   | Dynamic zoom while following. The usual view depends on speed (closer in town, wider
+   | on the expressway). Approaching the next turn the map zooms in, closest just before
+   | the turn; after the turn it holds a moment, then eases back out. Zoom changes are
+   | eased in the same animation loop as the movement and rotation, at most ZOOM_RATE
+   | levels a second, so they never jump.
+   * --------------------------------------------------------------------------------- */
+  const ZOOM_CITY = 17;            // at 20 km/h or slower
+  const ZOOM_EXPRESSWAY = 15.6;    // at 90 km/h or faster
+  const ZOOM_TURN_EXTRA = 1.2;     // how much closer at a turn
+  const ZOOM_MAX = 18;
+  const ZOOM_RATE = 0.8;           // fastest zoom change, levels per second
+  const TURN_HOLD_MS = 2500;       // stay close after a turn before zooming back out
+  let nextTurn = null;             // { step, distance } the next maneuver, from the app
+  let speed = 0;                   // m/s, from the last positions
+  let lastFix = null;              // { lat, lng, t }
+  let holdUntil = 0, holdZoom = 0;
+
+  function noteTurn(next, now) {
+    // The maneuver just ahead was passed (the app moved on to the next one): keep the close-up a moment.
+    if (nextTurn && (!next || next.step !== nextTurn.step) && nextTurn.distance < 120) {
+      holdUntil = now + TURN_HOLD_MS;
+      holdZoom = cam ? cam.zoom : map.getZoom();
+    }
+    nextTurn = next;
+  }
+  function noteSpeed(lat, lng, now) {
+    if (lastFix) {
+      const dt = (now - lastFix.t) / 1000;
+      const dy = (lat - lastFix.lat) * 111320;
+      const dx = (lng - lastFix.lng) * 111320 * Math.cos(toRad(lat));
+      // Capped at expressway speed: the sped-up demo simulation would otherwise look like a jet.
+      if (dt > 0.15 && dt < 15) speed = speed * 0.7 + Math.min(Math.hypot(dx, dy) / dt, 33) * 0.3;
+    }
+    lastFix = { lat, lng, t: now };
+  }
+  function targetZoom(now) {
+    const kmh = speed * 3.6;
+    const base = ZOOM_CITY - (ZOOM_CITY - ZOOM_EXPRESSWAY) * clamp((kmh - 20) / 70, 0, 1);
+    let z = base;
+    if (nextTurn && nextTurn.distance != null) {
+      // Start zooming about 12 s before the turn (150-450 m), fully in at 40 m.
+      const from = clamp(speed * 12, 150, 450);
+      const f = smooth(clamp((from - nextTurn.distance) / (from - 40), 0, 1));
+      z = base + ZOOM_TURN_EXTRA * f;
+    }
+    if (now < holdUntil) z = Math.max(z, holdZoom);
+    return Math.min(z, ZOOM_MAX);
+  }
 
   function placeCar() {
     if (!me || !cam) return;
@@ -164,57 +216,92 @@ export const MAP_HTML = `<!doctype html><html><head>
     if (Math.abs(turn) > maxTurn) turn = Math.sign(turn) * maxTurn;
     cam.bearing = norm(cam.bearing + turn);
 
+    // Zoom: ease toward the dynamic zoom (in a little quicker than out), with a speed limit.
+    let zoomGap = 0;
     if (follow) {
-      // Cheap per-frame moves: turn the map (a CSS rotation) and slide it (a CSS translation).
-      // The full refresh (route redraw, tile loading) runs every REFRESH_MS and when the motion
-      // settles, instead of 60 times a second; that's what keeps it smooth on a phone.
+      zoomGap = targetZoom(performance.now()) - cam.zoom;
+      let step = zoomGap * (1 - Math.exp(-dt / (zoomGap > 0 ? 0.7 : 1.2)));
+      const maxStep = ZOOM_RATE * dt;
+      if (Math.abs(step) > maxStep) step = Math.sign(step) * maxStep;
+      cam.zoom += step;
+    } else {
+      cam.zoom = map.getZoom();
+    }
+
+    if (follow) {
+      // Cheap per-frame moves: turn the map (a CSS rotation), slide it (a CSS translation) and
+      // scale it (a CSS zoom, as during a pinch). The full refresh (route redraw, tile loading)
+      // runs every REFRESH_MS and when the motion settles, instead of 60 times a second;
+      // that's what keeps it smooth on a phone.
       if (Math.abs(norm(cam.bearing - map.getBearing())) > 0.05) map.setBearing(cam.bearing);
       // Heading-up: centre the map on a point ahead of the vehicle, so the vehicle sits low.
       let center = [cam.lat, cam.lng];
       if (headingUp && heading != null) {
         const px = map.getSize().y * (VEHICLE_Y - 0.5);
-        center = ahead(cam.lat, cam.lng, -cam.bearing, px * metresPerPixel(cam.lat));
+        center = ahead(cam.lat, cam.lng, -cam.bearing, px * metresPerPixel(cam.lat, cam.zoom));
       }
-      const off = map._getCenterOffset(L.latLng(center));
-      if (Math.abs(off.x) >= 0.5 || Math.abs(off.y) >= 0.5) {
-        map._rawPanBy(off);
-        map.fire('move');
-        dirty = true;
+      if (Math.abs(cam.zoom - map.getZoom()) > 0.002) {
+        map._move(L.latLng(center), cam.zoom, { pinch: true });   // pinch: tiles and route scale now, reload at refresh
+        dirty = zoomDirty = true;
+      } else {
+        const off = map._getCenterOffset(L.latLng(center));
+        if (Math.abs(off.x) >= 0.5 || Math.abs(off.y) >= 0.5) {
+          map._rawPanBy(off);
+          map.fire('move');
+          dirty = true;
+        }
       }
       if (dirty && t - lastRefresh > REFRESH_MS) refresh(t);
     }
     placeCar();
-    const moving = Math.abs(goal.lat - cam.lat) > 1e-7 || Math.abs(goal.lng - cam.lng) > 1e-7 || Math.abs(diff) > 0.2;
+    const moving = Math.abs(goal.lat - cam.lat) > 1e-7 || Math.abs(goal.lng - cam.lng) > 1e-7 || Math.abs(diff) > 0.2
+      || Math.abs(zoomGap) > 0.01 || (follow && performance.now() < holdUntil + 3000);
     if (moving) rafId = requestAnimationFrame(frame);
     else if (dirty) refresh(t);   // settled: one last full refresh
   }
-  function refresh(t) { lastRefresh = t; dirty = false; map.fire('moveend'); }
+  function refresh(t) {
+    lastRefresh = t;
+    dirty = false;
+    if (zoomDirty) {
+      // After zooming: load the tiles for the new zoom and redraw the route sharp.
+      zoomDirty = false;
+      map.fire('zoom');
+      map.fire('zoomend');
+    }
+    map.fire('moveend');
+  }
   const kick = () => { if (!rafId) { lastT = 0; rafId = requestAnimationFrame(frame); } };
 
   /**
-   * Where the phone is now: { position, follow, heading (degrees or null), headingUp }.
+   * Where the phone is now: { position, follow, heading (degrees or null), headingUp,
+   * turn: { step, distance } (the next maneuver, or null) }.
    * Only the vehicle marker and the camera move; the route isn't redrawn.
    */
   window.moveTo = (p) => {
     const wasFollowing = follow;
+    const now = performance.now();
     follow = !!p.follow;
     headingUp = p.headingUp !== false;
     if (p.heading != null && !isNaN(p.heading)) heading = p.heading;
     if (!p.position) {
       if (me) { map.removeLayer(me); me = null; }
-      goal = cam = null;
+      goal = cam = lastFix = nextTurn = null;
+      speed = 0;
       return;
     }
     const at = [p.position.lat, p.position.lng];
     const icon = heading != null ? carIcon : meIcon;
     if (!me) me = L.marker(at, { icon, interactive: false, zIndexOffset: 1000 }).addTo(map);
     else if (me.options.icon !== icon) me.setIcon(icon);
+    if (!goal || goal.lat !== at[0] || goal.lng !== at[1]) noteSpeed(at[0], at[1], now);
+    noteTurn(p.turn || null, now);
     goal = { lat: at[0], lng: at[1] };
-    if (!cam) cam = { lat: at[0], lng: at[1], bearing: map.getBearing() };
+    if (!cam) cam = { lat: at[0], lng: at[1], bearing: map.getBearing(), zoom: map.getZoom() };
     if (follow && !wasFollowing) {
-      if (map.getZoom() < 15) map.setView(at, 16, { animate: false });
-      // Start from the vehicle and the map's current rotation, then ease from there.
-      cam.lat = at[0]; cam.lng = at[1]; cam.bearing = map.getBearing();
+      // From an overview, jump straight to the driving zoom; from close by, ease to it.
+      if (map.getZoom() < 14) map.setView(at, targetZoom(now), { animate: false });
+      // Start from the vehicle and the map's current rotation and zoom, then ease from there.
+      cam.lat = at[0]; cam.lng = at[1]; cam.bearing = map.getBearing(); cam.zoom = map.getZoom();
     }
     if (!follow && !headingUp && Math.abs(map.getBearing()) > 0.5) {
       // North-up chosen while looking around: straighten the map.

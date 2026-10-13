@@ -18,12 +18,14 @@ import { MAP_HTML } from './mapHtml';
  * position {lat, lng} / follow: the phone's live position; only the dot moves on each update.
  * heading (degrees from north) / headingUp: while following, the map turns so the direction of
  *   travel points up, with the vehicle near the bottom (North-up when headingUp is false).
- * night: dark map tiles (night mode on the trip screen).
+ * turn {step, distance}: the next maneuver while following; the map zooms in approaching it and
+ *   back out after it (dynamic zoom; the usual zoom also adapts to the speed).
+ * night: dark map tiles (Dark appearance).
  * onUserMove(): the driver touched the map (stop following). onTouching(bool): a finger is on
  * the map, so a scrolling parent can pause its own scrolling.
  * onPick(lat, lng): the map was tapped (only while `picking`). onSelect(i): a route line was tapped.
  */
-export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, night = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
+export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, night = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
   const web = useRef(null);
   const [ready, setReady] = useState(false);
 
@@ -32,8 +34,8 @@ export default function RouteMap({ data, position, follow = false, heading = nul
   }, [ready, data, picking, night]);
 
   useEffect(() => {
-    if (ready) web.current?.injectJavaScript(`window.moveTo(${JSON.stringify({ position: position || null, follow, heading, headingUp })});true;`);
-  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp]);
+    if (ready) web.current?.injectJavaScript(`window.moveTo(${JSON.stringify({ position: position || null, follow, heading, headingUp, turn })});true;`);
+  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp, turn?.step, turn ? Math.round(turn.distance / 10) : null]);
 
   const onMessage = (e) => {
     const m = JSON.parse(e.nativeEvent.data);

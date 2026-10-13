@@ -1,0 +1,22 @@
+diff --git a/node_modules/expo-task-manager/android/src/main/java/expo/modules/taskManager/TaskManagerUtils.java b/node_modules/expo-task-manager/android/src/main/java/expo/modules/taskManager/TaskManagerUtils.java
+index 82bc0db..601517b 100644
+--- a/node_modules/expo-task-manager/android/src/main/java/expo/modules/taskManager/TaskManagerUtils.java
++++ b/node_modules/expo-task-manager/android/src/main/java/expo/modules/taskManager/TaskManagerUtils.java
+@@ -143,7 +143,7 @@ public class TaskManagerUtils implements TaskManagerUtilsInterface {
+         JobInfo mergedJobInfo = createJobInfoByAddingData(newestJob, data);
+         jobScheduler.cancel(newestJob.getId());
+         jobScheduler.schedule(mergedJobInfo);
+-      } catch (IllegalStateException e) {
++      } catch (RuntimeException e) {   // SmartToll: also IllegalArgumentException (a job Android refuses), which crashed the app
+         Log.e(this.getClass().getName(), "Unable to merge job: " + e.getMessage());
+       }
+       return;
+@@ -153,7 +153,7 @@ public class TaskManagerUtils implements TaskManagerUtilsInterface {
+     try {
+       JobInfo jobInfo = createJobInfo(context, task, newJobId, data);
+       jobScheduler.schedule(jobInfo);
+-    } catch (IllegalStateException e) {
++    } catch (RuntimeException e) {   // SmartToll: also IllegalArgumentException (a job Android refuses), which crashed the app
+       Log.e(this.getClass().getName(), "Unable to schedule job: " + e.getMessage());
+     }
+   }

@@ -13,6 +13,11 @@
     },
     "android": {
       "package": "ph.edu.hau.smarttoll",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#0B4F3F",
         "foregroundImage": "./assets/android-icon-foreground.png",

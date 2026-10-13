@@ -607,7 +607,7 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 | Mobile app: "Google sign-in works in the installed SmartToll app, not in Expo Go" | Expected in Expo Go. Build and install the development app, see [Google sign-in on the phone](#google-sign-in-on-the-phone). |
 | Mobile app: "Google doesn't recognise this build of SmartToll" | The Android OAuth client's package name must be `ph.edu.hau.smarttoll` and its SHA-1 must match `eas credentials -p android`. |
 | Mobile app: Start Trip says location access is needed | Allow location for SmartToll (or Expo Go) in the phone's settings. |
-| Mobile app closes at once after choosing "Allow all the time" (older APKs) | Fixed in the current code (a patch to expo-location in `smarttoll/mobile/patches/`, applied on every install). Clear the app's storage (Settings → Apps → SmartToll → Storage) or reinstall, then build a new APK. |
+| Mobile app closes after choosing "Allow all the time", or when starting a trip with it (older APKs) | Fixed in the current code: the `RECEIVE_BOOT_COMPLETED` permission in `app.json` (Android needs it for the background GPS jobs) and patches to expo-location and expo-task-manager in `smarttoll/mobile/patches/`, applied on every install. Clear the app's storage (Settings → Apps → SmartToll → Storage) or reinstall, then build a new APK. |
 | MySQL won't start in XAMPP (port 3306 busy) | Another MySQL is running. Stop it, or change the port in XAMPP and `DB_PORT` in `.env`. |
 
 ---

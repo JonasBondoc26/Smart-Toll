@@ -278,6 +278,7 @@ export default function TripPlanner() {
   // A saved place is matched back to the current list by id and name; if the list has
   // changed since, it is used as a map pin at the saved coordinates.
   const fromSaved = (p) => locations.find((l) => l.id === p.id && l.name === p.name)
+    || (p.id.startsWith('osm:') && { ...p, kind: 'landmark', meta: p.meta || '' })   // landmarks keep their id
     || { id: `pin:${p.lat.toFixed(5)},${p.lng.toFixed(5)}`, kind: 'pin', name: p.name, meta: `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`, lat: p.lat, lng: p.lng };
   // From Trip History ("Plan Again"): same origin, destination and vehicle, priced with today's rates.
   useEffect(() => {
@@ -443,7 +444,7 @@ export default function TripPlanner() {
                   <LocationSelect
                     id="destination" label="Destination" locations={locations} value={destination} onChange={pickDestination}
                     onPin={() => togglePin('destination')} pinActive={pinMode === 'destination'}
-                    hint="Search supported cities and toll plazas, or pin any spot in Luzon on the map. Drag a pin to adjust it."
+                    hint="Search a landmark, city or toll plaza, or pin any spot in Luzon on the map. Drag a pin to adjust it."
                   />
 
                   <button type="submit" className="btn btn-primary btn-block" disabled={busy}>

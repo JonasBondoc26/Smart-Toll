@@ -15,6 +15,10 @@ return [
     // about one request per second and asks apps to cache results; names are cached 30 days.
     'nominatim_url' => env('NOMINATIM_URL', 'https://nominatim.openstreetmap.org'),
 
+    // Landmark search for origin / destination ("SM North EDSA", "Holy Angel University"):
+    // Photon, a free search-as-you-type service over OpenStreetMap data. Results are cached a day.
+    'photon_url' => env('PHOTON_URL', 'https://photon.komoot.io'),
+
     // Sent with every OSRM / Nominatim request so the operators can identify the app.
     'user_agent' => env('SMARTTOLL_USER_AGENT', 'SmartToll-Capstone/1.0 (student project)'),
 

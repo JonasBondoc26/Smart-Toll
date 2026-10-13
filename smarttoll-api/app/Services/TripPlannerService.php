@@ -214,6 +214,115 @@ class TripPlannerService
     }
 
     /* ------------------------------------------------------------------
+     | Landmarks (origin / destination search)
+     * ------------------------------------------------------------------ */
+
+    /** Luzon, where the toll data is: [west, south, east, north]. */
+    public const LUZON = [119.5, 12.5, 124.5, 18.7];
+
+    /**
+     * Landmarks, buildings, streets and towns in Luzon matching what the motorist typed, from
+     * Photon (OpenStreetMap data). Each is a location like the cities and plazas, with an id
+     * "osm:<N|W|R><number>" that plan() accepts. Null when the search service can't be reached.
+     */
+    public function searchPlaces(string $query): ?array
+    {
+        $query = trim(preg_replace('/\s+/', ' ', $query));
+        $key = 'landmarks:' . md5(mb_strtolower($query));
+        if (($cached = Cache::get($key)) !== null) {
+            return $cached;
+        }
+
+        [$w, $s, $e, $n] = self::LUZON;
+        try {
+            $res = Http::withHeaders(['User-Agent' => config('smarttoll.user_agent')])
+                ->timeout(8)
+                ->get(rtrim(config('smarttoll.photon_url'), '/') . '/api', [
+                    'q' => $query, 'limit' => 10, 'lang' => 'en', 'bbox' => "{$w},{$s},{$e},{$n}",
+                ]);
+        } catch (\Throwable $ex) {
+            return null;
+        }
+        if (!$res->successful()) {
+            return null;
+        }
+
+        $out = [];
+        $seen = [];
+        foreach ($res->json('features') ?? [] as $f) {
+            $p = $f['properties'] ?? [];
+            [$lng, $lat] = $f['geometry']['coordinates'] ?? [null, null];
+            $name = trim($p['name'] ?? '');
+            if ($name === '' || $lat === null || empty($p['osm_type']) || empty($p['osm_id']) || !self::inLuzon($lat, $lng)) {
+                continue;
+            }
+            $locality = $p['city'] ?? $p['county'] ?? $p['district'] ?? null;
+            $meta = implode(', ', array_values(array_unique(array_filter([$p['street'] ?? null, $locality, $p['state'] ?? null]))));
+            // The same place often comes back as a building, a bus stop and a terminal: keep the first.
+            $dup = mb_strtolower("{$name}|{$locality}");
+            if (isset($seen[$dup])) {
+                continue;
+            }
+            $seen[$dup] = true;
+
+            $id = 'osm:' . $p['osm_type'] . $p['osm_id'];
+            $loc = ['id' => $id, 'kind' => 'landmark', 'name' => $name, 'meta' => $meta ?: 'Luzon', 'lat' => (float) $lat, 'lng' => (float) $lng];
+            Cache::put("landmark:{$id}", $loc, now()->addDays(30));   // plan() finds it here
+            $out[] = $loc;
+        }
+        $out = array_slice($out, 0, 8);
+        Cache::put($key, $out, now()->addDay());
+        return $out;
+    }
+
+    /**
+     * A landmark by its id ("osm:W1149443007"): from the search cache, or else looked up on
+     * Nominatim (e.g. a saved route planned again weeks later). Null when unknown or outside Luzon.
+     */
+    public function landmark(string $id): ?array
+    {
+        if (!preg_match('/^osm:([NWR])(\d{1,15})$/', $id, $m)) {
+            return null;
+        }
+        if ($cached = Cache::get("landmark:{$id}")) {
+            return $cached;
+        }
+
+        try {
+            $res = Http::withHeaders(['User-Agent' => config('smarttoll.user_agent')])
+                ->timeout(8)
+                ->get(rtrim(config('smarttoll.nominatim_url'), '/') . '/lookup', [
+                    'osm_ids' => $m[1] . $m[2], 'format' => 'jsonv2', 'addressdetails' => 1, 'accept-language' => 'en',
+                ]);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        $hit = $res->successful() ? ($res->json()[0] ?? null) : null;
+        if (!$hit || !isset($hit['lat'], $hit['lon'])) {
+            return null;
+        }
+        $lat = (float) $hit['lat'];
+        $lng = (float) $hit['lon'];
+        if (!self::inLuzon($lat, $lng)) {
+            return null;
+        }
+
+        $a = $hit['address'] ?? [];
+        $name = trim($hit['name'] ?? '') ?: (explode(',', $hit['display_name'] ?? '')[0] ?: 'Landmark');
+        $locality = $a['city'] ?? $a['town'] ?? $a['municipality'] ?? null;
+        $meta = implode(', ', array_values(array_unique(array_filter([$a['road'] ?? null, $locality, $a['state'] ?? null]))));
+        $loc = ['id' => $id, 'kind' => 'landmark', 'name' => $name, 'meta' => $meta ?: 'Luzon', 'lat' => $lat, 'lng' => $lng];
+        Cache::put("landmark:{$id}", $loc, now()->addDays(30));
+        return $loc;
+    }
+
+    public static function inLuzon(float $lat, float $lng): bool
+    {
+        [$w, $s, $e, $n] = self::LUZON;
+        return $lat >= $s && $lat <= $n && $lng >= $w && $lng <= $e;
+    }
+
+    /* ------------------------------------------------------------------
      | OSRM
      * ------------------------------------------------------------------ */
 

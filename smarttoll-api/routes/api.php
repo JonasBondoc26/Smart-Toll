@@ -28,6 +28,7 @@ Route::post('/auth/google', [GoogleAuthController::class, 'login'])->middleware(
 Route::get('/trip-planner/locations', [TripPlannerController::class, 'locations'])->middleware('throttle:60,1');
 Route::post('/trip-planner/route', [TripPlannerController::class, 'plan'])->middleware('throttle:20,1');
 Route::get('/trip-planner/place-name', [TripPlannerController::class, 'placeName'])->middleware('throttle:20,1');
+Route::get('/trip-planner/search', [TripPlannerController::class, 'search'])->middleware('throttle:60,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

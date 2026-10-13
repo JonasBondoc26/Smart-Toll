@@ -36,7 +36,7 @@ It was built as a capstone project at Holy Angel University.
 - **Vehicles:** add, edit or delete vehicles with their toll class (Class 1, 2 or 3).
 - **RFID accounts:** link one Easytrip or Autosweep account to each vehicle and record its balance.
 - **Plan a Trip** (works without an account: visitors pick a vehicle class; saving asks them to log in in a pop-up)
-  - Choose an origin and destination from a list of cities and toll plazas, or **pin any spot in Luzon on the map**. Pinned spots get a real place name, e.g. "M. Roxas Avenue, Diliman, Quezon City".
+  - Choose an origin and destination by searching **any landmark in Luzon** (malls, schools, hospitals, terminals, streets, e.g. "SM North EDSA", "Holy Angel University"), a city or a toll plaza, or **pin any spot in Luzon on the map**. Pinned spots get a real place name, e.g. "M. Roxas Avenue, Diliman, Quezon City".
   - Compare up to four routes, with the fastest, shortest and cheapest labeled. When the fastest route has a higher toll than a longer one, the planner asks which you prefer: "Fastest & shortest, but expensive" or "Longer, but cheapest", with the extra distance, time and toll saved.
   - The map shows the toll expressway parts in solid green and the ordinary roads to the entry and from the exit in blue dashes. Entry and exit plazas are marked with their fees.
   - See the toll fee breakdown per expressway, from entry plaza to exit plaza.
@@ -129,7 +129,7 @@ Install these first. The versions in brackets are the ones SmartToll was built a
 | **Composer 2** | Installs Laravel's PHP packages | https://getcomposer.org/download |
 | **Node.js 18 or newer** (22.19) | Runs the React dev server | https://nodejs.org (LTS) |
 | **Git** | Cloning the repository | https://git-scm.com |
-| **Internet connection** | Routing (OSRM), map tiles and place names are online services | |
+| **Internet connection** | Routing (OSRM), map tiles, place names and landmark search are online services | |
 
 > **Not using XAMPP?** Any PHP 8.2+ with the `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` and `curl` extensions, plus MySQL 8 or MariaDB 10.4+, works too.
 
@@ -565,7 +565,7 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 
 ## Automated tests
 
-43 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
+45 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
 
 ```bash
 php artisan test
@@ -575,7 +575,7 @@ What they cover:
 - **Toll calculation:** fares from the TRB matrix per vehicle class, fares stored one way pricing both directions, and a recorded NLEX route detected as Mindanao Avenue → San Simon (₱266 for Class 1).
 - **Trips and RFID:** saving a trip re-prices it on the server (a fee sent by the browser is ignored), deducts the toll, refuses an insufficient balance and changes nothing, keeps what's needed to plan a trip again, and keeps each motorist's trips private. Visitors can plan but not save.
 - **Admin:** only admins reach the admin API; duplicate and cross-expressway rates are rejected; classes and plazas still in use can't be deleted; every rate change is written to the change log; CSV and TRB imports change nothing on preview and log everything they apply.
-- **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions (saved with the trip), and a motorist off the route gets new directions without the toll changing.
+- **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions (saved with the trip), and a motorist off the route gets new directions without the toll changing. Landmarks found by the search can be planned from (duplicates and places outside Luzon are left out), and one not in the cache is looked up again.
 - **Accounts:** saved routes are private to their owner; Google sign-in creates one account per person and rejects tokens made for other apps, unverified emails and admin accounts; a Google account sets its first password without a current one, and needs it from then on.
 
 The tests use a separate database, **`smarttoll_test`**, built automatically from `database/smarttoll.sql`. They never touch the real `smarttoll` database, and each test's changes are rolled back. The routing server (OSRM) and Google are replaced by recorded answers (`tests/Fixtures/`), so the tests run offline.
@@ -625,7 +625,7 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 
 - **Toll rates:** [Toll Regulatory Board](https://trb.gov.ph/) (Philippines)
 - **Map data:** © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
-- **Routing:** [OSRM](https://project-osrm.org/) · **Place names:** [Nominatim](https://nominatim.org/) · **Map display:** [Leaflet](https://leafletjs.com/)
+- **Routing:** [OSRM](https://project-osrm.org/) · **Place names:** [Nominatim](https://nominatim.org/) · **Landmark search:** [Photon](https://photon.komoot.io/) · **Map display:** [Leaflet](https://leafletjs.com/)
 - Built with [Laravel](https://laravel.com/), [React](https://react.dev/) and [React Native](https://reactnative.dev/) / [Expo](https://expo.dev/)
 
 This is an academic project made for a capstone course at Holy Angel University.

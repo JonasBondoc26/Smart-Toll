@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /** Planning (visitors and motorists), saving a trip, and the RFID balance deduction. */
@@ -27,6 +28,42 @@ class TripsAndRfidTest extends TestCase
 
         $res->assertOk()->assertJsonPath('class_name', 'Class 1')->assertJsonPath('rfid', null)->assertJsonPath('vehicle', null);
         $this->assertEquals(266, $res->json('routes.0.toll.total'));
+    }
+
+    public function test_landmarks_can_be_searched_and_planned_from(): void
+    {
+        $this->fakeOsrm();
+        $feature = fn ($type, $id, $name, $lng, $lat, $extra = []) => [
+            'geometry' => ['coordinates' => [$lng, $lat]],
+            'properties' => ['osm_type' => $type, 'osm_id' => $id, 'name' => $name, 'city' => 'Quezon City', 'state' => 'Metro Manila'] + $extra,
+        ];
+        Http::fake(['photon.komoot.io/*' => Http::response(['features' => [
+            $feature('W', 1149443007, 'SM North EDSA', 121.0313, 14.6571, ['street' => 'North Avenue']),
+            $feature('N', 12755472165, 'SM North EDSA', 121.0320, 14.6554),            // the bus stop: same place, dropped
+            $feature('N', 555, 'SM Seaside City Cebu', 123.8806, 10.2826),           // outside Luzon: dropped
+        ]])]);
+
+        $this->getJson('/api/trip-planner/search?q=sm north')->assertOk()
+            ->assertJsonCount(1, 'results')
+            ->assertJsonPath('results.0.id', 'osm:W1149443007')
+            ->assertJsonPath('results.0.meta', 'North Avenue, Quezon City, Metro Manila');
+
+        $this->postJson('/api/trip-planner/route', ['classification_id' => 1, 'origin_id' => 'osm:W1149443007', 'destination_id' => 'place:13'])
+            ->assertOk()->assertJsonPath('origin.name', 'SM North EDSA')->assertJsonPath('origin.kind', 'landmark');
+    }
+
+    public function test_a_landmark_not_in_the_cache_is_looked_up_and_unknown_ids_are_refused(): void
+    {
+        $this->fakeOsrm();
+        Http::fake(['nominatim.openstreetmap.org/lookup*' => Http::response([[
+            'name' => 'Holy Angel University', 'lat' => '15.1325', 'lon' => '120.5902',
+            'address' => ['city' => 'Angeles', 'state' => 'Central Luzon'],
+        ]])]);
+
+        $this->postJson('/api/trip-planner/route', ['classification_id' => 1, 'origin_id' => 'osm:R16198709', 'destination_id' => 'place:13'])
+            ->assertOk()->assertJsonPath('origin.name', 'Holy Angel University')->assertJsonPath('origin.meta', 'Angeles, Central Luzon');
+        $this->postJson('/api/trip-planner/route', ['classification_id' => 1, 'origin_id' => 'osm:nonsense', 'destination_id' => 'place:13'])
+            ->assertStatus(422);
     }
 
     public function test_visitors_cannot_use_a_saved_vehicle_or_save_trips(): void

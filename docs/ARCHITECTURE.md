@@ -27,6 +27,7 @@ flowchart LR
         OSRM["OSRM<br/>routes, turn-by-turn"]
         VAL["Valhalla<br/>toll-free route"]
         NOM["Nominatim<br/>place names"]
+        PHO["Photon<br/>landmark search"]
         OSM["OpenStreetMap<br/>map tiles"]
         GOO["Google Identity<br/>sign-in"]
         SMTP["Brevo email API<br/>reset emails"]
@@ -40,6 +41,7 @@ flowchart LR
     API --> TR --> DB
     API --> DB
     API --> NOM
+    API --> PHO
     API --> GOO
     API --> SMTP
     API -. "rate import (admin)" .-> TRB

@@ -24,7 +24,8 @@ export default function SavedRoutes({ locations, origin, destination, onApply })
 
   // A saved place is matched back to today's list by id and name; if the list changed, its saved
   // spot is used as a map pin.
-  const placeOf = (p) => locations.find((l) => l.id === p.id && l.name === p.name) || pinPlace(p.lat, p.lng, p.name);
+  const placeOf = (p) => locations.find((l) => l.id === p.id && l.name === p.name)
+    || (p.id.startsWith('osm:') ? { ...p, kind: 'landmark', meta: p.meta || '' } : pinPlace(p.lat, p.lng, p.name));   // landmarks keep their id
 
   const canSave = origin && destination && origin.id !== destination.id && origin.name !== 'Finding place name…' && destination.name !== 'Finding place name…';
   const alreadySaved = canSave && routes.some((r) => r.origin.id === origin.id && r.destination.id === destination.id);

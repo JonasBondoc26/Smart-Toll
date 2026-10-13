@@ -1,6 +1,6 @@
 # SmartToll automated tests
 
-*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **43 of 43 passed**, 182 assertions.*
+*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **45 of 45 passed**, 193 assertions.*
 
 The tests use a separate database (`smarttoll_test`) built from `database/smarttoll.sql`; every test runs in a transaction that is rolled back. Outside services are replaced by recorded answers (a real OSRM route for Quezon City → San Fernando via NLEX, Google token checks), so the results are repeatable and run offline.
 
@@ -9,8 +9,8 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 | Accounts: saved routes, Google sign-in, passwords | 6 | 6 |
 | Administration: access, rate rules, change log, CSV/TRB import | 10 | 10 |
 | Toll computation: TRB fares, segment detection, route comparison | 12 | 12 |
-| Trips and RFID: planning, saving, deduction, tracking, directions | 15 | 15 |
-| **Total** | **43** | **43** |
+| Trips and RFID: planning, landmarks, saving, deduction, tracking, directions | 17 | 17 |
+| **Total** | **45** | **45** |
 
 ## Accounts: saved routes, Google sign-in, passwords
 
@@ -49,9 +49,11 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 - ✅ The cavitex calax link road counts as cavitex
 - ✅ A fast but pricier route is offered against a longer cheaper one
 
-## Trips and RFID: planning, saving, deduction, tracking, directions
+## Trips and RFID: planning, landmarks, saving, deduction, tracking, directions
 
 - ✅ Visitors can plan a trip by vehicle class
+- ✅ Landmarks can be searched and planned from
+- ✅ A landmark not in the cache is looked up and unknown ids are refused
 - ✅ Visitors cannot use a saved vehicle or save trips
 - ✅ A motorist planning with their vehicle gets their rfid account
 - ✅ Planning with someone elses vehicle is refused

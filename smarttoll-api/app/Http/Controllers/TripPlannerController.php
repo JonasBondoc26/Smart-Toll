@@ -28,7 +28,7 @@ class TripPlannerController extends Controller
 
     /**
      * POST /api/trip-planner/route   { vehicle_id | classification_id, origin_id, destination_id }
-     * An id is one from locations() or a map pin, "pin:<lat>,<lng>".
+     * An id is one from locations(), a landmark from search() ("osm:W123"), or a map pin, "pin:<lat>,<lng>".
      *
      * Open to visitors (no login): they send a classification_id and get routes and
      * fares only. A logged-in motorist sends one of their vehicle_ids and also gets
@@ -66,8 +66,9 @@ class TripPlannerController extends Controller
         $account = $rfid ? ['network' => $rfid->network, 'balance' => (float) $rfid->balance] : null;
 
         $locations = $this->allLocations();
-        $origin = $locations[$d['origin_id']] ?? $this->pinnedLocation($d['origin_id']);
-        $destination = $locations[$d['destination_id']] ?? $this->pinnedLocation($d['destination_id']);
+        $resolve = fn (string $id) => $locations[$id] ?? $this->pinnedLocation($id) ?? $this->planner->landmark($id);
+        $origin = $resolve($d['origin_id']);
+        $destination = $resolve($d['destination_id']);
         abort_if(!$origin || !$destination, 422, 'Choose the origin and destination from the list, or pin them on the map within Luzon.');
 
         try {
@@ -119,10 +120,23 @@ class TripPlannerController extends Controller
         return ['name' => $this->planner->placeName((float) $d['lat'], (float) $d['lng'])];
     }
 
+    /**
+     * GET /api/trip-planner/search?q=SM North EDSA
+     * Landmarks, buildings, streets and towns in Luzon, for when the place isn't one of the
+     * cities or toll plazas in locations(). Each result's id can be sent to plan().
+     */
+    public function search(Request $r)
+    {
+        $d = $r->validate(['q' => 'required|string|min:2|max:100']);
+        $results = $this->planner->searchPlaces($d['q']);
+        abort_if($results === null, 503, 'Landmark search is unavailable right now. Pick a city or toll plaza, or pin the spot on the map.');
+        return ['results' => $results];
+    }
+
     /** The toll data covers Luzon only. */
     private static function inLuzon(float $lat, float $lng): bool
     {
-        return $lat >= 12.5 && $lat <= 18.7 && $lng >= 119.5 && $lng <= 124.5;
+        return TripPlannerService::inLuzon($lat, $lng);
     }
 
     /** id => location. Ids look like "place:4" or "plaza:61". */

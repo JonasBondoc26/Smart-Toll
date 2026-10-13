@@ -1,6 +1,6 @@
 # SmartToll REST API
 
-*Generated from `php artisan route:list` on October 13, 2026: 58 endpoints. Base URL: `https://<server>/api`. Requests and responses are JSON; logged-in requests send `Authorization: Bearer <token>`. The website and the mobile app use this same API; all toll computation happens here.*
+*Generated from `php artisan route:list` on October 13, 2026: 59 endpoints. Base URL: `https://<server>/api`. Requests and responses are JSON; logged-in requests send `Authorization: Bearer <token>`. The website and the mobile app use this same API; all toll computation happens here.*
 
 ## Public
 
@@ -15,6 +15,7 @@
 | POST | `/api/reset-password` | Set a new password with the emailed token *(max 6 per 1 min)* |
 | GET | `/api/trip-planner/locations` | Supported places and toll plazas, vehicle classes *(max 60 per 1 min)* |
 | GET | `/api/trip-planner/place-name` | Place name of a map pin *(max 20 per 1 min)* |
+| GET | `/api/trip-planner/search` | Landmarks and places in Luzon matching `q` (ids `osm:…` usable as origin / destination) *(max 60 per 1 min)* |
 | POST | `/api/trip-planner/route` | Routes with toll segments and fares (fastest / shortest / cheapest) *(max 20 per 1 min)* |
 
 ## Motorist (requires login token)

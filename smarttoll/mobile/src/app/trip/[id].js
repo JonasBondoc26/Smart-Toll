@@ -57,7 +57,7 @@ export default function TripDetails() {
 
       <Card>
         <CardTitle icon="information-circle">Trip</CardTitle>
-        <Row first label="Expressways" value={trip.expressways.length ? trip.expressways.join(' → ') : 'None'} />
+        <Row first stacked label="Expressways" value={trip.expressways.length ? trip.expressways.join(' → ') : 'None'} />
         <Row label="Distance" value={`${Number(trip.route_distance).toFixed(1)} km`} />
         <Row label="Travel time" value={minutes(trip.estimated_travel_time)} />
       </Card>

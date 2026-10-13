@@ -54,14 +54,26 @@ export function CardTitle({ icon, children, right }) {
 }
 
 /** Label on the left, value on the right, with a hairline above. */
-export function Row({ label, value, sub, strong, first, valueStyle }) {
+/**
+ * A label and its value on one line. A long value wraps on the right instead of squeezing the
+ * label away; `stacked` puts the value under the label (for long text like an expressway chain).
+ */
+export function Row({ label, value, sub, strong, first, valueStyle, stacked }) {
+  if (stacked) {
+    return (
+      <View style={[s.rowLine, first && { borderTopWidth: 0 }]}>
+        <Text style={strong ? s.strong : s.muted}>{label}</Text>
+        <Text style={[strong ? s.total : s.value, { marginTop: 4 }, valueStyle]}>{value}</Text>
+      </View>
+    );
+  }
   return (
     <View style={[s.row, s.rowLine, first && { borderTopWidth: 0 }]}>
-      <View style={{ flex: 1, paddingRight: 12 }}>
+      <View style={{ flex: 1, minWidth: 96, paddingRight: 12 }}>
         <Text style={strong ? s.strong : s.muted}>{label}</Text>
         {sub ? <Text style={s.small}>{sub}</Text> : null}
       </View>
-      <Text style={[strong ? s.total : s.value, valueStyle]}>{value}</Text>
+      <Text style={[strong ? s.total : s.value, { flexShrink: 1, textAlign: 'right' }, valueStyle]}>{value}</Text>
     </View>
   );
 }

@@ -30,7 +30,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
+      # The runner already has the Android SDK (ANDROID_HOME); just make sure it's on the PATH.
+      - name: Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
 
       - uses: expo/expo-github-action@v8
         with:

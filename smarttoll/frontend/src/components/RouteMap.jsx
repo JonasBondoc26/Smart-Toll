@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -19,7 +19,9 @@ const pinIcon = (letter, cls) => L.divIcon({
 
 // pinMode: 'origin' | 'destination' | null. While set, a click on the map calls
 // onPick(lat, lng). The A / B markers can always be dragged; onMove(role, lat, lng).
-export default function RouteMap({ origin, destination, routes, selected, onSelect, status, statusIsError, pinMode, onPick, onMove }) {
+export default function RouteMap({ origin, destination, routes, selected, onSelect, status, statusIsError, pinMode, onPick, onMove, trafficAvailable = false }) {
+  const [showTraffic, setShowTraffic] = useState(false);
+  const trafficLayer = useRef(null);
   const el = useRef(null);
   const map = useRef(null);
   const layers = useRef(null);
@@ -40,11 +42,21 @@ export default function RouteMap({ origin, destination, routes, selected, onSele
       if (cb.current.pinMode) cb.current.onPick?.(e.latlng.lat, e.latlng.lng);
     });
     map.current = m;
+    // Live traffic (green / orange / red roads): tiles from our API, so the TomTom key stays on the server.
+    m.createPane('traffic').style.zIndex = 250;
+    m.getPane('traffic').style.pointerEvents = 'none';
+    trafficLayer.current = L.tileLayer('/api/traffic/tiles/{z}/{x}/{y}.png', { pane: 'traffic', maxZoom: 18, opacity: 0.9 });
     layers.current = {
       routes: L.layerGroup().addTo(m), plazas: L.layerGroup().addTo(m), ends: L.layerGroup().addTo(m),
     };
     return () => { m.remove(); map.current = null; };
   }, []);
+
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !trafficLayer.current) return;
+    if (showTraffic) trafficLayer.current.addTo(m); else trafficLayer.current.remove();
+  }, [showTraffic]);
 
   // Crosshair cursor while waiting for a pin.
   useEffect(() => {
@@ -113,6 +125,11 @@ export default function RouteMap({ origin, destination, routes, selected, onSele
     <div className="map-block planner-map">
       <div className="map-canvas" ref={el} role="application" aria-label="Route map" />
       {status && <div className={`map-status${statusIsError ? ' is-error' : ''}`} role="status">{status}</div>}
+      {trafficAvailable && (
+        <button type="button" className={`map-traffic-toggle${showTraffic ? ' is-on' : ''}`} aria-pressed={showTraffic} onClick={() => setShowTraffic((t) => !t)}>
+          {showTraffic ? 'Traffic on' : 'Show traffic'}
+        </button>
+      )}
       <div className="map-legend">
         <div className="map-legend-row"><div className="map-legend-dot" style={{ background: GREEN }} />Toll expressway</div>
         <div className="map-legend-row"><div className="map-legend-dot" style={{ background: BLUE }} />Ordinary roads (to entry / from exit)</div>

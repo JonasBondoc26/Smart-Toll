@@ -70,6 +70,8 @@ class TripPlannerService
     /** @var array<int, array<string, float>> class number => ["entryId|exitId" => rate] */
     private array $ratesByClass = [];
 
+    public function __construct(private TrafficService $traffic) {}
+
     /* ------------------------------------------------------------------
      | Planning a trip (the one method the controller calls)
      * ------------------------------------------------------------------ */
@@ -106,8 +108,29 @@ class TripPlannerService
             ];
         }
 
+        $routes = $this->withTraffic($routes);
         $picks = $this->compareRoutes($routes);
         return ['routes' => $routes, 'picks' => $picks, 'tradeoff' => $this->tradeoff($routes, $picks)];
+    }
+
+    /**
+     * Live traffic on each route (when a TomTom key is set): duration_s becomes the time it
+     * takes right now, so "Fastest", the fastest-vs-cheapest trade-off and the saved trip's
+     * estimate all follow the traffic. The empty-road time stays in typical_duration_s, and
+     * `traffic` says how bad it is. The toll is never touched.
+     */
+    private function withTraffic(array $routes): array
+    {
+        foreach ($routes as &$r) {
+            $t = $this->traffic->routeTime($r['geometry']);
+            $r['typical_duration_s'] = $r['duration_s'];
+            $r['traffic'] = $t ? ['delay_s' => $t['delay_s'], 'level' => $t['level'], 'source' => 'live'] : null;
+            if ($t) {
+                $r['duration_s'] = $t['live_s'];
+            }
+        }
+        unset($r);
+        return $routes;
     }
 
     /* ------------------------------------------------------------------

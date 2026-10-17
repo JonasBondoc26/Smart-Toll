@@ -1,6 +1,6 @@
 # SmartToll REST API
 
-*Generated from `php artisan route:list` on October 13, 2026: 59 endpoints. Base URL: `https://<server>/api`. Requests and responses are JSON; logged-in requests send `Authorization: Bearer <token>`. The website and the mobile app use this same API; all toll computation happens here.*
+*Generated from `php artisan route:list` on October 13, 2026: 62 endpoints. Base URL: `https://<server>/api`. Requests and responses are JSON; logged-in requests send `Authorization: Bearer <token>`. The website and the mobile app use this same API; all toll computation happens here.*
 
 ## Public
 
@@ -16,6 +16,8 @@
 | GET | `/api/trip-planner/locations` | Supported places and toll plazas, vehicle classes *(max 60 per 1 min)* |
 | GET | `/api/trip-planner/place-name` | Place name of a map pin *(max 20 per 1 min)* |
 | GET | `/api/trip-planner/search` | Landmarks and places in Luzon matching `q` (ids `osm:…` usable as origin / destination) *(max 60 per 1 min)* |
+| GET | `/api/traffic/status` | Whether live traffic is set up (`enabled`) *(max 60 per 1 min)* |
+| GET | `/api/traffic/tiles/{z}/{x}/{y}.png` | Live traffic map tile (TomTom, through the server so the key stays private) *(max 600 per 1 min)* |
 | POST | `/api/trip-planner/route` | Routes with toll segments and fares (fastest / shortest / cheapest) *(max 20 per 1 min)* |
 
 ## Motorist (requires login token)
@@ -41,6 +43,7 @@
 | GET | `/api/trips/{id}` | One trip with toll segments, map and directions |
 | POST | `/api/trips/{id}/complete` | Arrived: mark completed (position checked) |
 | POST | `/api/trips/{id}/reroute` | New directions after a wrong turn *(max 10 per 1 min)* |
+| POST | `/api/trips/{id}/traffic` | Live traffic on the road ahead: time left, incidents, and a faster route when traffic is heavy *(max 20 per 1 min)* |
 | POST | `/api/trips/{id}/start` | Start following the trip with GPS (in progress) |
 | GET | `/api/vehicles` | List vehicles and classifications |
 | POST | `/api/vehicles` | Add a vehicle |

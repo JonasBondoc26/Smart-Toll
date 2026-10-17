@@ -1,6 +1,6 @@
 # SmartToll automated tests
 
-*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **45 of 45 passed**, 193 assertions.*
+*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **49 of 49 passed**, 222 assertions.*
 
 The tests use a separate database (`smarttoll_test`) built from `database/smarttoll.sql`; every test runs in a transaction that is rolled back. Outside services are replaced by recorded answers (a real OSRM route for Quezon City → San Fernando via NLEX, Google token checks), so the results are repeatable and run offline.
 
@@ -9,8 +9,8 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 | Accounts: saved routes, Google sign-in, passwords | 6 | 6 |
 | Administration: access, rate rules, change log, CSV/TRB import | 10 | 10 |
 | Toll computation: TRB fares, segment detection, route comparison | 12 | 12 |
-| Trips and RFID: planning, landmarks, saving, deduction, tracking, directions | 17 | 17 |
-| **Total** | **45** | **45** |
+| Trips and RFID: planning, landmarks, live traffic, saving, deduction, tracking, directions | 21 | 21 |
+| **Total** | **49** | **49** |
 
 ## Accounts: saved routes, Google sign-in, passwords
 
@@ -49,10 +49,14 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 - ✅ The cavitex calax link road counts as cavitex
 - ✅ A fast but pricier route is offered against a longer cheaper one
 
-## Trips and RFID: planning, landmarks, saving, deduction, tracking, directions
+## Trips and RFID: planning, landmarks, live traffic, saving, deduction, tracking, directions
 
 - ✅ Visitors can plan a trip by vehicle class
 - ✅ Landmarks can be searched and planned from
+- ✅ Without a traffic key routes keep their usual times
+- ✅ Live traffic sets the travel time but never the toll
+- ✅ A followed trip hears about incidents on the road ahead only
+- ✅ Heavy traffic ahead offers a faster route without touching the paid toll
 - ✅ A landmark not in the cache is looked up and unknown ids are refused
 - ✅ Visitors cannot use a saved vehicle or save trips
 - ✅ A motorist planning with their vehicle gets their rfid account
@@ -71,4 +75,4 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 
 ## Manual and end-to-end checks
 
-Besides the automated tests, the website and the mobile app (Expo web build at phone size) were exercised end to end in Chrome during development: registering, adding vehicles and RFID accounts, planning and saving Quezon City → San Fernando (₱266 deducted), GPS trip tracking in simulation (37 spoken directions, toll entry/exit warnings, arrival marks the trip completed), heading-up map rotation, light and dark mode, and map smoothness with the CPU slowed 4× (full map refreshes cut from 154/s to 2.8/s). Later checks: landmark search on both apps (SM North EDSA → Holy Angel University planned with real fares); dynamic zoom during a simulated trip (zooms in before turns and back out after, never faster than about 1 zoom level a second, still 2.8 full refreshes/s with the CPU slowed 4×); and the landscape trip layout, rotating portrait ↔ landscape mid-trip without the trip resetting (distance left kept counting down).
+Besides the automated tests, the website and the mobile app (Expo web build at phone size) were exercised end to end in Chrome during development: registering, adding vehicles and RFID accounts, planning and saving Quezon City → San Fernando (₱266 deducted), GPS trip tracking in simulation (37 spoken directions, toll entry/exit warnings, arrival marks the trip completed), heading-up map rotation, light and dark mode, and map smoothness with the CPU slowed 4× (full map refreshes cut from 154/s to 2.8/s). Later checks: landmark search on both apps (SM North EDSA → Holy Angel University planned with real fares); dynamic zoom during a simulated trip (zooms in before turns and back out after, never faster than about 1 zoom level a second, still 2.8 full refreshes/s with the CPU slowed 4×); and the landscape trip layout, rotating portrait ↔ landscape mid-trip without the trip resetting (distance left kept counting down). Live traffic was checked end to end against a local stand-in for TomTom (no real key yet): route options showed "1 h 30 min now · +25 min traffic" on both apps, the simulated trip announced an accident on E1 ahead and stretched the arrival time, and the traffic map layer showed on the website and the app (turning with heading-up).

@@ -100,6 +100,8 @@ export default function TripPlanner() {
 
   const [trip, setTrip] = useState(null);        // the API's answer: { routes, picks, vehicle, rfid }
   const [selected, setSelected] = useState(0);
+  const [trafficAvailable, setTrafficAvailable] = useState(false);
+  useEffect(() => { api('/traffic/status').then((d) => setTrafficAvailable(!!d.enabled)).catch(() => {}); }, []);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState({ text: '', error: false });
   const [pinMode, setPinMode] = useState(null);  // 'origin' | 'destination' | null: next map click sets it
@@ -501,7 +503,7 @@ export default function TripPlanner() {
                 <RouteMap
                   origin={origin} destination={destination} routes={routes} selected={selected}
                   onSelect={setSelected} status={mapStatus.text} statusIsError={mapStatus.error}
-                  pinMode={pinMode} onPick={onMapPick} onMove={placePin}
+                  pinMode={pinMode} onPick={onMapPick} onMove={placePin} trafficAvailable={trafficAvailable}
                 />
 
                 {!route && (
@@ -534,13 +536,19 @@ export default function TripPlanner() {
                               {r.toll.segments.length === 0 ? 'No toll' : peso(r.toll.total)}
                               {r.toll.segments.length > 0 && !r.toll.complete && <small>+ unpriced section</small>}
                             </div>
-                            <div className="route-option-meta">{km(r.distance_m)} · {duration(r.duration_s)}</div>
+                            <div className="route-option-meta">{km(r.distance_m)} · {duration(r.duration_s)}{r.traffic ? ' now' : ''}</div>
+                            {r.traffic && (
+                              <div className={`traffic-chip is-${r.traffic.level}`}>
+                                {r.traffic.delay_s >= 60 ? `+${duration(r.traffic.delay_s)} traffic` : 'Light traffic'}
+                              </div>
+                            )}
                             <div className="route-option-via">{via.length ? 'via ' + via.join(', ') : 'No expressway'}</div>
                           </button>
                         );
                       })}
                     </div>
                     <div className="field-hint" style={{ marginTop: 8 }}>
+                      {routes.some((r) => r.traffic) ? 'Times include live traffic. ' : 'Typical travel times (live traffic is not available). '}
                       {routes.length === 1
                         ? 'The routing service returned one route for this trip, so it is the fastest, shortest and cheapest option available.'
                         : `Comparing ${routes.length} routes. Tap a card or a grey line on the map to switch.`}

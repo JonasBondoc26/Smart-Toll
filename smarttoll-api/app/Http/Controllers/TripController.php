@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Services\TrafficService;
 use App\Services\TripPlannerService;
 use App\Services\TripRecorder;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  */
 class TripController extends Controller
 {
-    public function __construct(private TripPlannerService $planner, private TripRecorder $recorder) {}
+    public function __construct(private TripPlannerService $planner, private TripRecorder $recorder, private TrafficService $traffic) {}
 
     /** GET /api/trips — the user's saved trips, newest first. */
     public function index(Request $r)
@@ -213,6 +214,64 @@ class TripController extends Controller
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 502);
         }
+    }
+
+    /**
+     * POST /api/trips/{id}/traffic   { lat, lng, ahead: [[lat, lng], ...] }
+     * While a trip is followed (every few minutes): live traffic on the road still ahead.
+     *   remaining  live / typical time for the rest of the route, and the delay
+     *   incidents  crashes, jams, closures, road works and floods on the next 60 km, nearest first
+     *   faster     when traffic costs 10+ minutes, a different route from here that saves 5+ minutes
+     *              (geometry and directions to follow, its distance and its estimated toll);
+     *              the saved trip's toll record doesn't change
+     * { enabled: false } when no traffic service is set up.
+     */
+    public function traffic(Request $r, int $id)
+    {
+        $d = $r->validate([
+            'lat' => 'required|numeric|between:12.5,18.7', 'lng' => 'required|numeric|between:119.5,124.5',
+            'ahead' => 'required|array|min:2|max:200', 'ahead.*' => 'array|size:2', 'ahead.*.*' => 'numeric',
+        ]);
+        $trip = $this->ownTrip($r, $id);
+        if (!$this->traffic->enabled()) {
+            return ['enabled' => false];
+        }
+        $ahead = array_map(fn ($p) => [(float) $p[0], (float) $p[1]], $d['ahead']);
+        $remaining = $this->traffic->routeTime($ahead);
+        $incidents = $this->traffic->incidentsAlong($ahead) ?? [];
+
+        $faster = null;
+        if ($remaining && $remaining['delay_s'] >= 600) {
+            $faster = \Illuminate\Support\Facades\Cache::remember("traffic:faster:{$id}:" . round($d['lat'], 2) . ',' . round($d['lng'], 2), now()->addMinutes(5),
+                fn () => $this->fasterRoute($trip, (float) $d['lat'], (float) $d['lng'], $remaining['live_s']));
+        }
+        return ['enabled' => true, 'remaining' => $remaining, 'incidents' => $incidents, 'faster' => $faster];
+    }
+
+    /** A route from here to the destination that beats the current one in traffic by 5+ minutes, or null. */
+    private function fasterRoute(object $trip, float $lat, float $lng, int $currentLive): ?array
+    {
+        $dest = DB::table('trip_routes')->where('trip_id', $trip->trip_id)->first(['destination_lat', 'destination_lng']);
+        $class = DB::table('vehicles as v')->join('vehicle_classifications as c', 'c.classification_id', '=', 'v.classification_id')
+            ->where('v.vehicle_id', $trip->vehicle_id)->value('c.class_name');
+        if (!$dest || !$class) {
+            return null;
+        }
+        try {
+            $plan = $this->planner->plan(['lat' => $lat, 'lng' => $lng], ['lat' => (float) $dest->destination_lat, 'lng' => (float) $dest->destination_lng],
+                TripPlannerService::classNumber($class));
+        } catch (\RuntimeException $e) {
+            return null;
+        }
+        $best = $plan['routes'][$plan['picks']['fastest']] ?? null;
+        if (!$best || !($best['traffic'] ?? null) || $currentLive - $best['duration_s'] < 300) {
+            return null;
+        }
+        return [
+            'duration_s' => $best['duration_s'], 'saves_s' => $currentLive - $best['duration_s'], 'distance_m' => $best['distance_m'],
+            'toll_total' => $best['toll']['total'], 'expressways' => array_values(array_unique(array_column($best['toll']['segments'], 'label'))),
+            'geometry' => $best['geometry'], 'steps' => $best['steps'],
+        ];
     }
 
     private function ownTrip(Request $r, int $id): object

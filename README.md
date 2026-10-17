@@ -20,6 +20,7 @@ Web Application: https://smart-toll-production.up.railway.app/login
 - [Running it after setup](#running-it-after-setup)
 - [The database](#the-database)
 - [Password reset emails](#password-reset-emails)
+- [Live traffic (TomTom, optional)](#live-traffic-tomtom-optional)
 - [Sign in with Google](#sign-in-with-google)
 - [Mobile app (React Native)](#mobile-app-react-native)
 - [Put SmartToll online (Railway)](#put-smarttoll-online-railway)
@@ -55,6 +56,7 @@ Web Application: https://smart-toll-production.up.railway.app/login
 - **My location:** start a trip from where you are, using the phone's GPS.
 - **GPS trip tracking with turn-by-turn directions:** after you save a trip (its toll is deducted then), **Start Trip** follows you with the phone's GPS along the saved route: live position, distance and time left, and the next turn ("In 400 meters, turn left onto Tandang Sora Avenue"). It warns you before and when you **enter and exit each toll plaza**, re-routes automatically after a wrong turn, and marks the trip **Completed** when you reach the destination.
 - **Alerts your way:** while driving, switch **Voice**, **Text** and **Graphic** alerts on or off (any mix, remembered on the phone).
+- **Live traffic (optional, TomTom):** route options show the time *now* with a "+18 min traffic" chip, and "Fastest" follows the traffic. While following a trip, crashes, jams, closures, road works and floods on the road ahead are announced (voice, text or graphic), the arrival time follows the traffic, and a faster route is offered when traffic costs 10+ minutes and another way saves 5+. A **Traffic** button colours the roads on the map. Traffic changes travel times only; tolls always come from the TRB rates. Without a TomTom key the app shows typical times.
 - **Landscape driving layout:** with auto-rotate on, turning the phone sideways shows a full-height map with the next turn, distance, time and arrival time beside it; rotation lock is respected.
 - **Heading-up map:** while driving, the flat 2D map turns so the direction of travel points to the top of the screen, with your arrow near the bottom-center; turns rotate it smoothly. Switch to **North up** anytime. It zooms in automatically approaching each turn and back out after it.
 - **Keeps working with the screen off:** with "Allow all the time" location, directions and toll alerts continue when the phone is locked or another app is open.
@@ -132,7 +134,7 @@ Install these first. The versions in brackets are the ones SmartToll was built a
 | **Composer 2** | Installs Laravel's PHP packages | https://getcomposer.org/download |
 | **Node.js 18 or newer** (22.19) | Runs the React dev server | https://nodejs.org (LTS) |
 | **Git** | Cloning the repository | https://git-scm.com |
-| **Internet connection** | Routing (OSRM), map tiles, place names and landmark search are online services | |
+| **Internet connection** | Routing (OSRM), map tiles, place names, landmark search and live traffic are online services | |
 
 > **Not using XAMPP?** Any PHP 8.2+ with the `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` and `curl` extensions, plus MySQL 8 or MariaDB 10.4+, works too.
 
@@ -383,6 +385,22 @@ Brevo → **Transactional → Logs** shows every email the server sent and wheth
 
 ---
 
+## Live traffic (TomTom, optional)
+
+Routing (OSRM) has no traffic, so its times are for an empty road. With a free TomTom key SmartToll adds live traffic:
+
+1. Create a free account at https://developer.tomtom.com (Freemium plan, no credit card) and copy your **API key**.
+2. Put it in `smarttoll-api/.env` (and on Railway → **Variables**): `TOMTOM_API_KEY=your-key`. Run `php artisan config:clear` locally.
+
+What changes:
+- **Plan a Trip:** each route shows its time *now* and a traffic chip (green light / amber moderate / red heavy, "+18 min traffic"). "Fastest" and the fastest-vs-cheapest comparison use live times, and a saved trip keeps the estimate it was planned with. A note says "Times include live traffic" (or "Typical travel times" when traffic is off).
+- **Following a trip:** every 3 minutes (every 25 s in the simulation) the server checks the road ahead. Incidents within 20 km are announced once ("Heads up: accident ahead on E1, in 4 kilometres, about 12 minutes' delay"), the arrival time follows the traffic, and when traffic costs 10+ minutes and another route saves 5+, a **Faster route** card offers it (with that route's estimated toll; the saved trip's toll record doesn't change).
+- **Traffic button:** colours the roads green / orange / red on the Plan and trip maps (website and app).
+
+The key stays on the server: the apps ask the SmartToll API, which asks TomTom (answers cached 2–5 minutes, map tiles included). Traffic never changes a toll price. Without a key, or when TomTom can't be reached, everything works as before with typical times.
+
+---
+
 ## Sign in with Google
 
 Motorists can use **Continue with Google** on the Log In and Register pages, and in the Plan a Trip log-in pop-up. The button only appears once `GOOGLE_CLIENT_ID` is set.
@@ -537,6 +555,7 @@ Online, the website and the mobile app work from anywhere (not only on your Wi-F
    | `DB_URL` | `${{MySQL.MYSQL_URL}}` (Railway fills in the database address) |
    | `SEED_DEMO` | `1` for the first start (adds the demo accounts once), then delete it |
    | `GOOGLE_CLIENT_ID` | the same as in your local `.env` (optional) |
+   | `TOMTOM_API_KEY` | your TomTom key, for live traffic (optional; see [Live traffic](#live-traffic-tomtom-optional)) |
    | `MAIL_MAILER`, `BREVO_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | `brevo` and your Brevo details, for password-reset emails (Railway blocks SMTP; see [Emails from the online server](#emails-from-the-online-server-brevo)) |
 
    Debug mode is off and cache/sessions use files by default (set in the `Dockerfile`).
@@ -572,7 +591,7 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 
 ## Automated tests
 
-45 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
+49 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
 
 ```bash
 php artisan test
@@ -582,7 +601,7 @@ What they cover:
 - **Toll calculation:** fares from the TRB matrix per vehicle class, fares stored one way pricing both directions, and a recorded NLEX route detected as Mindanao Avenue → San Simon (₱266 for Class 1).
 - **Trips and RFID:** saving a trip re-prices it on the server (a fee sent by the browser is ignored), deducts the toll, refuses an insufficient balance and changes nothing, keeps what's needed to plan a trip again, and keeps each motorist's trips private. Visitors can plan but not save.
 - **Admin:** only admins reach the admin API; duplicate and cross-expressway rates are rejected; classes and plazas still in use can't be deleted; every rate change is written to the change log; CSV and TRB imports change nothing on preview and log everything they apply.
-- **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions (saved with the trip), and a motorist off the route gets new directions without the toll changing. Landmarks found by the search can be planned from (duplicates and places outside Luzon are left out), and one not in the cache is looked up again.
+- **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions (saved with the trip), and a motorist off the route gets new directions without the toll changing. Live traffic sets route times but never the toll, works without a key, reports only the incidents on the road ahead, and offers a faster route around heavy traffic without touching the toll already paid. Landmarks found by the search can be planned from (duplicates and places outside Luzon are left out), and one not in the cache is looked up again.
 - **Accounts:** saved routes are private to their owner; Google sign-in creates one account per person and rejects tokens made for other apps, unverified emails and admin accounts; a Google account sets its first password without a current one, and needs it from then on.
 
 The tests use a separate database, **`smarttoll_test`**, built automatically from `database/smarttoll.sql`. They never touch the real `smarttoll` database, and each test's changes are rolled back. The routing server (OSRM) and Google are replaced by recorded answers (`tests/Fixtures/`), so the tests run offline.
@@ -632,7 +651,7 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 
 - **Toll rates:** [Toll Regulatory Board](https://trb.gov.ph/) (Philippines)
 - **Map data:** © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
-- **Routing:** [OSRM](https://project-osrm.org/) · **Place names:** [Nominatim](https://nominatim.org/) · **Landmark search:** [Photon](https://photon.komoot.io/) · **Map display:** [Leaflet](https://leafletjs.com/)
+- **Routing:** [OSRM](https://project-osrm.org/) · **Place names:** [Nominatim](https://nominatim.org/) · **Landmark search:** [Photon](https://photon.komoot.io/) · **Live traffic:** [TomTom](https://developer.tomtom.com/) · **Map display:** [Leaflet](https://leafletjs.com/)
 - Built with [Laravel](https://laravel.com/), [React](https://react.dev/) and [React Native](https://reactnative.dev/) / [Expo](https://expo.dev/)
 
 This is an academic project made for a capstone course at Holy Angel University.

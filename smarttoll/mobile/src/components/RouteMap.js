@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { colors, themed } from '../lib/theme';
 import { MAP_HTML } from './mapHtml';
+import { TRAFFIC_TILES } from '../lib/traffic';
 
 /**
  * Leaflet on OpenStreetMap tiles, inside a WebView: the same map as the website, with
@@ -21,17 +22,18 @@ import { MAP_HTML } from './mapHtml';
  * turn {step, distance}: the next maneuver while following; the map zooms in approaching it and
  *   back out after it (dynamic zoom; the usual zoom also adapts to the speed).
  * night: dark map tiles (Dark appearance).
+ * traffic: show live traffic (green / orange / red roads) on the map.
  * onUserMove(): the driver touched the map (stop following). onTouching(bool): a finger is on
  * the map, so a scrolling parent can pause its own scrolling.
  * onPick(lat, lng): the map was tapped (only while `picking`). onSelect(i): a route line was tapped.
  */
-export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, night = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
+export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, night = false, traffic = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
   const web = useRef(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (ready) web.current?.injectJavaScript(`window.update(${JSON.stringify({ ...data, picking, night })});true;`);
-  }, [ready, data, picking, night]);
+    if (ready) web.current?.injectJavaScript(`window.update(${JSON.stringify({ ...data, picking, night, traffic, trafficUrl: TRAFFIC_TILES })});true;`);
+  }, [ready, data, picking, night, traffic]);
 
   useEffect(() => {
     if (ready) web.current?.injectJavaScript(`window.moveTo(${JSON.stringify({ position: position || null, follow, heading, headingUp, turn })});true;`);

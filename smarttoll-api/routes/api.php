@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\TrafficController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,8 @@ Route::get('/trip-planner/locations', [TripPlannerController::class, 'locations'
 Route::post('/trip-planner/route', [TripPlannerController::class, 'plan'])->middleware('throttle:20,1');
 Route::get('/trip-planner/place-name', [TripPlannerController::class, 'placeName'])->middleware('throttle:20,1');
 Route::get('/trip-planner/search', [TripPlannerController::class, 'search'])->middleware('throttle:60,1');
+Route::get('/traffic/status', [TrafficController::class, 'status'])->middleware('throttle:60,1');
+Route::get('/traffic/tiles/{z}/{x}/{y}.png', [TrafficController::class, 'tile'])->whereNumber(['z', 'x', 'y'])->middleware('throttle:600,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -53,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/trips/{id}/start', [TripController::class, 'start'])->whereNumber('id');
     Route::post('/trips/{id}/complete', [TripController::class, 'complete'])->whereNumber('id');
     Route::post('/trips/{id}/reroute', [TripController::class, 'reroute'])->whereNumber('id')->middleware('throttle:10,1');
+    Route::post('/trips/{id}/traffic', [TripController::class, 'traffic'])->whereNumber('id')->middleware('throttle:20,1');
 });
 
 // Admin module: reference data for route planning and toll computation

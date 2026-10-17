@@ -7,6 +7,7 @@ import { api } from './api';
 import { getItem, setItem } from './storage';
 import { metersBetween } from './format';
 import { inDistance, instruction, isHighway, pesosSpoken } from './directions';
+import { aheadWords } from './traffic';
 import { askBackgroundPermission, backgroundAvailable, hasBackgroundPermission, setBackgroundListener, startBackground, stopBackground } from './backgroundLocation';
 
 /**
@@ -66,6 +67,9 @@ const MIN_SPEED_MS = 1.5;        // slower than this (GPS speed), the heading is
 const MIN_HEADING_STEP = 3;      // heading changes smaller than this are GPS noise and ignored
 const SIM_STEP_M = 50;           // simulation: one position every 50 m ...
 const SIM_TICK_MS = 200;         // ... every 0.2 s (about 3 km a minute)
+const TRAFFIC_EVERY_MS = 180000; // live traffic on the road ahead: checked every 3 minutes ...
+const TRAFFIC_SIM_EVERY_MS = 25000; // ... and every 25 s in the sped-up simulation
+const INCIDENT_TELL_M = 20000;   // incidents are announced when they're within 20 km
 
 export function TrackingProvider({ children }) {
   const [state, setState] = useState(IDLE);
@@ -84,6 +88,8 @@ export function TrackingProvider({ children }) {
   const alertId = useRef(0);
   const heading = useRef(null);     // smoothed direction of travel, degrees from north
   const lastFix = useRef(null);     // previous position, for the heading off the route
+  const lastPos = useRef(null);     // the latest position, for the traffic check
+  const trafficBusy = useRef(false);
 
   useEffect(() => () => stopper.current?.(), []);
   // The app always opens with no trip being followed, so background GPS left over from before
@@ -152,11 +158,51 @@ export function TrackingProvider({ children }) {
     }
   };
 
+  // Live traffic on the road still ahead (when the server has it): incidents within reach are
+  // announced once, the time left follows the traffic, and a faster route is offered when traffic
+  // costs 10+ minutes and another way saves 5+. The saved toll record never changes.
+  const checkTraffic = async (trip) => {
+    const r = route.current;
+    const pos = lastPos.current;
+    if (!r || !pos || trafficBusy.current) return;
+    trafficBusy.current = true;
+    const myRun = run.current;
+    try {
+      const ahead = sampleLine([pos, ...r.line.slice(index.current + 1)], 150).map(([a, b]) => [+a.toFixed(5), +b.toFixed(5)]);
+      if (ahead.length < 2) return;
+      const d = await api(`/trips/${trip.trip_id}/traffic`, { method: 'POST', body: { lat: pos[0], lng: pos[1], ahead } });
+      if (myRun !== run.current || !d.enabled) return;
+      const fresh = (d.incidents || []).filter((i) => i.along_m <= INCIDENT_TELL_M && !said.current.has(`inc:${i.id}`));
+      fresh.forEach((i) => said.current.add(`inc:${i.id}`));
+      let trafficAlert = null;
+      if (fresh.length) {
+        const words = incidentWords(fresh[0]);
+        speak(words.spoken, { interrupt: false });
+        Vibration.vibrate(250);
+        trafficAlert = { ...fresh[0], ...words, alertId: ++alertId.current, at: Date.now() };
+      }
+      const f = d.faster;
+      if (f && !said.current.has(`faster:${Math.round(f.saves_s / 60)}`)) {
+        said.current.add(`faster:${Math.round(f.saves_s / 60)}`);
+        speak(`A faster route is available. It saves about ${Math.round(f.saves_s / 60)} minutes.`, { interrupt: false });
+      }
+      setState((s) => ({
+        ...s, traffic: d.remaining ? { ...d.remaining, at: Date.now() } : null, faster: f || null,
+        trafficAlert: trafficAlert || s.trafficAlert,
+      }));
+    } catch {
+      // traffic is a bonus: the trip carries on without it
+    } finally {
+      trafficBusy.current = false;
+    }
+  };
+
   // One position (real GPS or simulated).
   const onFix = (trip, lat, lng, simulated, gps = null) => {
     const r = route.current;
     if (!r) return;
     index.current = nearestIndex(r.line, lat, lng, index.current);
+    lastPos.current = [lat, lng];
     // Measured along the road, between route points: on expressways they can be 500 m apart.
     const travelled = progressAt(r.line, r.cum, index.current, lat, lng);
     const remaining = Math.max(0, r.total - travelled);
@@ -275,6 +321,14 @@ export function TrackingProvider({ children }) {
     }
   };
 
+  useEffect(() => {
+    if (state.status !== 'tracking' || !state.trip) return undefined;
+    const trip = state.trip;
+    const first = setTimeout(() => checkTraffic(trip), 8000);
+    const every = setInterval(() => checkTraffic(trip), state.simulated ? TRAFFIC_SIM_EVERY_MS : TRAFFIC_EVERY_MS);
+    return () => { clearTimeout(first); clearInterval(every); };
+  }, [state.status, state.tripId, state.simulated]);
+
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -353,6 +407,22 @@ export function TrackingProvider({ children }) {
       return granted;
     },
 
+    /** Follow the faster route the traffic check found (directions continue on it). */
+    takeFaster: () => {
+      const f = stateRef.current.faster;
+      const old = route.current;
+      if (!f || !old) return;
+      route.current = build(f.geometry, f.steps, old.plazas, old.destination, f.duration_s);
+      index.current = 0;
+      offRoute.current = 0;
+      said.current = new Set([...said.current].filter((k) => k.startsWith('plaza:') || k.startsWith('inc:') || k.startsWith('faster:')));
+      speak('Taking the faster route.');
+      setState((s) => ({ ...s, faster: null, traffic: null, routeVersion: s.routeVersion + 1, reroutes: s.reroutes + 1 }));
+    },
+
+    /** Keep the current route. */
+    dismissFaster: () => setState((s) => ({ ...s, faster: null })),
+
     /** Stop following (the trip stays "in progress" and can be started again later). */
     stop: () => { run.current += 1; end(); Speech.stop(); route.current = null; setState({ ...IDLE, alerts: alerts.current }); },
 
@@ -379,11 +449,11 @@ export function TrackingProvider({ children }) {
   const sessionValue = useMemo(() => ({
     status: state.status, tripId: state.tripId, trip: state.trip, simulated: state.simulated, alerts: state.alerts,
     background: state.background, error: state.error, hasDirections: state.hasDirections, rerouting: state.rerouting,
-    routeVersion: state.routeVersion, hasPosition,
+    routeVersion: state.routeVersion, hasPosition, traffic: state.traffic, faster: state.faster, trafficAlert: state.trafficAlert,
     active: state.status === 'tracking' || state.status === 'arrived',
     ...actions,
   }), [state.status, state.tripId, state.trip, state.simulated, state.alerts, state.background, state.error,
-    state.hasDirections, state.rerouting, state.routeVersion, hasPosition, actions]);
+    state.hasDirections, state.rerouting, state.routeVersion, hasPosition, state.traffic, state.faster, state.trafficAlert, actions]);
 
   return (
     <TrackingStatusContext.Provider value={statusValue}>
@@ -397,7 +467,7 @@ export function TrackingProvider({ children }) {
 const IDLE = {
   status: 'idle', tripId: null, trip: null, simulated: false, startedAt: null, completedAt: null,
   position: null, heading: null, travelled: 0, remaining: 0, passed: {}, tollAlert: null, guidance: null, hasDirections: false,
-  offRoute: false, rerouting: false, reroutes: 0, routeVersion: 0, background: false, alerts: { voice: true, text: true, graphic: true }, fixes: 0, error: '',
+  offRoute: false, rerouting: false, reroutes: 0, routeVersion: 0, background: false, traffic: null, faster: null, trafficAlert: null, alerts: { voice: true, text: true, graphic: true }, fixes: 0, error: '',
 };
 
 const DEFAULT_ALERTS = { voice: true, text: true, graphic: true };
@@ -556,4 +626,22 @@ function resample(line, stepM) {
   }
   out.push(line[line.length - 1]);
   return out;
+}
+
+/** At most `max` points of a line, evenly spread, keeping the first and the last. */
+function sampleLine(line, max) {
+  if (line.length <= max) return line;
+  const out = [];
+  for (let i = 0; i < max; i++) out.push(line[Math.round((i * (line.length - 1)) / (max - 1))]);
+  return out;
+}
+
+/** What a traffic incident ahead says on screen and out loud. */
+function incidentWords(i) {
+  const where = i.road ? ` on ${i.road}` : '';
+  const delay = i.delay_s >= 60 ? `, about ${Math.round(i.delay_s / 60)} minutes' delay` : '';
+  return {
+    text: `${i.kind}${where} ${aheadWords(i.along_m)}${delay}.`,
+    spoken: `Heads up: ${i.kind.toLowerCase()} ahead${where}, ${aheadWords(i.along_m)}${delay}.`,
+  };
 }

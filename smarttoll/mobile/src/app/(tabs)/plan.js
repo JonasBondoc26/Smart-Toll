@@ -5,14 +5,18 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import RouteMap from '../../components/RouteMap';
 import PlacePicker, { pinPlace, placeNameOf } from '../../components/PlacePicker';
 import SavedRoutes from '../../components/SavedRoutes';
+import TrafficChip from '../../components/TrafficChip';
+import { useTrafficEnabled } from '../../lib/traffic';
 import { BalanceCard, BalanceSheet, TollBreakdown } from '../../components/Toll';
-import { Badge, Button, Card, EmptyState, Notice, Screen, SelectField, T, s } from '../../components/ui';
+import { Badge, Button, Card, CardTitle, EmptyState, Notice, Screen, SelectField, T, s } from '../../components/ui';
 import { SkeletonForm } from '../../components/Skeleton';
 import { api } from '../../lib/api';
 import { km, minutes, peso, roadsOf } from '../../lib/format';
 import { colors, fonts, shadow, themed, useTheme } from '../../lib/theme';
 
 export default function Plan() {
+  const trafficEnabled = useTrafficEnabled();
+  const [showTraffic, setShowTraffic] = useState(false);
   const theme = useTheme();   // re-renders on a light / dark switch
   const params = useLocalSearchParams();          // ?again=<trip_id> from Trip Details ("Plan Again")
   const [vehicles, setVehicles] = useState(null);
@@ -165,7 +169,13 @@ export default function Plan() {
       </View>
 
       {pinFor && <Notice tone="info">{`Tap the map to set the ${pinFor}.`}</Notice>}
-      <RouteMap data={mapData} height={pinFor ? 380 : 280} picking={!!pinFor} onPick={onMapPick} onSelect={setSelected} onTouching={setTouchingMap} night={theme.dark} />
+      {trafficEnabled && !pinFor && (
+        <View style={[s.row, { justifyContent: 'flex-end', marginBottom: 8 }]}>
+          <Button small variant="secondary" icon={showTraffic ? 'speedometer' : 'speedometer-outline'} title={showTraffic ? 'Traffic on' : 'Show traffic'}
+            onPress={() => setShowTraffic((t) => !t)} />
+        </View>
+      )}
+      <RouteMap data={mapData} height={pinFor ? 380 : 280} picking={!!pinFor} onPick={onMapPick} onSelect={setSelected} onTouching={setTouchingMap} night={theme.dark} traffic={showTraffic} />
 
       <Button title={busy ? 'Finding routes…' : 'Find Route'} icon="search" onPress={() => findRoute()} busy={busy} />
       <Notice tone={status.tone} style={{ marginTop: 14 }}>{status.text}</Notice>
@@ -179,7 +189,8 @@ export default function Plan() {
                 <Pressable key={i} onPress={() => setSelected(i)} style={[s.option, i === selected && s.optionOn]}>
                   <View style={{ flex: 1 }}>
                     <Text style={s.strong}>{roadsOf(r.toll).join(' → ') || 'No toll road'}</Text>
-                    <Text style={s.small}>{km(r.distance_m)} · {minutes(r.duration_s / 60)}</Text>
+                    <Text style={s.small}>{km(r.distance_m)} · {minutes(r.duration_s / 60)}{r.traffic ? ' now' : ''}</Text>
+                    <TrafficChip traffic={r.traffic} style={{ marginTop: 6 }} />
                     <View style={[s.row, { gap: 6, marginTop: 6, flexWrap: 'wrap' }]}>
                       {i === trip.picks.fastest && <Badge tone="ok">Fastest</Badge>}
                       {i === trip.picks.shortest && <Badge>Shortest</Badge>}
@@ -189,9 +200,14 @@ export default function Plan() {
                   <Text style={[s.value, { fontFamily: fonts.bold }]}>{r.toll.segments.length ? peso(r.toll.total) : 'No toll'}</Text>
                 </Pressable>
               ))}
+              <T.Small style={{ marginBottom: trip.tradeoff ? 4 : 0 }}>
+                {trip.routes.some((r) => r.traffic) ? 'Times include live traffic.' : 'Typical travel times (live traffic is not available).'}
+              </T.Small>
               {trip.tradeoff && (
                 <T.Small style={{ marginTop: 4 }}>
-                  The cheapest route saves {peso(trip.tradeoff.savings)} in toll but takes {minutes(trip.tradeoff.extra_duration_s / 60)} longer.
+                  {trip.tradeoff.extra_duration_s >= 60
+                    ? `The cheapest route saves ${peso(trip.tradeoff.savings)} in toll but takes ${minutes(trip.tradeoff.extra_duration_s / 60)} longer.`
+                    : `The cheapest route saves ${peso(trip.tradeoff.savings)} in toll and takes about the same time.`}
                 </T.Small>
               )}
             </Card>

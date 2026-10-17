@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { colors, themed } from '../lib/theme';
 import { MAP_HTML } from './mapHtml';
+import { TRAFFIC_TILES } from '../lib/traffic';
 
 // Web version of RouteMap (react-native-webview has no web support): the same Leaflet
 // page in an <iframe>, talking through window.postMessage. Same props as RouteMap.js.
-export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, night = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
+export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, night = false, traffic = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
   const frame = useRef(null);
   const [ready, setReady] = useState(false);
   const handlers = useRef({});
@@ -25,8 +26,8 @@ export default function RouteMap({ data, position, follow = false, heading = nul
   }, []);
 
   useEffect(() => {
-    if (ready) frame.current?.contentWindow?.update({ ...data, picking, night });
-  }, [ready, data, picking, night]);
+    if (ready) frame.current?.contentWindow?.update({ ...data, picking, night, traffic, trafficUrl: TRAFFIC_TILES });
+  }, [ready, data, picking, night, traffic]);
 
   useEffect(() => {
     if (ready) frame.current?.contentWindow?.moveTo({ position: position || null, follow, heading, headingUp, turn });

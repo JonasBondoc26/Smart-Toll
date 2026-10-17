@@ -213,6 +213,87 @@ class TripsAndRfidTest extends TestCase
         $this->actingAsUser($this->motorist())->postJson("/api/trips/{$tripId}/reroute", ['lat' => 14.70, 'lng' => 121.03])->assertNotFound();
     }
 
+    /** What TomTom answers: a route summary for the given times, and incidents. */
+    private function tomtomSays(int $live, int $typical, array $incidents = []): void
+    {
+        config(['smarttoll.traffic.tomtom_key' => 'test-key']);
+        Http::fake([
+            'api.tomtom.com/routing/*' => Http::response(['routes' => [['summary' => [
+                'lengthInMeters' => 58400, 'travelTimeInSeconds' => $live, 'trafficDelayInSeconds' => $live - $typical, 'noTrafficTravelTimeInSeconds' => $typical,
+            ]]]]),
+            'api.tomtom.com/traffic/services/*' => Http::response(['incidents' => $incidents]),
+            'api.tomtom.com/traffic/map/*' => Http::response('PNGDATA', 200, ['Content-Type' => 'image/png']),
+        ]);
+    }
+
+    public function test_without_a_traffic_key_routes_keep_their_usual_times(): void
+    {
+        $route = $this->fakeOsrm();
+        $res = $this->postJson('/api/trip-planner/route', ['classification_id' => 1, 'origin_id' => 'place:0', 'destination_id' => 'place:13'])->assertOk();
+        $res->assertJsonPath('routes.0.traffic', null);
+        $this->assertEquals(round($route['routes'][0]['duration']), $res->json('routes.0.duration_s'));
+        $this->getJson('/api/traffic/status')->assertJsonPath('enabled', false);
+        $this->get('/api/traffic/tiles/12/3412/1880.png')->assertNotFound();
+    }
+
+    public function test_live_traffic_sets_the_travel_time_but_never_the_toll(): void
+    {
+        $this->fakeOsrm();
+        $this->tomtomSays(5400, 3600);   // an hour on an empty road, an hour and a half now
+
+        $res = $this->postJson('/api/trip-planner/route', ['classification_id' => 1, 'origin_id' => 'place:0', 'destination_id' => 'place:13'])->assertOk();
+        $res->assertJsonPath('routes.0.duration_s', 5400)
+            ->assertJsonPath('routes.0.traffic.delay_s', 1800)
+            ->assertJsonPath('routes.0.traffic.level', 'heavy');
+        $this->assertEquals(266, $res->json('routes.0.toll.total'));
+        $this->getJson('/api/traffic/status')->assertJsonPath('enabled', true);
+        $this->get('/api/traffic/tiles/12/3412/1880.png')->assertOk()->assertHeader('Content-Type', 'image/png');
+    }
+
+    public function test_a_followed_trip_hears_about_incidents_on_the_road_ahead_only(): void
+    {
+        $user = $this->motorist();
+        $tripId = $this->actingAsUser($user)->postJson('/api/trips', $this->tripBody($this->vehicle($user, 1, 1000)))->json('trip_id');
+        $ahead = [[14.70, 121.03], [14.80, 120.95], [14.90, 120.85]];
+        $this->tomtomSays(2000, 1900, [
+            ['type' => 'Feature', 'geometry' => ['type' => 'Point', 'coordinates' => [120.95, 14.80]],
+             'properties' => ['id' => 'crash-1', 'iconCategory' => 1, 'magnitudeOfDelay' => 3, 'delay' => 720, 'roadNumbers' => ['E1'], 'events' => [['description' => 'Stationary traffic']]]],
+            ['type' => 'Feature', 'geometry' => ['type' => 'Point', 'coordinates' => [121.30, 14.60]],   // nowhere near the route
+             'properties' => ['id' => 'far-away', 'iconCategory' => 6, 'magnitudeOfDelay' => 2, 'delay' => 300]],
+        ]);
+
+        $res = $this->postJson("/api/trips/{$tripId}/traffic", ['lat' => 14.70, 'lng' => 121.03, 'ahead' => $ahead])->assertOk();
+        $res->assertJsonPath('enabled', true)
+            ->assertJsonPath('remaining.delay_s', 100)
+            ->assertJsonCount(1, 'incidents')
+            ->assertJsonPath('incidents.0.kind', 'Accident')
+            ->assertJsonPath('incidents.0.road', 'E1')
+            ->assertJsonPath('faster', null);   // a 100 s delay doesn't call for another route
+        $this->assertGreaterThan(10000, $res->json('incidents.0.along_m'));
+        $this->actingAsUser($this->motorist())->postJson("/api/trips/{$tripId}/traffic", ['lat' => 14.70, 'lng' => 121.03, 'ahead' => $ahead])->assertNotFound();
+    }
+
+    public function test_heavy_traffic_ahead_offers_a_faster_route_without_touching_the_paid_toll(): void
+    {
+        $user = $this->motorist();
+        $tripId = $this->actingAsUser($user)->postJson('/api/trips', $this->tripBody($this->vehicle($user, 1, 1000)))->json('trip_id');
+        $this->fakeOsrm();
+        config(['smarttoll.traffic.tomtom_key' => 'test-key']);
+        $summary = fn ($live, $typical) => ['routes' => [['summary' => ['travelTimeInSeconds' => $live, 'trafficDelayInSeconds' => $live - $typical, 'noTrafficTravelTimeInSeconds' => $typical]]]];
+        Http::fake([
+            // The road ahead: 1 h 30 now (40 min of traffic); then the other way round: 50 min.
+            'api.tomtom.com/routing/*' => Http::sequence()->push($summary(5400, 3000))->whenEmpty(Http::response($summary(3000, 2900))),
+            'api.tomtom.com/traffic/services/*' => Http::response(['incidents' => []]),
+        ]);
+
+        $res = $this->postJson("/api/trips/{$tripId}/traffic", ['lat' => 14.70, 'lng' => 121.03, 'ahead' => [[14.70, 121.03], [14.85, 120.90], [15.0286, 120.6898]]])->assertOk();
+        $res->assertJsonPath('remaining.delay_s', 2400)
+            ->assertJsonPath('faster.saves_s', 2400)
+            ->assertJsonPath('faster.toll_total', 266);
+        $this->assertGreaterThan(10, count($res->json('faster.steps')));
+        $this->assertEquals(734, DB::table('rfid_accounts')->where('user_id', $user->user_id)->value('balance'));   // paid once, when saved
+    }
+
     public function test_a_vehicle_with_trip_history_cannot_be_deleted(): void
     {
         $user = $this->motorist();

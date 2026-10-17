@@ -9,6 +9,8 @@ import RouteLine from '../../components/RouteLine';
 import StatusBadge from '../../components/StatusBadge';
 import { Badge, Button, Card, CardTitle, Notice, Row, Screen, T } from '../../components/ui';
 import { SkeletonTrip } from '../../components/Skeleton';
+import TrafficChip from '../../components/TrafficChip';
+import { useTrafficEnabled } from '../../lib/traffic';
 import { useTracking, useTrackingSession } from '../../lib/tracking';
 import { api } from '../../lib/api';
 import { confirm } from '../../lib/confirm';
@@ -40,6 +42,8 @@ export default function TrackTrip() {
   const [headingUp, setHeadingUp] = useState(true);   // map turns with the direction of travel
   const [touchingMap, setTouchingMap] = useState(false);   // pause page scrolling while a finger is on the map
   const [bgNote, setBgNote] = useState('');
+  const trafficEnabled = useTrafficEnabled();
+  const [showTraffic, setShowTraffic] = useState(false);   // live traffic colours on the map
   const { width, height } = useWindowDimensions();
   const landscape = width > height;
   const insets = useSafeAreaInsets();
@@ -132,7 +136,7 @@ export default function TrackTrip() {
       mine={mine} data={mapData} headingUp={headingUp}
       height={landscape ? null : arrived ? 240 : 330} style={landscape ? styles.mapLandscape : undefined}
       follow={driving && follow && tracking.hasPosition}
-      onUserMove={stopFollowing} onTouching={setTouchingMap} night={dark}
+      onUserMove={stopFollowing} onTouching={setTouchingMap} night={dark} traffic={showTraffic}
     />
   );
   const mapButtons = driving && (
@@ -141,6 +145,10 @@ export default function TrackTrip() {
         onPress={() => setFollow((f) => !f)} />
       <Button small variant="secondary" icon={headingUp ? 'navigate' : 'compass'} title={headingUp ? 'Heading up' : 'North up'}
         onPress={() => setHeadingUp((h) => !h)} />
+      {trafficEnabled && (
+        <Button small variant="secondary" icon={showTraffic ? 'speedometer' : 'speedometer-outline'} title={showTraffic ? 'Traffic on' : 'Traffic'}
+          onPress={() => setShowTraffic((t) => !t)} />
+      )}
     </View>
   );
   const screenOff = (
@@ -225,6 +233,8 @@ export default function TrackTrip() {
             <>
               <DirectionBanner />
               <LiveTollAlert alerts={tracking.alerts} />
+              <LiveTrafficAlert alerts={tracking.alerts} />
+              <FasterRoute tracking={tracking} />
             </>
           )}
           {arrived ? arrivedCard : mine ? (
@@ -251,6 +261,8 @@ export default function TrackTrip() {
         <>
           <AlertChoice alerts={tracking.alerts} onChange={tracking.setAlerts} />
           <LiveTollAlert alerts={tracking.alerts} />
+          <LiveTrafficAlert alerts={tracking.alerts} />
+          <FasterRoute tracking={tracking} />
           <DirectionBanner />
         </>
       )}
@@ -321,6 +333,54 @@ function LiveTollAlert({ alerts }) {
   );
 }
 
+/** A traffic incident on the road ahead (shown for 20 s): written, as a graphic card, or both. */
+function LiveTrafficAlert({ alerts }) {
+  const alert = useTracking().trafficAlert;
+  if (!alert || Date.now() - alert.at > 20000 || (!alerts.text && !alerts.graphic)) return null;
+  const closed = alert.magnitude >= 4 || /closed/i.test(alert.kind);
+  const tint = closed || alert.magnitude >= 3 ? colors.red : colors.amberDark;
+  if (!alerts.graphic) return <Notice tone={tint === colors.red ? 'error' : 'warn'}>{alert.text}</Notice>;
+  return (
+    <View style={[styles.toll, { borderColor: tint }]}>
+      <View style={[styles.tollIcon, { backgroundColor: tint }]}>
+        <MaterialCommunityIcons name={TRAFFIC_ICONS[alert.kind] || 'car-brake-alert'} size={34} color={colors.white} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.tollKicker, { color: tint }]}>{alert.kind} ahead</Text>
+        <Text style={[styles.tollText, { color: colors.ink, fontFamily: fonts.semibold }]}>{alert.text}</Text>
+      </View>
+    </View>
+  );
+}
+
+const TRAFFIC_ICONS = {
+  Accident: 'car-emergency', 'Traffic jam': 'car-multiple', 'Lane closed': 'sign-caution', 'Road closed': 'road-variant',
+  'Road works': 'cone', Flooding: 'waves', 'Broken-down vehicle': 'car-wrench', 'Dangerous conditions': 'alert',
+};
+
+/** A faster way around the traffic: how much it saves, and the choice to take it. */
+function FasterRoute({ tracking }) {
+  const f = tracking.faster;
+  if (!f) return null;
+  const saves = Math.round(f.saves_s / 60);
+  return (
+    <Card style={{ borderColor: colors.greenDeep, borderWidth: 1.5 }}>
+      <View style={[styles.row, { marginBottom: 6 }]}>
+        <Ionicons name="flash" size={18} color={colors.greenDeep} />
+        <Text style={[styles.plazaTitle, { flex: 1 }]}>Faster route: saves about {saves} min</Text>
+      </View>
+      <T.Muted style={{ marginBottom: 12 }}>
+        {km(f.distance_m)}{f.expressways.length ? ` via ${f.expressways.join(', ')}` : ' on ordinary roads'} · toll on that route about {peso(f.toll_total)}.
+        Your saved trip's toll record stays as it is.
+      </T.Muted>
+      <View style={[styles.row, { gap: 10 }]}>
+        <Button small title="Take it" icon="navigate" variant="amber" onPress={tracking.takeFaster} style={{ flex: 1 }} />
+        <Button small title="Keep my route" variant="secondary" onPress={tracking.dismissFaster} style={{ flex: 1 }} />
+      </View>
+    </Card>
+  );
+}
+
 /** The next maneuver: arrow + distance (graphic) and the instruction (text); spoken if Voice is on. */
 function DirectionBanner() {
   const tracking = useTracking();
@@ -376,9 +436,11 @@ function LiveMap({ mine, ...props }) {
 
 /** Distance and time left, plazas passed, the next toll plaza and the plaza checklist. */
 function LiveProgress({ route: r, list = true }) {
-  const { remaining, passed, travelled } = useTracking();
+  const { remaining, passed, travelled, traffic } = useTracking();
   const nextPlaza = r.plazas.find((p) => !passed[p.key] && p.along != null && p.along >= travelled);
-  const minsLeft = (r.durationS / 60) * (r.total ? remaining / r.total : 0);
+  // The route's usual time for what's left, stretched by the live traffic when there is some.
+  const trafficFactor = traffic && traffic.typical_s > 0 ? traffic.live_s / traffic.typical_s : 1;
+  const minsLeft = (r.durationS / 60) * (r.total ? remaining / r.total : 0) * trafficFactor;
   const eta = new Date(Date.now() + minsLeft * 60000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   return (
     <>
@@ -387,6 +449,7 @@ function LiveProgress({ route: r, list = true }) {
         <Stat label={`Arrive ${eta}`} value={minutes(minsLeft)} />
         <Stat label="Plazas" value={`${Object.keys(passed).length}/${r.plazas.length}`} />
       </View>
+      {traffic && <TrafficChip traffic={traffic} style={{ marginTop: -6, marginBottom: 14 }} />}
 
       {nextPlaza && (
         <Card style={styles.next}>

@@ -19,6 +19,13 @@ return [
     // Photon, a free search-as-you-type service over OpenStreetMap data. Results are cached a day.
     'photon_url' => env('PHOTON_URL', 'https://photon.komoot.io'),
 
+    // Live traffic (TomTom, Freemium plan: no card, about 2,500 requests a day). Leave
+    // TOMTOM_API_KEY empty to plan with typical (empty-road) times only.
+    'traffic' => [
+        'tomtom_key' => env('TOMTOM_API_KEY'),
+        'tomtom_url' => env('TOMTOM_URL', 'https://api.tomtom.com'),
+    ],
+
     // Sent with every OSRM / Nominatim request so the operators can identify the app.
     'user_agent' => env('SMARTTOLL_USER_AGENT', 'SmartToll-Capstone/1.0 (student project)'),
 

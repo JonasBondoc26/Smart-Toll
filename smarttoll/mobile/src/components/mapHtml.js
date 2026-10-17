@@ -43,6 +43,13 @@ export const MAP_HTML = `<!doctype html><html><head>
   // light labels), which needs no extra map service or API key.
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
   let night = false;
+  // Live traffic (green / orange / red roads) in its own pane above the map tiles, so the night
+  // look's colour inversion of the tiles doesn't touch it. Tiles come from the SmartToll server.
+  // Inside leaflet-rotate's rotating pane, so it sits over the tiles and turns with heading-up.
+  map.createPane('traffic', map._rotatePane || map.getPane('mapPane'));
+  map.getPane('traffic').style.zIndex = 250;
+  map.getPane('traffic').style.pointerEvents = 'none';
+  let trafficLayer = null;
   // Route lines get a light outline by day and a dark one at night.
   const casing = () => (night ? '#0B1512' : '#fff');
   // The toll road's green is lifted at night so it stays visible on the dark tiles.
@@ -68,6 +75,12 @@ export const MAP_HTML = `<!doctype html><html><head>
       document.body.classList.toggle('night', night);
     }
     picking = !!d.picking;
+    if (d.traffic && d.trafficUrl && !trafficLayer) {
+      trafficLayer = L.tileLayer(d.trafficUrl, { pane: 'traffic', maxZoom: 19, opacity: 0.9, updateWhenIdle: true }).addTo(map);
+    } else if (!d.traffic && trafficLayer) {
+      map.removeLayer(trafficLayer);
+      trafficLayer = null;
+    }
     document.getElementById('map').classList.toggle('picking', picking);
     layer.clearLayers();
     const bounds = [];

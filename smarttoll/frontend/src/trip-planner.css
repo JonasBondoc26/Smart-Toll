@@ -38,6 +38,13 @@
 /* "Pin on map" beside the Origin / Destination label */
 .field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
 .field-label-row label { margin-bottom: 0; }
+/* Live traffic on a route option, and the map's traffic toggle */
+.traffic-chip { display: inline-flex; align-self: flex-start; align-items: center; gap: 5px; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font: 700 12px 'Manrope', sans-serif; }
+.traffic-chip.is-light { background: var(--green-pale); color: var(--green-deep); }
+.traffic-chip.is-moderate { background: var(--amber-pale); color: var(--amber-dark); }
+.traffic-chip.is-heavy { background: var(--red-pale); color: var(--red); }
+.map-traffic-toggle { position: absolute; top: 14px; right: 14px; z-index: 500; border: none; cursor: pointer; padding: 9px 16px; border-radius: 999px; background: var(--white); color: var(--green-deep); font: 700 13px 'Manrope', sans-serif; box-shadow: var(--shadow-card); }
+.map-traffic-toggle.is-on { background: var(--action); color: var(--white); }
 /* Origin / Destination: the label sits inside the search field (like the other fields); Pin on map stays above it. */
 .field:has(> .field-label-row + .search-select) { position: relative; }
 .field-label-row:has(+ .search-select) { justify-content: flex-end; min-height: 24px; margin-bottom: 6px; }

@@ -25,7 +25,7 @@ class DashboardController extends Controller
         $recent = DB::table('trips as t')
             ->join('vehicles as v', 'v.vehicle_id', '=', 't.vehicle_id')
             ->where('t.user_id', $uid)->orderByDesc('t.date_created')->limit(3)
-            ->get(['t.trip_id', 't.origin', 't.destination', 't.total_toll_fee', 't.topup_amount', 't.date_created', 'v.vehicle_name']);
+            ->get(['t.trip_id', 't.origin', 't.destination', 't.route_distance', 't.estimated_travel_time', 't.total_toll_fee', 't.topup_amount', 't.date_created', 'v.vehicle_name']);
 
         $trips = DB::table('trips')->where('user_id', $uid);
         return [

@@ -73,8 +73,7 @@ export default function Vehicles() {
       {vehicles && vehicles.length > 0 && <Button title="Add Vehicle" icon="add" onPress={() => open(null)} />}
 
       <Sheet
-        visible={!!editing} onClose={() => setEditing(null)} busy={busy}
-        kicker={editing?.id ? 'EDIT VEHICLE' : 'ADD VEHICLE'} title="Vehicle Details"
+        visible={!!editing} onClose={() => setEditing(null)} busy={busy} title="Vehicle Details"
         footer={<>
           <Button title="Cancel" variant="ghost" onPress={() => setEditing(null)} style={{ flex: 1 }} disabled={busy} />
           <Button title={editing?.id ? 'Save Changes' : 'Save Vehicle'} onPress={save} busy={busy} style={{ flex: 1 }} />

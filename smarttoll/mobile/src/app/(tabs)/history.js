@@ -1,13 +1,13 @@
 import { memo, useCallback, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import StatusBadge from '../../components/StatusBadge';
 import { Button, Card, EmptyState, Notice, T, s } from '../../components/ui';
 import { SkeletonList } from '../../components/Skeleton';
+import RouteLine from '../../components/RouteLine';
 import { api } from '../../lib/api';
-import { day, peso } from '../../lib/format';
-import { colors, useTheme } from '../../lib/theme';
+import { day, minutes, peso } from '../../lib/format';
+import { colors, fonts, useTheme } from '../../lib/theme';
 
 // A virtualized list: only the trips on screen are drawn, so a long history scrolls smoothly.
 export default function History() {
@@ -52,16 +52,20 @@ export default function History() {
 const TripRow = memo(function TripRow({ trip: t }) {
   useTheme();   // re-render on a light / dark switch
   return (
-    <Card onPress={() => router.push(`/trip/${t.trip_id}`)} style={{ padding: 14 }}>
-      <View style={s.row}>
-        <View style={{ flex: 1, paddingRight: 10 }}>
-          <Text style={s.strong} numberOfLines={2}>{t.origin} → {t.destination}</Text>
-          <Text style={[s.small, { marginTop: 3 }]}>{day(t.date_created)} · {t.vehicle_name}</Text>
-          <Text style={[s.small, { color: colors.greenDeep }]}>{t.expressways.length ? t.expressways.join(', ') : 'No toll road'}</Text>
-          <StatusBadge status={t.status} style={{ marginTop: 6 }} />
+    <Card onPress={() => router.push(`/trip/${t.trip_id}`)}>
+      <View style={[s.row, { marginBottom: 14 }]}>
+        <Text style={[s.small, { flex: 1 }]} numberOfLines={1}>{day(t.date_created)} · {t.vehicle_name}</Text>
+        <StatusBadge status={t.status} />
+      </View>
+      <RouteLine
+        from={t.origin} to={t.destination}
+        middle={t.estimated_travel_time ? `${minutes(t.estimated_travel_time)} · ${Number(t.route_distance).toFixed(0)} km` : null}
+      />
+      <View style={[s.row, { marginTop: 14, gap: 10 }]}>
+        <Text style={[s.small, { flex: 1, color: colors.greenDeep }]} numberOfLines={2}>{t.expressways.length ? t.expressways.join(' · ') : Number(t.total_toll_fee) > 0 ? 'Expressway not recorded' : 'No toll road'}</Text>
+        <View style={{ backgroundColor: colors.action, borderRadius: 999, paddingVertical: 7, paddingHorizontal: 14 }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 13.5, color: colors.onAction }}>{peso(t.total_toll_fee)}</Text>
         </View>
-        <Text style={[s.value, { marginRight: 6 }]}>{peso(t.total_toll_fee)}</Text>
-        <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
       </View>
     </Card>
   );

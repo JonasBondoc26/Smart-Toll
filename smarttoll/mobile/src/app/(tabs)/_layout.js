@@ -7,7 +7,11 @@ import { useSession } from '../../lib/session';
 import { useTrackingStatus } from '../../lib/tracking';
 import { colors, fonts, headerOptions, shadow, themed, useTheme } from '../../lib/theme';
 
-const icon = (name) => ({ color, focused }) => <Ionicons name={focused ? name : `${name}-outline`} size={23} color={color} />;
+const icon = (name) => ({ color, focused }) => (
+  <View style={[styles.tabIcon, focused && styles.tabIconOn]}>
+    <Ionicons name={focused ? name : `${name}-outline`} size={21} color={color} />
+  </View>
+);
 
 /**
  * Bottom navigation: Home · Vehicles · [Plan] · RFID · History. Plan a Trip, the app's main
@@ -21,16 +25,16 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        ...headerOptions,
+        ...headerOptions(),
         headerRight: () => <HeaderAvatar />,
         sceneStyle: { backgroundColor: colors.concrete },
         tabBarActiveTintColor: colors.greenDeep,
         tabBarInactiveTintColor: colors.inkFaint,
         tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
-        tabBarStyle: { borderTopColor: colors.line, backgroundColor: colors.surface, height: 64 + insets.bottom, paddingTop: 6, paddingBottom: Math.max(insets.bottom, 8), paddingLeft: insets.left, paddingRight: insets.right },
+        tabBarStyle: { borderTopWidth: 0, backgroundColor: colors.surface, height: 70 + insets.bottom, paddingTop: 8, ...shadow, paddingBottom: Math.max(insets.bottom, 8), paddingLeft: insets.left, paddingRight: insets.right },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home', headerTitle: () => <Brand size={28} />, tabBarIcon: icon('home') }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', headerTitle: () => <Brand size={28} onLight />, tabBarIcon: icon('home') }} />
       <Tabs.Screen name="vehicles" options={{ title: 'Vehicles', tabBarIcon: icon('car') }} />
       <Tabs.Screen
         name="plan"
@@ -84,6 +88,8 @@ function HeaderAvatar() {
 }
 
 const styles = themed(() => StyleSheet.create({
+  tabIcon: { width: 56, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  tabIconOn: { backgroundColor: colors.greenPale },
   planSlot: { flex: 1, alignItems: 'center', justifyContent: 'flex-start' },
   planCircle: {
     width: 58, height: 58, borderRadius: 29, marginTop: -26, backgroundColor: colors.amber,
@@ -92,8 +98,8 @@ const styles = themed(() => StyleSheet.create({
   planCircleOn: { backgroundColor: colors.greenDeep },
   planLabel: { fontFamily: fonts.semibold, fontSize: 11, color: colors.inkFaint, marginTop: 2 },
   avatar: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: colors.greenMid, marginRight: 14,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)',
+    width: 36, height: 36, borderRadius: 18, backgroundColor: colors.greenDeep, marginRight: 14,
+    alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
 }));

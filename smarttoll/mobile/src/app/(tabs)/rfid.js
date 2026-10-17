@@ -71,7 +71,7 @@ export default function Rfid() {
                 <Text style={s.strong}>{a.network}</Text>
                 <Text style={s.small}>{a.vehicle_name}</Text>
               </View>
-              <Text style={{ fontFamily: fonts.signHeavy, fontSize: 24, color: low ? colors.red : colors.ink }}>{peso(a.balance)}</Text>
+              <Text style={{ fontFamily: fonts.heavy, fontSize: 22, letterSpacing: -0.4, color: low ? colors.red : colors.ink }}>{peso(a.balance)}</Text>
             </View>
             <View style={[s.row, { marginTop: 12, justifyContent: 'space-between' }]}>
               {low ? <Badge tone="danger">Low balance</Badge> : <Badge tone="ok">OK</Badge>}
@@ -85,7 +85,7 @@ export default function Rfid() {
       <BalanceSheet visible={!!updating} rfid={updating} onClose={() => setUpdating(null)} onSaved={load} />
 
       <Sheet
-        visible={!!adding} onClose={() => setAdding(null)} busy={busy} kicker="ADD RFID ACCOUNT" title="RFID Details"
+        visible={!!adding} onClose={() => setAdding(null)} busy={busy} title="RFID Details"
         footer={<>
           <Button title="Cancel" variant="ghost" onPress={() => setAdding(null)} style={{ flex: 1 }} disabled={busy} />
           <Button title="Save Account" onPress={add} busy={busy} style={{ flex: 1 }} />

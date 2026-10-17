@@ -594,7 +594,7 @@ export default function TripPlanner() {
                         ))}
                         <div className="card-row" style={{ padding: '15px 0 0', borderTop: '2px solid var(--green-dark)', marginTop: 6 }}>
                           <span style={{ fontWeight: 700, fontSize: 15 }}>Total Estimated Toll</span>
-                          <span style={{ fontFamily: "'Barlow Condensed'", fontWeight: 700, fontSize: 26, color: 'var(--green-deep)' }}>
+                          <span style={{ fontFamily: "'Manrope'", fontWeight: 800, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--green-deep)' }}>
                             {peso(toll.total)}{toll.complete ? '' : ' +'}
                           </span>
                         </div>

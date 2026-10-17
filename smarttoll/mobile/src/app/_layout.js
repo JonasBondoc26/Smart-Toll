@@ -3,11 +3,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-// One file per weight, so only these six fonts are bundled.
-import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
-import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
-import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
-import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+// One file per weight, so only these seven fonts are bundled.
+import { Manrope_400Regular } from '@expo-google-fonts/manrope/400Regular';
+import { Manrope_500Medium } from '@expo-google-fonts/manrope/500Medium';
+import { Manrope_600SemiBold } from '@expo-google-fonts/manrope/600SemiBold';
+import { Manrope_700Bold } from '@expo-google-fonts/manrope/700Bold';
+import { Manrope_800ExtraBold } from '@expo-google-fonts/manrope/800ExtraBold';
 import { BarlowCondensed_700Bold } from '@expo-google-fonts/barlow-condensed/700Bold';
 import { BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed/800ExtraBold';
 import { SessionProvider, useSession } from '../lib/session';
@@ -16,7 +17,7 @@ import { colors, headerOptions, ThemeProvider, useTheme } from '../lib/theme';
 
 SplashScreen.preventAutoHideAsync();
 
-const header = () => ({ ...headerOptions, contentStyle: { backgroundColor: colors.concrete } });
+const header = () => ({ ...headerOptions(), contentStyle: { backgroundColor: colors.concrete } });
 
 function Routes() {
   useTheme();   // re-render (page background) on a light / dark switch
@@ -25,7 +26,7 @@ function Routes() {
   // Logged out for any reason (e.g. the session expired mid-trip): stop following the trip.
   useEffect(() => { if (!user && tracking.status !== 'idle') tracking.stop(); }, [user]);
   const [fontsLoaded] = useFonts({
-    Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold,
+    Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold,
   });
 
   useEffect(() => {
@@ -52,12 +53,18 @@ function Routes() {
   );
 }
 
+// Dark status-bar icons on the light ground, light ones at night.
+function ThemedStatusBar() {
+  const { dark } = useTheme();
+  return <StatusBar style={dark ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
   return (
     <ThemeProvider>
       <SessionProvider>
         <TrackingProvider>
-          <StatusBar style="light" />
+          <ThemedStatusBar />
           <Routes />
         </TrackingProvider>
       </SessionProvider>

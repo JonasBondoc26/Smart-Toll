@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import RouteMap from '../../components/RouteMap';
+import RouteLine from '../../components/RouteLine';
 import StatusBadge from '../../components/StatusBadge';
 import { Badge, Button, Card, CardTitle, Notice, Row, Screen, T } from '../../components/ui';
 import { SkeletonTrip } from '../../components/Skeleton';
@@ -45,7 +46,10 @@ export default function TripDetails() {
 
   return (
     <Screen>
-      <T.H2>{trip.origin} → {trip.destination}</T.H2>
+      <View style={{ marginTop: 4, marginBottom: 10 }}>
+        <RouteLine size="lg" from={trip.origin} to={trip.destination}
+          middle={trip.estimated_travel_time ? `${minutes(trip.estimated_travel_time)} · ${Number(trip.route_distance).toFixed(0)} km` : null} />
+      </View>
       <T.Muted style={{ marginBottom: 8 }}>{day(trip.date_created)} · {time(trip.date_created)} · {trip.vehicle_name} ({trip.class_name})</T.Muted>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <StatusBadge status={trip.status} />
@@ -57,7 +61,7 @@ export default function TripDetails() {
 
       <Card>
         <CardTitle icon="information-circle">Trip</CardTitle>
-        <Row first stacked label="Expressways" value={trip.expressways.length ? trip.expressways.join(' → ') : 'None'} />
+        <Row first stacked label="Expressways" value={trip.expressways.length ? trip.expressways.join(' → ') : Number(trip.total_toll_fee) > 0 ? 'Not recorded' : 'None'} />
         <Row label="Distance" value={`${Number(trip.route_distance).toFixed(1)} km`} />
         <Row label="Travel time" value={minutes(trip.estimated_travel_time)} />
       </Card>

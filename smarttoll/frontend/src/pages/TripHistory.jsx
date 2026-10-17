@@ -5,6 +5,7 @@ import { useAuth } from '../AuthContext.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import Icon from '../components/Icon.jsx';
 import Brand from '../components/Brand.jsx';
+import RouteLine from '../components/RouteLine.jsx';
 
 const NAV = [
   ['/dashboard', 'grid', 'Home'], ['/vehicles', 'car', 'Vehicles'], ['/rfid', 'card', 'RFID'],
@@ -65,9 +66,9 @@ export default function TripHistory() {
                     {trips.map((t) => (
                       <tr key={t.trip_id}>
                         <td style={{ whiteSpace: 'nowrap' }}>{day(t.date_created)}</td>
-                        <td>{t.origin} → {t.destination}</td>
+                        <td><RouteLine from={t.origin} to={t.destination} travelMin={t.estimated_travel_time} distanceKm={t.route_distance} /></td>
                         <td>{t.vehicle_name}</td>
-                        <td>{t.expressways.length ? t.expressways.join(', ') : <span className="muted">None</span>}</td>
+                        <td>{t.expressways.length ? t.expressways.join(', ') : <span className="muted">{Number(t.total_toll_fee) > 0 ? 'Not recorded' : 'None'}</span>}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>{peso(t.total_toll_fee)}</td>
                         <td>
                           <div className="table-actions">

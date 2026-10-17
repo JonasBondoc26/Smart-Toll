@@ -76,7 +76,7 @@ export default function SavedRoutes({ locations, origin, destination, onApply })
       )}
 
       <Sheet
-        visible={naming !== null} onClose={() => setNaming(null)} busy={busy} kicker="SAVE ROUTE" title="Name This Route"
+        visible={naming !== null} onClose={() => setNaming(null)} busy={busy} title="Name This Route"
         footer={<>
           <Button title="Cancel" variant="ghost" onPress={() => setNaming(null)} style={{ flex: 1 }} disabled={busy} />
           <Button title="Save Route" onPress={save} busy={busy} style={{ flex: 1 }} />
@@ -91,7 +91,7 @@ export default function SavedRoutes({ locations, origin, destination, onApply })
 
 const styles = themed(() => StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  label: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase' },
+  label: { fontFamily: fonts.bold, fontSize: 13, color: colors.inkSoft },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: 220, paddingVertical: 9, paddingHorizontal: 12,
     borderRadius: 100, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,

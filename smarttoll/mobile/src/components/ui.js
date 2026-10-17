@@ -29,7 +29,7 @@ export function Screen({ children, onRefresh, refreshing = false, padded = true,
   );
 }
 
-/** Page title in signage type, with a muted line under it. */
+/** Page title (large, medium weight), with a muted line under it. */
 export function PageHead({ title, subtitle, right }) {
   return (
     <View style={[s.row, { marginBottom: 16, alignItems: 'flex-start' }]}>
@@ -91,7 +91,6 @@ export const T = {
   Body: (p) => <Text {...p} style={[s.body, p.style]} />,
   Muted: (p) => <Text {...p} style={[s.muted, p.style]} />,
   Small: (p) => <Text {...p} style={[s.small, p.style]} />,
-  Kicker: (p) => <Text {...p} style={[s.kicker, p.style]} />,
   Error: (p) => (p.children ? <Text {...p} style={[s.error, p.style]} /> : null),
 };
 
@@ -99,10 +98,10 @@ export const T = {
 
 // Read at render time (functions), so they follow the light / dark theme.
 const BUTTON = () => ({
-  primary: { bg: colors.greenDeep, fg: colors.white, border: colors.greenDeep },
+  primary: { bg: colors.action, fg: colors.onAction, border: colors.action },
   amber: { bg: colors.amber, fg: colors.greenDark, border: colors.amber },
   ghost: { bg: 'transparent', fg: colors.inkSoft, border: colors.line },
-  secondary: { bg: colors.surface, fg: colors.greenDeep, border: colors.line },
+  secondary: { bg: colors.field, fg: colors.greenDeep, border: colors.line },
   danger: { bg: colors.red, fg: colors.white, border: colors.red },
   text: { bg: 'transparent', fg: colors.greenDeep, border: 'transparent' },
 });
@@ -125,18 +124,21 @@ export function Button({ title, onPress, variant = 'primary', icon, busy, disabl
   );
 }
 
+/** A text field with its label inside, above the value (like a ticket). */
 export function Field({ label, error, hint, style, ...input }) {
   const [focus, setFocus] = useState(false);
   return (
-    <View style={[{ marginBottom: 14 }, style]}>
-      {label ? <Text style={s.label}>{label}</Text> : null}
-      <TextInput
-        placeholderTextColor={colors.inkFaint}
-        {...input}
-        onFocus={(e) => { setFocus(true); input.onFocus?.(e); }}
-        onBlur={(e) => { setFocus(false); input.onBlur?.(e); }}
-        style={[s.input, focus && { borderColor: colors.greenMid }, error && { borderColor: colors.red }]}
-      />
+    <View style={[{ marginBottom: 12 }, style]}>
+      <View style={[s.input, label && s.inputLabelled, focus && { borderColor: colors.greenMid }, error && { borderColor: colors.red }]}>
+        {label ? <Text style={s.label}>{label}</Text> : null}
+        <TextInput
+          placeholderTextColor={colors.inkFaint}
+          {...input}
+          onFocus={(e) => { setFocus(true); input.onFocus?.(e); }}
+          onBlur={(e) => { setFocus(false); input.onBlur?.(e); }}
+          style={s.inputText}
+        />
+      </View>
       {error ? <Text style={s.error}>{error}</Text> : hint ? <Text style={[s.small, { marginTop: 4 }]}>{hint}</Text> : null}
     </View>
   );
@@ -147,11 +149,14 @@ export function SelectField({ label, value, options, onChange, placeholder = 'Se
   const [open, setOpen] = useState(false);
   const current = options.find((o) => String(o.value) === String(value));
   return (
-    <View style={{ marginBottom: 14 }}>
-      {label ? <Text style={s.label}>{label}</Text> : null}
-      <Pressable style={[s.input, s.row, disabled && { opacity: 0.6 }]} onPress={() => setOpen(true)} disabled={disabled}>
-        <Text style={[s.body, { flex: 1 }, !current && { color: colors.inkFaint }]} numberOfLines={1}>{current ? current.label : placeholder}</Text>
-        <Ionicons name="chevron-down" size={16} color={colors.inkSoft} />
+    <View style={{ marginBottom: 12 }}>
+      <Pressable style={[s.input, label && s.inputLabelled, s.row, disabled && { opacity: 0.6 }]} onPress={() => setOpen(true)} disabled={disabled}
+        accessibilityRole="button" accessibilityLabel={`${label || 'Choose'}: ${current ? current.label : placeholder}`}>
+        <View style={{ flex: 1 }}>
+          {label ? <Text style={s.label}>{label}</Text> : null}
+          <Text style={[s.inputText, !current && { color: colors.inkFaint }]} numberOfLines={1}>{current ? current.label : placeholder}</Text>
+        </View>
+        <Ionicons name="chevron-down" size={18} color={colors.inkSoft} />
       </Pressable>
       <Sheet visible={open} onClose={() => setOpen(false)} title={label}>
         {options.map((o) => (
@@ -172,7 +177,7 @@ const BADGE = () => ({
   ok: { bg: colors.greenPale, fg: colors.greenDeep },
   warn: { bg: colors.amberPale, fg: colors.amberDark },
   danger: { bg: colors.redPale, fg: colors.red },
-  neutral: { bg: colors.concrete, fg: colors.inkSoft },
+  neutral: { bg: colors.line, fg: colors.inkSoft },
 });
 export function Badge({ children, tone = 'neutral', style }) {
   const b = BADGE()[tone];
@@ -223,7 +228,7 @@ export function Loading({ text = 'Loading…' }) {
 
 /* ---------- Bottom sheet (the app's pop-up) ---------- */
 
-export function Sheet({ visible, onClose, kicker, title, children, footer, busy }) {
+export function Sheet({ visible, onClose, title, children, footer, busy }) {
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={() => !busy && onClose()}>
@@ -233,7 +238,6 @@ export function Sheet({ visible, onClose, kicker, title, children, footer, busy 
           <View style={s.grabber} />
           <View style={[s.row, { marginBottom: 12 }]}>
             <View style={{ flex: 1 }}>
-              {kicker ? <Text style={s.kicker}>{kicker}</Text> : null}
               {title ? <Text style={s.h2}>{title}</Text> : null}
             </View>
             <Pressable onPress={onClose} disabled={busy} hitSlop={10} style={s.close}><Ionicons name="close" size={18} color={colors.inkSoft} /></Pressable>
@@ -250,37 +254,39 @@ export function Sheet({ visible, onClose, kicker, title, children, footer, busy 
 
 export const s = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
-  rowLine: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line },
-  h1: { fontFamily: fonts.signHeavy, fontSize: 28, color: colors.ink, textTransform: 'uppercase', letterSpacing: 0.3 },
-  h2: { fontFamily: fonts.sign, fontSize: 21, color: colors.ink, textTransform: 'uppercase', letterSpacing: 0.3 },
-  h3: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  body: { fontFamily: fonts.regular, fontSize: 14, color: colors.ink, lineHeight: 20 },
-  muted: { fontFamily: fonts.regular, fontSize: 13.5, color: colors.inkSoft, lineHeight: 19 },
-  small: { fontFamily: fonts.regular, fontSize: 12, color: colors.inkFaint, lineHeight: 16 },
-  strong: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
-  value: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
-  total: { fontFamily: fonts.signHeavy, fontSize: 22, color: colors.greenDeep },
-  kicker: { fontFamily: fonts.bold, fontSize: 11, color: colors.inkFaint, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 },
-  label: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 },
+  rowLine: { paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
+  h1: { fontFamily: fonts.medium, fontSize: 30, lineHeight: 36, color: colors.ink, letterSpacing: -0.6 },
+  h2: { fontFamily: fonts.semibold, fontSize: 21, lineHeight: 27, color: colors.ink, letterSpacing: -0.3 },
+  h3: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink, letterSpacing: -0.1 },
+  body: { fontFamily: fonts.regular, fontSize: 14.5, color: colors.ink, lineHeight: 21 },
+  muted: { fontFamily: fonts.regular, fontSize: 14, color: colors.inkSoft, lineHeight: 20 },
+  small: { fontFamily: fonts.medium, fontSize: 12, color: colors.inkFaint, lineHeight: 16 },
+  strong: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.ink },
+  value: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.ink },
+  total: { fontFamily: fonts.heavy, fontSize: 22, color: colors.greenDeep, letterSpacing: -0.3 },
+  label: { fontFamily: fonts.medium, fontSize: 12, color: colors.inkSoft, marginBottom: 2 },
   error: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.red, marginTop: 4 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: colors.line, ...shadow },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: colors.cardEdge, ...shadow },
   input: {
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md,
-    paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 13 : 10, fontFamily: fonts.regular, fontSize: 15, color: colors.ink, minHeight: 48,
+    backgroundColor: colors.field, borderWidth: 1.5, borderColor: colors.field, borderRadius: radius.md,
+    paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 11, minHeight: 52, justifyContent: 'center',
+    fontFamily: fonts.medium, fontSize: 15, color: colors.ink,
   },
-  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.md, borderWidth: 1, paddingVertical: 13, paddingHorizontal: 18, minHeight: 48 },
-  btnSmall: { paddingVertical: 8, paddingHorizontal: 12, minHeight: 36 },
-  btnText: { fontFamily: fonts.semibold, fontSize: 15 },
-  badge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, borderRadius: 100, paddingVertical: 4, paddingHorizontal: 10 },
+  inputLabelled: { paddingTop: 9, paddingBottom: 9, minHeight: 60 },
+  inputText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink, padding: 0, margin: 0 },
+  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.pill, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 22, minHeight: 52 },
+  btnSmall: { paddingVertical: 8, paddingHorizontal: 14, minHeight: 38 },
+  btnText: { fontFamily: fonts.bold, fontSize: 15 },
+  badge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: 11 },
   badgeDot: { width: 6, height: 6, borderRadius: 3 },
   badgeText: { fontFamily: fonts.semibold, fontSize: 12 },
-  notice: { flexDirection: 'row', gap: 10, borderRadius: radius.md, padding: 12, marginBottom: 14 },
-  empty: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.line, padding: 28, alignItems: 'center' },
-  emptyIcon: { width: 60, height: 60, borderRadius: 16, backgroundColor: colors.greenPale, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  notice: { flexDirection: 'row', gap: 10, borderRadius: radius.md, padding: 14, marginBottom: 14 },
+  empty: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.cardEdge, padding: 28, alignItems: 'center', ...shadow },
+  emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.greenPale, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   backdrop: { flex: 1, backgroundColor: colors.backdrop },
-  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingTop: 10 },
-  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 12 },
-  close: { width: 32, height: 32, borderRadius: 8, backgroundColor: colors.concrete, alignItems: 'center', justifyContent: 'center' },
-  option: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, marginBottom: 8 },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingTop: 10 },
+  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 14 },
+  close: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.field, alignItems: 'center', justifyContent: 'center' },
+  option: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.field, backgroundColor: colors.field, marginBottom: 8 },
   optionOn: { borderColor: colors.greenDeep, backgroundColor: colors.greenPale },
 }));

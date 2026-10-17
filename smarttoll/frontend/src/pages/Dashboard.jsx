@@ -5,6 +5,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import { useAuth } from '../AuthContext.jsx';
 import Icon from '../components/Icon.jsx';
 import Brand from '../components/Brand.jsx';
+import RouteLine from '../components/RouteLine.jsx';
 
 const NAV = [
   ['/dashboard', 'grid', 'Home'], ['/vehicles', 'car', 'Vehicles'], ['/rfid', 'card', 'RFID'],
@@ -62,7 +63,7 @@ export default function Dashboard() {
               <h1>Dashboard</h1>
               <div className="subtitle">Welcome back, {user.name.split(' ')[0]}. Here's where things stand before your next trip.</div>
             </div>
-            <Link to="/trip-planner" className="btn btn-primary"><Icon name="plus" stroke={2.5} />Plan a Trip</Link>
+            <Link to="/trip-planner" className="btn btn-amber"><Icon name="plus" stroke={2.5} />Plan a Trip</Link>
           </div>
 
           {error && <p className="muted mb-24" style={{ color: '#B3261E' }}>{error}</p>}
@@ -109,7 +110,7 @@ export default function Dashboard() {
                     {data.recent_trips.length === 0 && <tr><td colSpan="4" className="muted">No trips planned yet.</td></tr>}
                     {data.recent_trips.map((t) => (
                       <tr key={t.trip_id}>
-                        <td>{day(t.date_created)}</td><td><Link to={`/trip-history/${t.trip_id}`} style={{ color: 'inherit' }}>{t.origin} → {t.destination}</Link></td><td>{t.vehicle_name}</td><td>{peso(t.total_toll_fee)}</td>
+                        <td>{day(t.date_created)}</td><td><Link to={`/trip-history/${t.trip_id}`} className="route-link"><RouteLine from={t.origin} to={t.destination} travelMin={t.estimated_travel_time} distanceKm={t.route_distance} /></Link></td><td>{t.vehicle_name}</td><td>{peso(t.total_toll_fee)}</td>
                       </tr>
                     ))}
                   </tbody>

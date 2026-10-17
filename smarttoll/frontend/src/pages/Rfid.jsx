@@ -119,7 +119,7 @@ export default function Rfid() {
                       </span>
                     </div>
                     <div style={{
-                      fontFamily: "'Barlow Condensed'", fontSize: 38, fontWeight: 700,
+                      fontFamily: "'Manrope'", fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em',
                       color: low ? 'var(--amber-dark)' : 'var(--green-deep)', margin: '18px 0 4px',
                     }}>
                       {peso(a.balance)}

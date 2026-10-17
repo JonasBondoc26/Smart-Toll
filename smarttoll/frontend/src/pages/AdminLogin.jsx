@@ -26,7 +26,7 @@ export default function AdminLogin() {
   );
 
   return (
-    <AuthLayout admin visual={visual} visualStyle={{ background: 'linear-gradient(160deg, var(--ink) 0%, #0A0F0D 100%)' }}>
+    <AuthLayout admin visual={visual} visualStyle={{ background: 'var(--ink)' }}>
       <form onSubmit={submit} noValidate>
         <div className="empty-icon" style={{ marginBottom: 20 }}><Icon name="lock" size={28} /></div>
         <h2 style={{ fontSize: 26, marginBottom: 6 }}>Administrator Log In</h2>

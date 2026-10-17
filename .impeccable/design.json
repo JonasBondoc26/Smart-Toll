@@ -1,0 +1,928 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-17T06:42:22.062Z",
+  "title": "Design System: SmartToll",
+  "extensions": {
+    "colorMeta": {
+      "sign-green": {
+        "role": "primary",
+        "displayName": "Sign Green",
+        "canonical": "#0B4F3F",
+        "oklch": "oklch(38.3% 0.070 172.2)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 172.2)",
+          "oklch(26.0% 0.070 172.2)",
+          "oklch(37.0% 0.070 172.2)",
+          "oklch(48.0% 0.070 172.2)",
+          "oklch(60.0% 0.070 172.2)",
+          "oklch(72.0% 0.070 172.2)",
+          "oklch(84.0% 0.070 172.2)",
+          "oklch(95.0% 0.060 172.2)"
+        ]
+      },
+      "overhead-green": {
+        "role": "primary",
+        "displayName": "Overhead Green",
+        "canonical": "#12261F",
+        "oklch": "oklch(24.9% 0.030 169.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.030 169.4)",
+          "oklch(26.0% 0.030 169.4)",
+          "oklch(37.0% 0.030 169.4)",
+          "oklch(48.0% 0.030 169.4)",
+          "oklch(60.0% 0.030 169.4)",
+          "oklch(72.0% 0.030 169.4)",
+          "oklch(84.0% 0.030 169.4)",
+          "oklch(95.0% 0.030 169.4)"
+        ]
+      },
+      "verge-green": {
+        "role": "primary",
+        "displayName": "Verge Green",
+        "canonical": "#2F8F5B",
+        "oklch": "oklch(58.1% 0.120 155.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 155.6)",
+          "oklch(26.0% 0.120 155.6)",
+          "oklch(37.0% 0.120 155.6)",
+          "oklch(48.0% 0.120 155.6)",
+          "oklch(60.0% 0.120 155.6)",
+          "oklch(72.0% 0.120 155.6)",
+          "oklch(84.0% 0.120 155.6)",
+          "oklch(95.0% 0.060 155.6)"
+        ]
+      },
+      "green-wash": {
+        "role": "primary",
+        "displayName": "Green Wash",
+        "canonical": "#E2F0E8",
+        "oklch": "oklch(94.2% 0.018 161.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.018 161.1)",
+          "oklch(26.0% 0.018 161.1)",
+          "oklch(37.0% 0.018 161.1)",
+          "oklch(48.0% 0.018 161.1)",
+          "oklch(60.0% 0.018 161.1)",
+          "oklch(72.0% 0.018 161.1)",
+          "oklch(84.0% 0.018 161.1)",
+          "oklch(95.0% 0.018 161.1)"
+        ]
+      },
+      "lane-amber": {
+        "role": "secondary",
+        "displayName": "Lane Amber",
+        "canonical": "#E8A33D",
+        "oklch": "oklch(76.5% 0.140 72.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 72.9)",
+          "oklch(26.0% 0.140 72.9)",
+          "oklch(37.0% 0.140 72.9)",
+          "oklch(48.0% 0.140 72.9)",
+          "oklch(60.0% 0.140 72.9)",
+          "oklch(72.0% 0.140 72.9)",
+          "oklch(84.0% 0.140 72.9)",
+          "oklch(95.0% 0.060 72.9)"
+        ]
+      },
+      "amber-deep": {
+        "role": "secondary",
+        "displayName": "Amber Deep",
+        "canonical": "#A86E18",
+        "oklch": "oklch(58.6% 0.119 70.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 70.4)",
+          "oklch(26.0% 0.119 70.4)",
+          "oklch(37.0% 0.119 70.4)",
+          "oklch(48.0% 0.119 70.4)",
+          "oklch(60.0% 0.119 70.4)",
+          "oklch(72.0% 0.119 70.4)",
+          "oklch(84.0% 0.119 70.4)",
+          "oklch(95.0% 0.060 70.4)"
+        ]
+      },
+      "amber-wash": {
+        "role": "secondary",
+        "displayName": "Amber Wash",
+        "canonical": "#FCEFD8",
+        "oklch": "oklch(95.6% 0.033 82.0)",
+        "tonalRamp": [
+          "oklch(15.0% 0.033 82.0)",
+          "oklch(26.0% 0.033 82.0)",
+          "oklch(37.0% 0.033 82.0)",
+          "oklch(48.0% 0.033 82.0)",
+          "oklch(60.0% 0.033 82.0)",
+          "oklch(72.0% 0.033 82.0)",
+          "oklch(84.0% 0.033 82.0)",
+          "oklch(95.0% 0.033 82.0)"
+        ]
+      },
+      "stop-red": {
+        "role": "tertiary",
+        "displayName": "Stop Red",
+        "canonical": "#C1442E",
+        "oklch": "oklch(55.8% 0.164 32.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 32.3)",
+          "oklch(26.0% 0.164 32.3)",
+          "oklch(37.0% 0.164 32.3)",
+          "oklch(48.0% 0.164 32.3)",
+          "oklch(60.0% 0.164 32.3)",
+          "oklch(72.0% 0.164 32.3)",
+          "oklch(84.0% 0.164 32.3)",
+          "oklch(95.0% 0.060 32.3)"
+        ]
+      },
+      "red-wash": {
+        "role": "tertiary",
+        "displayName": "Red Wash",
+        "canonical": "#FBE8E3",
+        "oklch": "oklch(94.5% 0.022 35.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.022 35.1)",
+          "oklch(26.0% 0.022 35.1)",
+          "oklch(37.0% 0.022 35.1)",
+          "oklch(48.0% 0.022 35.1)",
+          "oklch(60.0% 0.022 35.1)",
+          "oklch(72.0% 0.022 35.1)",
+          "oklch(84.0% 0.022 35.1)",
+          "oklch(95.0% 0.022 35.1)"
+        ]
+      },
+      "route-blue": {
+        "role": "tertiary",
+        "displayName": "Route Blue",
+        "canonical": "#2F6FD6",
+        "oklch": "oklch(55.7% 0.172 259.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 259.7)",
+          "oklch(26.0% 0.172 259.7)",
+          "oklch(37.0% 0.172 259.7)",
+          "oklch(48.0% 0.172 259.7)",
+          "oklch(60.0% 0.172 259.7)",
+          "oklch(72.0% 0.172 259.7)",
+          "oklch(84.0% 0.172 259.7)",
+          "oklch(95.0% 0.060 259.7)"
+        ]
+      },
+      "sky-wash": {
+        "role": "tertiary",
+        "displayName": "Sky Wash",
+        "canonical": "#E4EEFB",
+        "oklch": "oklch(94.5% 0.021 254.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.021 254.9)",
+          "oklch(26.0% 0.021 254.9)",
+          "oklch(37.0% 0.021 254.9)",
+          "oklch(48.0% 0.021 254.9)",
+          "oklch(60.0% 0.021 254.9)",
+          "oklch(72.0% 0.021 254.9)",
+          "oklch(84.0% 0.021 254.9)",
+          "oklch(95.0% 0.021 254.9)"
+        ]
+      },
+      "mint-ground": {
+        "role": "neutral",
+        "displayName": "Mint Ground",
+        "canonical": "#EEF3EF",
+        "oklch": "oklch(95.9% 0.007 151.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.007 151.9)",
+          "oklch(26.0% 0.007 151.9)",
+          "oklch(37.0% 0.007 151.9)",
+          "oklch(48.0% 0.007 151.9)",
+          "oklch(60.0% 0.007 151.9)",
+          "oklch(72.0% 0.007 151.9)",
+          "oklch(84.0% 0.007 151.9)",
+          "oklch(95.0% 0.007 151.9)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.0% 0.000 89.9)",
+          "oklch(37.0% 0.000 89.9)",
+          "oklch(48.0% 0.000 89.9)",
+          "oklch(60.0% 0.000 89.9)",
+          "oklch(72.0% 0.000 89.9)",
+          "oklch(84.0% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field",
+        "canonical": "#F5F8F6",
+        "oklch": "oklch(97.6% 0.004 157.2)",
+        "tonalRamp": [
+          "oklch(15.0% 0.004 157.2)",
+          "oklch(26.0% 0.004 157.2)",
+          "oklch(37.0% 0.004 157.2)",
+          "oklch(48.0% 0.004 157.2)",
+          "oklch(60.0% 0.004 157.2)",
+          "oklch(72.0% 0.004 157.2)",
+          "oklch(84.0% 0.004 157.2)",
+          "oklch(95.0% 0.004 157.2)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#E1E8E3",
+        "oklch": "oklch(92.4% 0.010 155.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.010 155.1)",
+          "oklch(26.0% 0.010 155.1)",
+          "oklch(37.0% 0.010 155.1)",
+          "oklch(48.0% 0.010 155.1)",
+          "oklch(60.0% 0.010 155.1)",
+          "oklch(72.0% 0.010 155.1)",
+          "oklch(84.0% 0.010 155.1)",
+          "oklch(95.0% 0.010 155.1)"
+        ]
+      },
+      "action": {
+        "role": "primary",
+        "displayName": "Action (Overhead Green pill)",
+        "canonical": "#12261F",
+        "oklch": "oklch(24.9% 0.030 169.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.030 169.4)",
+          "oklch(26.0% 0.030 169.4)",
+          "oklch(37.0% 0.030 169.4)",
+          "oklch(48.0% 0.030 169.4)",
+          "oklch(60.0% 0.030 169.4)",
+          "oklch(72.0% 0.030 169.4)",
+          "oklch(84.0% 0.030 169.4)",
+          "oklch(95.0% 0.030 169.4)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#14201C",
+        "oklch": "oklch(23.1% 0.019 172.0)",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 172.0)",
+          "oklch(26.0% 0.019 172.0)",
+          "oklch(37.0% 0.019 172.0)",
+          "oklch(48.0% 0.019 172.0)",
+          "oklch(60.0% 0.019 172.0)",
+          "oklch(72.0% 0.019 172.0)",
+          "oklch(84.0% 0.019 172.0)",
+          "oklch(95.0% 0.019 172.0)"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Ink Soft",
+        "canonical": "#55665D",
+        "oklch": "oklch(49.3% 0.025 162.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.025 162.3)",
+          "oklch(26.0% 0.025 162.3)",
+          "oklch(37.0% 0.025 162.3)",
+          "oklch(48.0% 0.025 162.3)",
+          "oklch(60.0% 0.025 162.3)",
+          "oklch(72.0% 0.025 162.3)",
+          "oklch(84.0% 0.025 162.3)",
+          "oklch(95.0% 0.025 162.3)"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "#5F6F66",
+        "oklch": "oklch(52.6% 0.024 160.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.024 160.9)",
+          "oklch(26.0% 0.024 160.9)",
+          "oklch(37.0% 0.024 160.9)",
+          "oklch(48.0% 0.024 160.9)",
+          "oklch(60.0% 0.024 160.9)",
+          "oklch(72.0% 0.024 160.9)",
+          "oklch(84.0% 0.024 160.9)",
+          "oklch(95.0% 0.024 160.9)"
+        ]
+      },
+      "sign-mint": {
+        "role": "neutral",
+        "displayName": "Sign Mint",
+        "canonical": "#A9CDBB",
+        "oklch": "oklch(81.7% 0.046 163.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.046 163.6)",
+          "oklch(26.0% 0.046 163.6)",
+          "oklch(37.0% 0.046 163.6)",
+          "oklch(48.0% 0.046 163.6)",
+          "oklch(60.0% 0.046 163.6)",
+          "oklch(72.0% 0.046 163.6)",
+          "oklch(84.0% 0.046 163.6)",
+          "oklch(95.0% 0.046 163.6)"
+        ]
+      },
+      "plaza-entry": {
+        "role": "tertiary",
+        "displayName": "Plaza Entry",
+        "canonical": "#16A34A",
+        "oklch": "oklch(62.7% 0.170 149.2)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 149.2)",
+          "oklch(26.0% 0.170 149.2)",
+          "oklch(37.0% 0.170 149.2)",
+          "oklch(48.0% 0.170 149.2)",
+          "oklch(60.0% 0.170 149.2)",
+          "oklch(72.0% 0.170 149.2)",
+          "oklch(84.0% 0.170 149.2)",
+          "oklch(95.0% 0.060 149.2)"
+        ]
+      },
+      "plaza-exit": {
+        "role": "tertiary",
+        "displayName": "Plaza Exit",
+        "canonical": "#EA580C",
+        "oklch": "oklch(64.6% 0.194 41.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 41.1)",
+          "oklch(26.0% 0.194 41.1)",
+          "oklch(37.0% 0.194 41.1)",
+          "oklch(48.0% 0.194 41.1)",
+          "oklch(60.0% 0.194 41.1)",
+          "oklch(72.0% 0.194 41.1)",
+          "oklch(84.0% 0.194 41.1)",
+          "oklch(95.0% 0.060 41.1)"
+        ]
+      },
+      "night-sign-green": {
+        "role": "primary",
+        "displayName": "Night Sign Green",
+        "canonical": "#2E9E78",
+        "oklch": "oklch(62.7% 0.115 165.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 165.9)",
+          "oklch(26.0% 0.115 165.9)",
+          "oklch(37.0% 0.115 165.9)",
+          "oklch(48.0% 0.115 165.9)",
+          "oklch(60.0% 0.115 165.9)",
+          "oklch(72.0% 0.115 165.9)",
+          "oklch(84.0% 0.115 165.9)",
+          "oklch(95.0% 0.060 165.9)"
+        ],
+        "theme": "dark",
+        "pairs": "sign-green"
+      },
+      "night-verge-green": {
+        "role": "primary",
+        "displayName": "Night Verge Green",
+        "canonical": "#3DB37A",
+        "oklch": "oklch(68.6% 0.135 158.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 158.4)",
+          "oklch(26.0% 0.135 158.4)",
+          "oklch(37.0% 0.135 158.4)",
+          "oklch(48.0% 0.135 158.4)",
+          "oklch(60.0% 0.135 158.4)",
+          "oklch(72.0% 0.135 158.4)",
+          "oklch(84.0% 0.135 158.4)",
+          "oklch(95.0% 0.060 158.4)"
+        ],
+        "theme": "dark",
+        "pairs": "verge-green"
+      },
+      "night-green-wash": {
+        "role": "primary",
+        "displayName": "Night Green Wash",
+        "canonical": "#163327",
+        "oklch": "oklch(29.4% 0.042 164.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.042 164.7)",
+          "oklch(26.0% 0.042 164.7)",
+          "oklch(37.0% 0.042 164.7)",
+          "oklch(48.0% 0.042 164.7)",
+          "oklch(60.0% 0.042 164.7)",
+          "oklch(72.0% 0.042 164.7)",
+          "oklch(84.0% 0.042 164.7)",
+          "oklch(95.0% 0.042 164.7)"
+        ],
+        "theme": "dark",
+        "pairs": "green-wash"
+      },
+      "night-amber-deep": {
+        "role": "secondary",
+        "displayName": "Night Amber Deep",
+        "canonical": "#E0A74F",
+        "oklch": "oklch(76.5% 0.124 75.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 75.8)",
+          "oklch(26.0% 0.124 75.8)",
+          "oklch(37.0% 0.124 75.8)",
+          "oklch(48.0% 0.124 75.8)",
+          "oklch(60.0% 0.124 75.8)",
+          "oklch(72.0% 0.124 75.8)",
+          "oklch(84.0% 0.124 75.8)",
+          "oklch(95.0% 0.060 75.8)"
+        ],
+        "theme": "dark",
+        "pairs": "amber-deep"
+      },
+      "night-amber-wash": {
+        "role": "secondary",
+        "displayName": "Night Amber Wash",
+        "canonical": "#3A2C12",
+        "oklch": "oklch(30.3% 0.045 81.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.045 81.1)",
+          "oklch(26.0% 0.045 81.1)",
+          "oklch(37.0% 0.045 81.1)",
+          "oklch(48.0% 0.045 81.1)",
+          "oklch(60.0% 0.045 81.1)",
+          "oklch(72.0% 0.045 81.1)",
+          "oklch(84.0% 0.045 81.1)",
+          "oklch(95.0% 0.045 81.1)"
+        ],
+        "theme": "dark",
+        "pairs": "amber-wash"
+      },
+      "night-stop-red": {
+        "role": "tertiary",
+        "displayName": "Night Stop Red",
+        "canonical": "#E5684F",
+        "oklch": "oklch(66.5% 0.161 32.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 32.9)",
+          "oklch(26.0% 0.161 32.9)",
+          "oklch(37.0% 0.161 32.9)",
+          "oklch(48.0% 0.161 32.9)",
+          "oklch(60.0% 0.161 32.9)",
+          "oklch(72.0% 0.161 32.9)",
+          "oklch(84.0% 0.161 32.9)",
+          "oklch(95.0% 0.060 32.9)"
+        ],
+        "theme": "dark",
+        "pairs": "stop-red"
+      },
+      "night-red-wash": {
+        "role": "tertiary",
+        "displayName": "Night Red Wash",
+        "canonical": "#3D1E19",
+        "oklch": "oklch(27.7% 0.050 30.2)",
+        "tonalRamp": [
+          "oklch(15.0% 0.050 30.2)",
+          "oklch(26.0% 0.050 30.2)",
+          "oklch(37.0% 0.050 30.2)",
+          "oklch(48.0% 0.050 30.2)",
+          "oklch(60.0% 0.050 30.2)",
+          "oklch(72.0% 0.050 30.2)",
+          "oklch(84.0% 0.050 30.2)",
+          "oklch(95.0% 0.050 30.2)"
+        ],
+        "theme": "dark",
+        "pairs": "red-wash"
+      },
+      "night-route-blue": {
+        "role": "tertiary",
+        "displayName": "Night Route Blue",
+        "canonical": "#6FA2F0",
+        "oklch": "oklch(70.9% 0.127 258.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 258.6)",
+          "oklch(26.0% 0.127 258.6)",
+          "oklch(37.0% 0.127 258.6)",
+          "oklch(48.0% 0.127 258.6)",
+          "oklch(60.0% 0.127 258.6)",
+          "oklch(72.0% 0.127 258.6)",
+          "oklch(84.0% 0.127 258.6)",
+          "oklch(95.0% 0.060 258.6)"
+        ],
+        "theme": "dark",
+        "pairs": "route-blue"
+      },
+      "night-sky-wash": {
+        "role": "tertiary",
+        "displayName": "Night Sky Wash",
+        "canonical": "#16263D",
+        "oklch": "oklch(26.7% 0.048 257.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.048 257.5)",
+          "oklch(26.0% 0.048 257.5)",
+          "oklch(37.0% 0.048 257.5)",
+          "oklch(48.0% 0.048 257.5)",
+          "oklch(60.0% 0.048 257.5)",
+          "oklch(72.0% 0.048 257.5)",
+          "oklch(84.0% 0.048 257.5)",
+          "oklch(95.0% 0.048 257.5)"
+        ],
+        "theme": "dark",
+        "pairs": "sky-wash"
+      },
+      "night-ground": {
+        "role": "neutral",
+        "displayName": "Night Mint Ground",
+        "canonical": "#0D1412",
+        "oklch": "oklch(18.3% 0.011 175.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.011 175.6)",
+          "oklch(26.0% 0.011 175.6)",
+          "oklch(37.0% 0.011 175.6)",
+          "oklch(48.0% 0.011 175.6)",
+          "oklch(60.0% 0.011 175.6)",
+          "oklch(72.0% 0.011 175.6)",
+          "oklch(84.0% 0.011 175.6)",
+          "oklch(95.0% 0.011 175.6)"
+        ],
+        "theme": "dark",
+        "pairs": "mint-ground"
+      },
+      "night-surface": {
+        "role": "neutral",
+        "displayName": "Night Surface",
+        "canonical": "#16201C",
+        "oklch": "oklch(23.2% 0.016 168.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.016 168.4)",
+          "oklch(26.0% 0.016 168.4)",
+          "oklch(37.0% 0.016 168.4)",
+          "oklch(48.0% 0.016 168.4)",
+          "oklch(60.0% 0.016 168.4)",
+          "oklch(72.0% 0.016 168.4)",
+          "oklch(84.0% 0.016 168.4)",
+          "oklch(95.0% 0.016 168.4)"
+        ],
+        "theme": "dark",
+        "pairs": "surface"
+      },
+      "night-field": {
+        "role": "neutral",
+        "displayName": "Night Field",
+        "canonical": "#1D2924",
+        "oklch": "oklch(26.8% 0.019 167.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 167.5)",
+          "oklch(26.0% 0.019 167.5)",
+          "oklch(37.0% 0.019 167.5)",
+          "oklch(48.0% 0.019 167.5)",
+          "oklch(60.0% 0.019 167.5)",
+          "oklch(72.0% 0.019 167.5)",
+          "oklch(84.0% 0.019 167.5)",
+          "oklch(95.0% 0.019 167.5)"
+        ],
+        "theme": "dark",
+        "pairs": "field"
+      },
+      "night-hairline": {
+        "role": "neutral",
+        "displayName": "Night Hairline",
+        "canonical": "#25332D",
+        "oklch": "oklch(30.6% 0.022 166.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.022 166.8)",
+          "oklch(26.0% 0.022 166.8)",
+          "oklch(37.0% 0.022 166.8)",
+          "oklch(48.0% 0.022 166.8)",
+          "oklch(60.0% 0.022 166.8)",
+          "oklch(72.0% 0.022 166.8)",
+          "oklch(84.0% 0.022 166.8)",
+          "oklch(95.0% 0.022 166.8)"
+        ],
+        "theme": "dark",
+        "pairs": "hairline"
+      },
+      "night-action": {
+        "role": "primary",
+        "displayName": "Night Action (Overhead Green pill)",
+        "canonical": "#DCEBE3",
+        "oklch": "oklch(92.7% 0.019 162.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 162.9)",
+          "oklch(26.0% 0.019 162.9)",
+          "oklch(37.0% 0.019 162.9)",
+          "oklch(48.0% 0.019 162.9)",
+          "oklch(60.0% 0.019 162.9)",
+          "oklch(72.0% 0.019 162.9)",
+          "oklch(84.0% 0.019 162.9)",
+          "oklch(95.0% 0.019 162.9)"
+        ],
+        "theme": "dark",
+        "pairs": "action"
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#E6EEEA",
+        "oklch": "oklch(94.2% 0.010 164.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.010 164.9)",
+          "oklch(26.0% 0.010 164.9)",
+          "oklch(37.0% 0.010 164.9)",
+          "oklch(48.0% 0.010 164.9)",
+          "oklch(60.0% 0.010 164.9)",
+          "oklch(72.0% 0.010 164.9)",
+          "oklch(84.0% 0.010 164.9)",
+          "oklch(95.0% 0.010 164.9)"
+        ],
+        "theme": "dark",
+        "pairs": "ink"
+      },
+      "night-ink-soft": {
+        "role": "neutral",
+        "displayName": "Night Ink Soft",
+        "canonical": "#A7B8AF",
+        "oklch": "oklch(76.7% 0.023 162.9)",
+        "tonalRamp": [
+          "oklch(15.0% 0.023 162.9)",
+          "oklch(26.0% 0.023 162.9)",
+          "oklch(37.0% 0.023 162.9)",
+          "oklch(48.0% 0.023 162.9)",
+          "oklch(60.0% 0.023 162.9)",
+          "oklch(72.0% 0.023 162.9)",
+          "oklch(84.0% 0.023 162.9)",
+          "oklch(95.0% 0.023 162.9)"
+        ],
+        "theme": "dark",
+        "pairs": "ink-soft"
+      },
+      "night-ink-faint": {
+        "role": "neutral",
+        "displayName": "Night Ink Faint",
+        "canonical": "#8A9C92",
+        "oklch": "oklch(67.6% 0.025 161.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.025 161.4)",
+          "oklch(26.0% 0.025 161.4)",
+          "oklch(37.0% 0.025 161.4)",
+          "oklch(48.0% 0.025 161.4)",
+          "oklch(60.0% 0.025 161.4)",
+          "oklch(72.0% 0.025 161.4)",
+          "oklch(84.0% 0.025 161.4)",
+          "oklch(95.0% 0.025 161.4)"
+        ],
+        "theme": "dark",
+        "pairs": "ink-faint"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles and the Home greeting; medium weight, sentence case. 30px app, 34px web desktop (30 tablet, 27 mobile)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Sheet, dialog and empty-state titles; the large route line on trip detail (21px app, 28px web)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles beside a 17px sign-green icon."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text and notices; muted lines in Ink Soft at 14px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels inside fields, meta lines, badge text."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Every button label, sentence case (14px on the web)."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Pesos, kilometres and counts on figure tiles and totals; tabular (28px on web tiles)."
+      },
+      "signage": {
+        "displayName": "Signage",
+        "purpose": "Driving screen only: plaza names (uppercase), distances, stat figures; also the SMARTTOLL wordmark and route-illustration fees."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift-app",
+        "value": "0 8px 20px rgba(11,38,31,0.07)",
+        "purpose": "React Native: shadowColor #0B261F, opacity 0.07, radius 20, offset 0/8, elevation 3. Cards, white Home action pill, plain figure tile, tab bar; Plan button at elevation 6."
+      },
+      {
+        "name": "card-lift-web",
+        "value": "0 2px 4px rgba(11,38,31,0.03), 0 10px 28px rgba(11,38,31,0.07)",
+        "purpose": "Web cards, empty states, map labels and legends."
+      },
+      {
+        "name": "modal",
+        "value": "0 24px 64px rgba(11,38,31,0.22), 0 4px 16px rgba(11,38,31,0.10)",
+        "purpose": "Web dialogs and search dropdowns."
+      },
+      {
+        "name": "field-focus",
+        "value": "0 0 0 4px rgba(47,143,91,0.12)",
+        "purpose": "Focused web fields and open search selects, with a Verge Green border."
+      },
+      {
+        "name": "focus-outline",
+        "value": "outline: 3px solid #E8A33D; outline-offset: 2px",
+        "purpose": "Web keyboard focus on every control."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press-feedback",
+        "value": "opacity 0.85",
+        "purpose": "App pressed state on buttons, cards and rows; disabled at 0.55."
+      },
+      {
+        "name": "plan-press",
+        "value": "transform: scale(0.95)",
+        "purpose": "The raised Plan button while pressed."
+      },
+      {
+        "name": "button-hover-web",
+        "value": "filter 0.15s, background-color 0.15s; hover brightness(1.08), active brightness(0.95)",
+        "purpose": "Web button hover and active."
+      },
+      {
+        "name": "skeleton-pulse",
+        "value": "700ms ease-in-out, opacity 1 to 0.45, looped",
+        "purpose": "Skeleton placeholders while content loads (native driver)."
+      },
+      {
+        "name": "sheet-slide",
+        "value": "slide up (React Native Modal animationType=\"slide\")",
+        "purpose": "Bottom sheets entering over the green-tinted backdrop."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "480px"
+      },
+      {
+        "name": "tablet",
+        "value": "1024px"
+      }
+    ],
+    "appearance": {
+      "app": [
+        "light",
+        "dark",
+        "system"
+      ],
+      "web": [
+        "light"
+      ],
+      "nightTokenPrefix": "night-"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Near-black overhead-green pill for the main action on a screen.",
+      "html": "<button class=\"ds-btn-primary\">Save Trip</button>",
+      "css": ".ds-btn-primary { font-family: 'Manrope', sans-serif; background: #12261F; color: #FFFFFF; font-weight: 700; font-size: 15px; padding: 14px 22px; min-height: 52px; border: 1px solid #12261F; border-radius: 999px; cursor: pointer; transition: filter 0.15s; } .ds-btn-primary:hover { filter: brightness(1.08); } .ds-btn-primary:active { filter: brightness(0.95); } .ds-btn-primary:focus-visible { outline: 3px solid #E8A33D; outline-offset: 2px; }"
+    },
+    {
+      "name": "Amber Go Button",
+      "kind": "button",
+      "refersTo": "button-amber",
+      "description": "The one amber \"go\" action per screen; overhead-green text, never white.",
+      "html": "<button class=\"ds-btn-amber\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z\"/><path d=\"M9 4v14M15 6v14\"/></svg>Plan a Trip</button>",
+      "css": ".ds-btn-amber { font-family: 'Manrope', sans-serif; display: inline-flex; align-items: center; gap: 8px; background: #E8A33D; color: #12261F; font-weight: 700; font-size: 15px; padding: 14px 22px; min-height: 52px; border: none; border-radius: 999px; cursor: pointer; transition: filter 0.15s; } .ds-btn-amber:hover { filter: brightness(1.08); } .ds-btn-amber:active { filter: brightness(0.95); } .ds-btn-amber:focus-visible { outline: 3px solid #12261F; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Field-tinted pill with sign-green text for secondary actions.",
+      "html": "<button class=\"ds-btn-secondary\">Plan Again</button>",
+      "css": ".ds-btn-secondary { font-family: 'Manrope', sans-serif; background: #F5F8F6; color: #0B4F3F; font-weight: 700; font-size: 15px; padding: 14px 22px; min-height: 52px; border: 1px solid #E1E8E3; border-radius: 999px; cursor: pointer; transition: background-color 0.15s; } .ds-btn-secondary:hover { background: #E2F0E8; } .ds-btn-secondary:focus-visible { outline: 3px solid #E8A33D; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ticket Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Borderless tinted field with the label inside, above the value.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Destination</span><input class=\"ds-field-input\" value=\"Baguio City\"></label>",
+      "css": ".ds-field { font-family: 'Manrope', sans-serif; display: flex; flex-direction: column; justify-content: center; background: #F5F8F6; border: 1.5px solid #F5F8F6; border-radius: 16px; padding: 9px 16px; min-height: 60px; width: 300px; transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; } .ds-field-label { font-size: 12px; font-weight: 500; color: #55665D; margin-bottom: 2px; } .ds-field-input { font: 600 15px 'Manrope', sans-serif; color: #14201C; background: transparent; border: none; padding: 0; outline: none; } .ds-field:hover { border-color: #E1E8E3; } .ds-field:focus-within { border-color: #2F8F5B; background: #FFFFFF; box-shadow: 0 0 0 4px rgba(47,143,91,0.12); }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-active",
+      "description": "White tab bar: active icon in a green-wash pill, raised amber Plan button in the middle.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab is-on\"><span class=\"ds-tab-icon\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 3 3 10.5V21h6v-6h6v6h6V10.5z\"/></svg></span>Home</a><a class=\"ds-tab\"><span class=\"ds-tab-icon\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M5 16h14l-1.5-6.5a2 2 0 0 0-2-1.5h-7a2 2 0 0 0-2 1.5zM7 16v3M17 16v3\"/></svg></span>Vehicles</a><a class=\"ds-tab ds-tab-plan\"><span class=\"ds-plan\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linejoin=\"round\"><path d=\"M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z\"/></svg></span>Plan</a><a class=\"ds-tab\"><span class=\"ds-tab-icon\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><rect x=\"3\" y=\"6\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M3 10h18\"/></svg></span>RFID</a><a class=\"ds-tab\"><span class=\"ds-tab-icon\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg></span>History</a></nav>",
+      "css": ".ds-tabs { font-family: 'Manrope', sans-serif; display: flex; align-items: flex-start; width: 380px; background: #FFFFFF; padding: 8px 4px 10px; margin-top: 30px; border-radius: 0; box-shadow: 0 8px 20px rgba(11,38,31,0.07); } .ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: #5F6F66; cursor: pointer; text-decoration: none; } .ds-tab-icon { width: 56px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s; } .ds-tab:hover .ds-tab-icon { background: #F5F8F6; } .ds-tab.is-on { color: #0B4F3F; } .ds-tab.is-on .ds-tab-icon { background: #E2F0E8; } .ds-plan { width: 58px; height: 58px; margin-top: -26px; border-radius: 50%; background: #E8A33D; color: #12261F; border: 4px solid #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(11,38,31,0.12); box-sizing: border-box; transition: transform 0.1s; } .ds-tab-plan:active .ds-plan { transform: scale(0.95); } .ds-tab:focus-visible { outline: 3px solid #E8A33D; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White borderless card, 24px corners, one soft green-tinted lift.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0B4F3F\" stroke-width=\"2\"><rect x=\"3\" y=\"6\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M3 10h18\"/></svg>RFID Balances</div><div class=\"ds-card-row\"><span>Toyota Vios<small>Easytrip</small></span><b>₱1,250.00</b></div><div class=\"ds-card-row\"><span>Hilux<small>Autosweep</small></span><b class=\"is-low\">₱180.00</b></div></div>",
+      "css": ".ds-card { font-family: 'Manrope', sans-serif; background: #FFFFFF; border-radius: 24px; padding: 18px; width: 320px; box-shadow: 0 2px 4px rgba(11,38,31,0.03), 0 10px 28px rgba(11,38,31,0.07); transition: opacity 0.15s; } .ds-card:active { opacity: 0.85; } .ds-card-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: #14201C; margin-bottom: 12px; } .ds-card-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-top: 1px solid #E1E8E3; font-size: 14px; color: #55665D; } .ds-card-row:first-of-type { border-top: none; } .ds-card-row small { display: block; font-size: 12px; font-weight: 500; color: #5F6F66; } .ds-card-row b { font-weight: 600; font-size: 14.5px; color: #14201C; } .ds-card-row b.is-low { color: #C1442E; }"
+    },
+    {
+      "name": "Figure Tiles",
+      "kind": "card",
+      "refersTo": "figure-tile-green",
+      "description": "Pastel figure tiles in order: green, amber, sky, then plain white with lift.",
+      "html": "<div class=\"ds-tiles\"><div class=\"ds-tile t1\"><span class=\"ds-tile-icon\">₱</span><b>₱1,430</b><small>RFID balance</small></div><div class=\"ds-tile t2\"><span class=\"ds-tile-icon\">₱</span><b>₱612</b><small>Tolls this month</small></div><div class=\"ds-tile t3\"><span class=\"ds-tile-icon\">2</span><b>2</b><small>Vehicles</small></div><div class=\"ds-tile t4\"><span class=\"ds-tile-icon\">#</span><b>14</b><small>Trips</small></div></div>",
+      "css": ".ds-tiles { font-family: 'Manrope', sans-serif; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 340px; } .ds-tile { border-radius: 22px; padding: 16px; } .ds-tile.t1 { background: #E2F0E8; } .ds-tile.t2 { background: #FCEFD8; } .ds-tile.t3 { background: #E4EEFB; } .ds-tile.t4 { background: #FFFFFF; box-shadow: 0 8px 20px rgba(11,38,31,0.07); } .ds-tile-icon { width: 34px; height: 34px; border-radius: 50%; background: #FFFFFF; color: #0B4F3F; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; margin-bottom: 14px; } .ds-tile.t4 .ds-tile-icon { background: #E2F0E8; } .ds-tile b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: #14201C; font-variant-numeric: tabular-nums; } .ds-tile small { display: block; font-size: 12.5px; font-weight: 500; color: #55665D; margin-top: 2px; }"
+    },
+    {
+      "name": "Badges and Price Pill",
+      "kind": "chip",
+      "refersTo": "badge-ok",
+      "description": "Pill badges with a status dot on pastel washes; the dark price pill on trip rows.",
+      "html": "<div class=\"ds-badges\"><span class=\"ds-badge ok\"><i></i>Completed</span><span class=\"ds-badge warn\"><i></i>Planned</span><span class=\"ds-badge danger\"><i></i>1 low balance</span><span class=\"ds-price\">₱345.00</span></div>",
+      "css": ".ds-badges { font-family: 'Manrope', sans-serif; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; } .ds-badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; } .ds-badge.ok { background: #E2F0E8; color: #0B4F3F; } .ds-badge.warn { background: #FCEFD8; color: #A86E18; } .ds-badge.danger { background: #FBE8E3; color: #C1442E; } .ds-price { background: #12261F; color: #FFFFFF; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Route Line",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Signature: origin, dotted road with time and km, destination with a sign-green pin.",
+      "html": "<a class=\"ds-route\" href=\"#\"><span class=\"ds-route-end\">Angeles City</span><span class=\"ds-route-road\"><span class=\"ds-route-mid\">1h 50m · 128 km</span><span class=\"ds-route-track\"><i class=\"ds-route-dot\"></i><i class=\"ds-route-dash\"></i><i class=\"ds-route-pin\"><svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"#FFFFFF\"><path d=\"M5 3v18h2v-7h11l-2-4 2-4H7V3z\"/></svg></i></span></span><span class=\"ds-route-end to\">Baguio City</span></a>",
+      "css": ".ds-route { font-family: 'Manrope', sans-serif; display: flex; align-items: center; gap: 10px; width: 340px; color: inherit; text-decoration: none; } .ds-route-end { width: 34%; font-size: 15px; font-weight: 700; line-height: 19px; letter-spacing: -0.01em; color: #14201C; transition: color 0.15s; } .ds-route-end.to { text-align: right; } .ds-route:hover .ds-route-end { color: #0B4F3F; } .ds-route:focus-visible { outline: 3px solid #E8A33D; outline-offset: 4px; border-radius: 8px; } .ds-route-road { flex: 1; display: flex; flex-direction: column; } .ds-route-mid { font-size: 11.5px; font-weight: 500; color: #55665D; text-align: center; margin-bottom: 4px; white-space: nowrap; } .ds-route-track { display: flex; align-items: center; } .ds-route-dot { width: 9px; height: 9px; border-radius: 50%; background: #14201C; } .ds-route-dash { flex: 1; border-top: 2px dashed #5F6F66; margin: 0 4px; } .ds-route-pin { width: 20px; height: 20px; border-radius: 50%; background: #0B4F3F; display: flex; align-items: center; justify-content: center; }"
+    },
+    {
+      "name": "Driving Banner",
+      "kind": "custom",
+      "refersTo": "driving-banner",
+      "description": "Driving-screen register: overhead-green gantry sign with Barlow Condensed plaza name.",
+      "html": "<div class=\"ds-drive\"><span class=\"ds-drive-meta\">Next toll plaza · 4.2 km</span><span class=\"ds-drive-name\">Dau Exit</span><span class=\"ds-drive-fee\">₱87.00 · Class 1</span></div>",
+      "css": ".ds-drive { display: flex; flex-direction: column; gap: 2px; width: 320px; background: #12261F; border-radius: 16px; padding: 14px 16px; } .ds-drive-meta { font: 500 13px 'Manrope', sans-serif; color: #E8A33D; } .ds-drive-name { font: 800 26px/1.1 'Barlow Condensed', sans-serif; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.01em; } .ds-drive-fee { font: 500 12.5px 'Manrope', sans-serif; color: #A9CDBB; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dotted Road",
+    "northStarStatus": "proposed, pending user confirmation",
+    "overview": "Every trip in SmartToll is drawn the same way: an origin, a dotted road carrying the time and distance, and a destination marked by a sign-green pin. The rest of the system is built to give that line room. A pale mint-grey ground holds white, borderless cards with generous 24 px corners and one soft green-tinted lift; actions are pills; fields read like a ticket, with the label sitting inside above the value. The softness and airiness are borrowed from consumer travel apps, but the colour stays SmartToll's own: sign green for links, icons and selection, near-black overhead green for primary actions, and lane amber reserved for the one \"go\" action per screen.\n\nThe mood is clear, sturdy and trustworthy. Titles are large, sentence-case and medium weight, so the hierarchy feels calm; the weight is spent on figures instead (pesos, kilometres, minutes in Manrope 800), because the toll is the number the motorist came for. Pastel washes (green, amber, sky) carry figure tiles, badges, notices and selected states; they are tinted toward the road's green, never lavender.\n\nOn the road the system changes register on purpose. The Trip in Progress screen is a high-contrast gantry sign: overhead-green direction banners, Barlow Condensed uppercase plaza names and figures, thick outlines on toll alerts. The softness is for planning at home; the driving screen is for a glance. The app ships Light, Dark and System appearances; the website is light only. Confirmed rejections: the lavender consumer-travel template (candy tiles, illustrated mascots), gradients and glassy effects, and promo clutter (vouchers, points, discount banners, ratings, favourite hearts).",
+    "keyCharacteristics": [
+      "Trips drawn as route lines: origin, dotted road with time and km, destination with a green pin.",
+      "Pale mint-grey ground, white borderless 24 px cards, one soft green-tinted shadow.",
+      "Pill buttons: near-black overhead green for primary, amber only for the single \"go\" action.",
+      "Borderless tinted fields with the label inside, above the value.",
+      "Manrope throughout: medium sentence-case titles, heavy tabular figures.",
+      "Barlow Condensed only for driving signage, the wordmark and the route illustration's fees.",
+      "A bold, high-contrast driving screen that deliberately leaves the soft world."
+    ],
+    "rules": [
+      {
+        "name": "The One Amber Go Rule",
+        "body": "One amber pill per screen, and it is the action that moves the trip forward. Text and icons on amber are Overhead Green (#12261F), never white.",
+        "section": "colors"
+      },
+      {
+        "name": "The Green Wash Rule",
+        "body": "Pastels are green, amber and sky washes tinted toward the road; figure tiles run green, amber, sky, then plain white. Never lavender, never candy colours.",
+        "section": "colors"
+      },
+      {
+        "name": "The Night Lift Rule",
+        "body": "In Dark, sign green lifts to #2E9E78, the primary pill inverts to a pale #DCEBE3 with dark text, and cards gain a quiet #25332D outline because shadows no longer show. The driving screen's overhead-green banners stay dark in both themes; the night map draws the toll road in Night Verge Green (#3DB37A).",
+        "section": "colors"
+      },
+      {
+        "name": "The Medium Title Rule",
+        "body": "Titles are large, medium weight and sentence case; heaviness belongs to figures. A heading never shouts in bold uppercase.",
+        "section": "typography"
+      },
+      {
+        "name": "The Signage Stays On The Road Rule",
+        "body": "Barlow Condensed appears only on the driving screen, in the wordmark and in the route illustration's fees. Planning screens are all Manrope.",
+        "section": "typography"
+      },
+      {
+        "name": "The Standalone Heading Rule",
+        "body": "A heading stands on its own: no small caption or uppercase line above it. Dialog titles say what they are.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Soft Lift Rule",
+        "body": "There is one shadow, tinted with overhead green, and it is soft. No hard offsets, no stacked glows, no glass or blur, no gradients.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do draw every trip as a route line: origin, dotted road with time and km, destination with the Sign Green pin.",
+      "Do keep exactly one amber pill per screen, with Overhead Green (#12261F) text on it.",
+      "Do use Overhead Green pills for primary actions and pills (999px) for every button, badge and price.",
+      "Do put cards on the Mint Ground (#EEF3EF) as white, borderless 24px shapes with the one soft green-tinted lift; add the #25332D outline only at night.",
+      "Do put field labels inside the field, above the value, on the borderless Field tint.",
+      "Do run figure tiles green, amber, sky, then plain white, and set their figures in Manrope 800.",
+      "Do keep titles large, medium weight and sentence case.",
+      "Do keep the driving screen bold: Overhead Green banners, Barlow Condensed plaza names, high contrast in both themes."
+    ],
+    "donts": [
+      "Don't use lavender, purple or candy-coloured tiles, or illustrated mascots.",
+      "Don't use gradients, glassy or blurred effects.",
+      "Don't add promo clutter: vouchers, points, discount banners, ratings or favourite hearts.",
+      "Don't put white text on amber, or use more than one amber action on a screen.",
+      "Don't place a small caption or uppercase line above a heading.",
+      "Don't use Barlow Condensed on planning screens; it belongs to the driving screen, the wordmark and the route illustration's fees.",
+      "Don't add hard offset shadows or stacked glows; there is one soft lift."
+    ]
+  }
+}

@@ -15,13 +15,16 @@ export function BrandMark({ size = 32 }) {
   );
 }
 
-/** Logo and "SMARTTOLL" wordmark ("Toll" in amber), for dark backgrounds. */
-export default function Brand({ size = 32 }) {
+/**
+ * Logo and "SMARTTOLL" wordmark ("Toll" in amber). On dark grounds (the login hero) the
+ * wordmark is white; `onLight` uses the theme's ink and deep amber for the light header.
+ */
+export default function Brand({ size = 32, onLight = false }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: size * 0.34 }}>
       <BrandMark size={size} />
-      <Text style={{ fontFamily: fonts.signHeavy, fontSize: size * 0.66, color: colors.white, letterSpacing: 0.6 }}>
-        SMART<Text style={{ color: colors.amber }}>TOLL</Text>
+      <Text style={{ fontFamily: fonts.signHeavy, fontSize: size * 0.66, color: onLight ? colors.ink : colors.white, letterSpacing: 0.6 }}>
+        SMART<Text style={{ color: onLight ? colors.amberDark : colors.amber }}>TOLL</Text>
       </Text>
     </View>
   );

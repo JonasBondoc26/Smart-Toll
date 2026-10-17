@@ -91,7 +91,7 @@ export default function LocationSelect({ id, label, locations, value, onChange, 
       <div className={`search-select${open ? ' open' : ''}`}>
         <span className="search-icon"><Icon name="search" size={15} stroke={2.3} /></span>
         <input
-          id={id} type="text" autoComplete="off" placeholder="Search landmark, city or toll plaza..."
+          id={id} type="text" autoComplete="off" placeholder="Landmark, city or toll plaza"
           role="combobox" aria-expanded={open} aria-autocomplete="list" aria-controls={`${id}-list`}
           value={shown}
           onFocus={(e) => { e.target.select(); setActive(0); setOpen(true); }}

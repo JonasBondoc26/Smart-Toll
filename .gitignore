@@ -17,3 +17,8 @@ smarttoll/frontend/dist/
 Thumbs.db
 .vscode/
 .idea/
+
+# Impeccable design-review screenshots and local settings
+.impeccable/review/
+.impeccable/config.local.json
+.impeccable/build/

@@ -4,31 +4,35 @@ import { getItem, setItem } from './storage';
 
 /*
  | The SmartToll design system (same palette as smarttoll/frontend/src/styles.css), in a light
- | and a dark version. The motorist picks Light, Dark or System (follow the phone) in Account.
+ | and a dark version: soft rounded cards on a pale mint ground, pill buttons, Manrope type. The motorist picks Light, Dark or System (follow the phone) in Account.
  |
  | `colors` is one shared object whose values switch with the theme, so code keeps writing
  | colors.ink / colors.surface. Screens call useTheme() so they re-render on a switch, and
  | style sheets made with themed() rebuild themselves for the new colors.
  */
 const light = {
-  greenDeep: '#0B4F3F',   // brand green: primary buttons, links, icons
-  greenDark: '#12261F',   // headers, dark banners (dark in both themes)
+  greenDeep: '#0B4F3F',   // sign green: links, icons, selected options, the toll-road line
+  greenDark: '#12261F',   // overhead green: the trip screen's gantry banners (dark in both themes)
   greenMid: '#2F8F5B',
-  greenPale: '#F0F6F2',   // tinted backgrounds (icon tiles, selected options, success notes)
-  amber: '#E8A33D',
-  amberDark: '#B87A1F',
-  amberPale: '#FCF0DB',
+  greenPale: '#E2F0E8',   // pastel green wash: tiles, selected options, success notes
+  amber: '#E8A33D',       // lane amber: the one "go" action
+  amberDark: '#A86E18',
+  amberPale: '#FCEFD8',
   red: '#C1442E',
-  redPale: '#FBEAE6',
-  bluePale: '#EAF1FB',
+  redPale: '#FBE8E3',
+  bluePale: '#E4EEFB',
   blue: '#2F6FD6',
-  concrete: '#F3F4EF',    // page background
-  surface: '#FFFFFF',     // cards, inputs, sheets, tab bar
-  line: '#E2E4DC',
+  concrete: '#EEF3EF',    // page ground: pale mint-grey
+  surface: '#FFFFFF',     // cards, sheets, tab bar
+  field: '#F5F8F6',       // borderless fields and options (lighter than the ground, tinted inside cards)
+  cardEdge: '#FFFFFF',    // card outline: invisible by day (the soft shadow carries the edge)
+  line: '#E1E8E3',
+  action: '#12261F',      // primary pill buttons: near-black overhead green
+  onAction: '#FFFFFF',
   white: '#FFFFFF',       // always white: text on green / amber, map casing
   ink: '#14201C',         // main text
-  inkSoft: '#5B6B63',
-  inkFaint: '#93A099',
+  inkSoft: '#55665D',
+  inkFaint: '#5F6F66',
   mint: '#A9CDBB',        // soft text on the dark green
   backdrop: 'rgba(11,38,31,0.45)',
   // Map lines, as on the website
@@ -42,19 +46,23 @@ const dark = {
   ...light,
   greenDeep: '#2E9E78',   // lifted so green text and icons stay readable on dark surfaces
   greenMid: '#3DB37A',
-  greenPale: '#15302A',
+  greenPale: '#163327',
   amberDark: '#E0A74F',
   amberPale: '#3A2C12',
   red: '#E5684F',
   redPale: '#3D1E19',
   bluePale: '#16263D',
   blue: '#6FA2F0',
-  concrete: '#0E1513',
-  surface: '#17211D',
-  line: '#27352F',
+  concrete: '#0D1412',
+  surface: '#16201C',
+  field: '#1D2924',
+  cardEdge: '#25332D',    // at night shadows don't show, so cards keep a quiet outline
+  line: '#25332D',
+  action: '#DCEBE3',      // light pill on dark, the same role inverted
+  onAction: '#0D1412',
   ink: '#E6EEEA',
   inkSoft: '#A7B8AF',
-  inkFaint: '#74877D',
+  inkFaint: '#8A9C92',
   backdrop: 'rgba(0,0,0,0.6)',
 };
 
@@ -109,29 +117,31 @@ export function themed(build) {
 /* ---------- Fixed design values ---------- */
 
 export const fonts = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-  // Condensed signage type for headings, like the expressway signs
+  regular: 'Manrope_400Regular',
+  medium: 'Manrope_500Medium',
+  semibold: 'Manrope_600SemiBold',
+  bold: 'Manrope_700Bold',
+  heavy: 'Manrope_800ExtraBold',     // figures: pesos, kilometres, times
+  // Condensed signage type, kept for the trip screen's driving information (gantry signs)
   sign: 'BarlowCondensed_700Bold',
   signHeavy: 'BarlowCondensed_800ExtraBold',
 };
 
-export const radius = { sm: 6, md: 10, lg: 16 };
+export const radius = { sm: 8, md: 16, lg: 24, pill: 999 };
 
-// Dark green header with white signage-type titles, like the website's top bar (both themes).
-export const headerOptions = {
-  headerStyle: { backgroundColor: light.greenDark },
-  headerTintColor: '#FFFFFF',
-  headerTitleStyle: { fontFamily: fonts.sign, fontSize: 20 },
+// A light header on the page ground with a dark title (both follow the theme).
+export const headerOptions = () => ({
+  headerStyle: { backgroundColor: colors.concrete },
+  headerTintColor: colors.ink,
+  headerTitleStyle: { fontFamily: fonts.medium, fontSize: 24, letterSpacing: -0.4 },
   headerShadowVisible: false,
-};
+});
 
+// One soft, green-tinted lift for cards and the tab bar.
 export const shadow = {
   shadowColor: '#0B261F',
   shadowOpacity: 0.07,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 2,
+  shadowRadius: 20,
+  shadowOffset: { width: 0, height: 8 },
+  elevation: 3,
 };

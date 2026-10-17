@@ -45,6 +45,8 @@ export const MAP_HTML = `<!doctype html><html><head>
   let night = false;
   // Route lines get a light outline by day and a dark one at night.
   const casing = () => (night ? '#0B1512' : '#fff');
+  // The toll road's green is lifted at night so it stays visible on the dark tiles.
+  const tollColor = () => (night ? '#3DB37A' : '${colors.tollRoad}');
   const layer = L.layerGroup().addTo(map);
   const pin = (l) => L.divIcon({ className: '', html: '<div class="pin ' + l.toLowerCase() + '"><span>' + l + '</span></div>', iconSize: [28, 28], iconAnchor: [14, 32] });
   const meIcon = L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18], iconAnchor: [9, 9] });
@@ -83,7 +85,7 @@ export const MAP_HTML = `<!doctype html><html><head>
       L.polyline(sel.geometry, { color: '${colors.freeRoad}', weight: 5, dashArray: '2 9', lineCap: 'round' }).addTo(layer);
       (sel.toll_geometry || []).forEach((line) => {
         L.polyline(line, { color: casing(), weight: 9, opacity: 0.9 }).addTo(layer);
-        L.polyline(line, { color: '${colors.tollRoad}', weight: 5 }).addTo(layer);
+        L.polyline(line, { color: tollColor(), weight: 5 }).addTo(layer);
       });
       (sel.segments || []).forEach((sg) => {
         [['entry', '${colors.entry}'], ['exit', '${colors.exit}']].forEach(([role, color]) => {

@@ -7,6 +7,7 @@ import Icon from '../components/Icon.jsx';
 import Brand from '../components/Brand.jsx';
 import RouteMap from '../components/RouteMap.jsx';
 import '../trip-planner.css';
+import RouteLine from '../components/RouteLine.jsx';
 
 // The saved trip in the shape RouteMap draws: one route, its toll stretches, entry / exit plazas.
 const mapRoute = (trip) => ({
@@ -87,7 +88,7 @@ export default function TripDetail() {
             <>
               <div className="page-head">
                 <div>
-                  <h1>{trip.origin} → {trip.destination}</h1>
+                  <h1><RouteLine size="lg" from={trip.origin} to={trip.destination} travelMin={trip.estimated_travel_time} distanceKm={trip.route_distance} /></h1>
                   <div className="subtitle">
                     Planned {day(trip.date_created)} · {time(trip.date_created)} · {trip.vehicle_name} ({trip.class_name})
                   </div>
@@ -119,14 +120,14 @@ export default function TripDetail() {
               )}
 
               <div className="gantry mb-24">
-                <div className="gantry-title">Route — {trip.expressways.length ? trip.expressways.join(' → ') : 'No toll road'}</div>
+                <div className="gantry-title">Route — {trip.expressways.length ? trip.expressways.join(' → ') : Number(trip.total_toll_fee) > 0 ? 'Expressway not recorded' : 'No toll road'}</div>
                 <svg className="route-svg" viewBox="0 0 400 20" height="20" aria-hidden="true">
                   <path d="M20 10 L380 10" stroke="rgba(255,255,255,0.15)" strokeWidth="4" strokeLinecap="round" />
                   <path d="M20 10 L380 10" stroke="#E8A33D" strokeWidth="4" strokeLinecap="round" strokeDasharray="2 12" />
                 </svg>
                 <div className="gantry-plazas is-segments">
                   {trip.segments.length === 0 && (
-                    <div className="gantry-plaza is-wide"><div className="gantry-plaza-name">This trip used no toll road</div></div>
+                    <div className="gantry-plaza is-wide"><div className="gantry-plaza-name">{Number(trip.total_toll_fee) > 0 ? "This trip's toll plazas weren't recorded" : 'This trip used no toll road'}</div></div>
                   )}
                   {trip.segments.map((s, i) => (
                     <div className="gantry-plaza is-wide" key={i}>
@@ -173,7 +174,7 @@ export default function TripDetail() {
                   ))}
                   <div className="card-row" style={{ padding: '15px 0 0', borderTop: '2px solid var(--green-dark)', marginTop: 6 }}>
                     <span style={{ fontWeight: 700, fontSize: 15 }}>Total</span>
-                    <span style={{ fontFamily: "'Barlow Condensed'", fontWeight: 700, fontSize: 22, color: 'var(--green-deep)' }}>{peso(trip.total_toll_fee)}</span>
+                    <span style={{ fontFamily: "'Manrope'", fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em', color: 'var(--green-deep)' }}>{peso(trip.total_toll_fee)}</span>
                   </div>
                 </div>
 

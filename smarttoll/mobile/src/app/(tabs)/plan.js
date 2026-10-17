@@ -10,7 +10,7 @@ import { Badge, Button, Card, EmptyState, Notice, Screen, SelectField, T, s } fr
 import { SkeletonForm } from '../../components/Skeleton';
 import { api } from '../../lib/api';
 import { km, minutes, peso, roadsOf } from '../../lib/format';
-import { colors, fonts, themed, useTheme } from '../../lib/theme';
+import { colors, fonts, shadow, themed, useTheme } from '../../lib/theme';
 
 export default function Plan() {
   const theme = useTheme();   // re-renders on a light / dark switch
@@ -174,7 +174,7 @@ export default function Plan() {
         <View style={{ marginTop: 14 }}>
           {trip.routes.length > 1 && (
             <Card>
-              <T.Kicker>{trip.routes.length} route options</T.Kicker>
+              <CardTitle icon="git-branch">{trip.routes.length} route options</CardTitle>
               {trip.routes.map((r, i) => (
                 <Pressable key={i} onPress={() => setSelected(i)} style={[s.option, i === selected && s.optionOn]}>
                   <View style={{ flex: 1 }}>
@@ -257,10 +257,10 @@ function Summary({ icon, value, label }) {
 
 const styles = themed(() => StyleSheet.create({
   places: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  swap: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  swap: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.cardEdge, alignItems: 'center', justifyContent: 'center', ...shadow },
   letter: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.greenDeep, alignItems: 'center', justifyContent: 'center' },
   letterText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12 },
   summary: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   sumBox: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line, padding: 12, gap: 2 },
-  sumValue: { fontFamily: fonts.signHeavy, fontSize: 20, color: colors.ink, marginTop: 4 },
+  sumValue: { fontFamily: fonts.heavy, fontSize: 19, color: colors.ink, marginTop: 4, letterSpacing: -0.3 },
 }));

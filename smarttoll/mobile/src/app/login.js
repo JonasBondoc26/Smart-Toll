@@ -31,7 +31,7 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.surface }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.concrete }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
         <View style={[styles.hero, { paddingTop: insets.top + 36 }]}>
           <View style={styles.ring} />
@@ -62,9 +62,9 @@ export default function Login() {
 }
 
 const styles = themed(() => StyleSheet.create({
-  hero: { backgroundColor: colors.greenDark, paddingHorizontal: 24, paddingBottom: 32, overflow: 'hidden' },
+  hero: { backgroundColor: colors.greenDark, paddingHorizontal: 24, paddingBottom: 36, overflow: 'hidden', borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
   ring: { position: 'absolute', right: -90, bottom: -110, width: 260, height: 260, borderRadius: 130, borderWidth: 34, borderColor: 'rgba(232,163,61,0.10)' },
-  headline: { fontFamily: fonts.signHeavy, fontSize: 34, lineHeight: 38, color: colors.white, textTransform: 'uppercase', marginTop: 28 },
+  headline: { fontFamily: fonts.medium, fontSize: 32, lineHeight: 38, color: colors.white, letterSpacing: -0.7, marginTop: 28 },
   lead: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 21, color: colors.mint, marginTop: 10, maxWidth: 320 },
   form: { padding: 24, flex: 1 },
   link: { fontFamily: fonts.semibold, color: colors.greenDeep, fontSize: 14 },

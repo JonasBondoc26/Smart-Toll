@@ -87,7 +87,7 @@ export function BalanceSheet({ visible, rfid, needed, onClose, onSaved }) {
   };
 
   return (
-    <Sheet visible={visible} onClose={onClose} busy={busy} kicker="RFID ACCOUNT" title={`Update ${rfid?.network ?? ''} Balance`}
+    <Sheet visible={visible} onClose={onClose} busy={busy} title={`Update ${rfid?.network ?? ''} Balance`}
       footer={<>
         <Button title="Cancel" variant="ghost" onPress={onClose} style={{ flex: 1 }} disabled={busy} />
         <Button title="Save Balance" onPress={save} busy={busy} style={{ flex: 1 }} />

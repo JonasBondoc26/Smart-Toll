@@ -64,7 +64,7 @@ export default function GoogleButton({ onSuccess, text = 'continue_with', divide
       });
       el.current.innerHTML = '';
       window.google.accounts.id.renderButton(el.current, {
-        type: 'standard', theme: 'outline', size: 'large', shape: 'rectangular', text, logo_alignment: 'center',
+        type: 'standard', theme: 'outline', size: 'large', shape: 'pill', text, logo_alignment: 'center',
         locale: 'en',   // match the app's English text (otherwise Google follows the browser language)
         width: Math.min(400, el.current.offsetWidth || 320),
       });

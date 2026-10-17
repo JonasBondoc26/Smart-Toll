@@ -67,7 +67,7 @@ export default function PlacePicker({ visible, title, locations, onClose, onPick
   };
 
   return (
-    <Sheet visible={visible} onClose={close} kicker="CHOOSE A PLACE" title={title}>
+    <Sheet visible={visible} onClose={close} title={title}>
       <View style={[s.input, s.row, { marginBottom: 10 }]}>
         <Ionicons name="search" size={17} color={colors.inkFaint} style={{ marginRight: 8 }} />
         <TextInput
@@ -83,7 +83,7 @@ export default function PlacePicker({ visible, title, locations, onClose, onPick
       {results.map((l) => <Option key={l.id} place={l} onPress={() => pick(l)} />)}
       {(extra.length > 0 || landmarks.busy) && q.trim().length >= 3 && (
         <View style={[s.row, { gap: 8, marginTop: results.length ? 6 : 0, marginBottom: 8 }]}>
-          <Text style={[s.small, { fontFamily: fonts.bold, letterSpacing: 0.6, textTransform: 'uppercase' }]}>Landmarks and places</Text>
+          <Text style={[s.small, { fontFamily: fonts.bold, fontSize: 13, color: colors.inkSoft }]}>Landmarks and places</Text>
           {landmarks.busy && <ActivityIndicator size="small" color={colors.greenDeep} />}
         </View>
       )}

@@ -5,6 +5,7 @@ import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import RouteMap from '../../components/RouteMap';
+import RouteLine from '../../components/RouteLine';
 import StatusBadge from '../../components/StatusBadge';
 import { Badge, Button, Card, CardTitle, Notice, Row, Screen, T } from '../../components/ui';
 import { SkeletonTrip } from '../../components/Skeleton';
@@ -108,7 +109,10 @@ export default function TrackTrip() {
   // ---- Pieces shared by both layouts ----
   const title = (
     <>
-      <T.H2 numberOfLines={landscape ? 1 : undefined}>{trip.origin} → {trip.destination}</T.H2>
+      <View style={{ marginBottom: 10 }}>
+        <RouteLine size="lg" from={trip.origin} to={trip.destination}
+          middle={trip.estimated_travel_time ? `${minutes(trip.estimated_travel_time)} · ${Number(trip.route_distance).toFixed(0)} km` : null} />
+      </View>
       <View style={[styles.row, { marginBottom: 12 }]}>
         <StatusBadge status={arrived ? 'completed' : mine ? 'in_progress' : trip.status} />
         <T.Small style={{ flexShrink: 1 }} numberOfLines={1}>{trip.vehicle_name} · {peso(trip.total_toll_fee)} toll (paid when saved)</T.Small>
@@ -306,7 +310,7 @@ function LiveTollAlert({ alerts }) {
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.tollKicker, { color: tint }]}>
-          {alert.stage === 'approach' ? (entry ? 'TOLL ENTRY AHEAD' : 'TOLL EXIT AHEAD') : entry ? 'ENTERING EXPRESSWAY' : 'EXITING EXPRESSWAY'}
+          {alert.stage === 'approach' ? (entry ? 'Toll entry ahead' : 'Toll exit ahead') : entry ? 'Entering the expressway' : 'Exiting the expressway'}
         </Text>
         <Text style={styles.tollName}>{alert.plaza.name}</Text>
         {alerts.text
@@ -386,10 +390,9 @@ function LiveProgress({ route: r, list = true }) {
 
       {nextPlaza && (
         <Card style={styles.next}>
-          <T.Kicker style={{ color: colors.mint }}>Next toll plaza</T.Kicker>
           <Text style={styles.nextName}>{nextPlaza.name}</Text>
           <Text style={styles.nextMeta}>
-            {nextPlaza.road} · {nextPlaza.role === 'entry' ? 'entry' : `exit · ${peso(nextPlaza.fee)}`} · in {shortDistance(Math.max(0, nextPlaza.along - travelled))}
+            Next plaza · {nextPlaza.road} {nextPlaza.role === 'entry' ? 'entry' : `exit · ${peso(nextPlaza.fee)}`} · in {shortDistance(Math.max(0, nextPlaza.along - travelled))}
           </Text>
         </Card>
       )}
@@ -465,13 +468,13 @@ const styles = themed(() => StyleSheet.create({
   plazaName: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
   plazaFee: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
   modes: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  modesLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginRight: 2 },
+  modesLabel: { fontFamily: fonts.bold, fontSize: 13, color: colors.inkSoft, marginRight: 2 },
   mode: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
   modeOn: { backgroundColor: colors.greenDeep, borderColor: colors.greenDeep },
   modeText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.inkFaint },
   toll: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderWidth: 2, borderRadius: 16, padding: 12, marginBottom: 10 },
   tollIcon: { width: 62, height: 62, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  tollKicker: { fontFamily: fonts.bold, fontSize: 11.5, letterSpacing: 0.8 },
+  tollKicker: { fontFamily: fonts.bold, fontSize: 14 },
   tollName: { fontFamily: fonts.signHeavy, fontSize: 26, color: colors.ink, textTransform: 'uppercase' },
   tollText: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: colors.inkSoft },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.greenDark, borderRadius: 16, padding: 14, marginBottom: 10 },

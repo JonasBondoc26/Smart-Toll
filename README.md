@@ -537,6 +537,15 @@ The development app above loads its code from your computer. For a standalone AP
 
 Both profiles are signed with the same keystore, so the SHA-1 registered for Google sign-in works for the preview APK too.
 
+### Free APK builds on GitHub (when the EAS free builds run out)
+
+The Expo Free plan includes a limited number of cloud builds a month. The same build can run for free on GitHub's servers (`.github/workflows/android-apk.yml`, an EAS *local* build; the repository is public, so GitHub Actions minutes are free):
+
+1. **Once:** on expo.dev → **Account settings → Access tokens → Create token**, copy it. On GitHub → the repository → **Settings → Secrets and variables → Actions → New repository secret**: name `EXPO_TOKEN`, value the token.
+2. GitHub → **Actions → Android APK → Run workflow**. After about 20 minutes, open the finished run and download **SmartToll-apk** (a zip with `SmartToll.apk`) at the bottom.
+
+It's signed with the same keystore as the EAS builds (Google sign-in keeps working) and uses the preview profile (the Railway API, the `preview` update channel).
+
 ### Update the installed app without a new build (EAS Update)
 
 APKs built from now on can receive updates over the internet, so most changes don't need a new build (and don't use up EAS build minutes):

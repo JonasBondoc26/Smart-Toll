@@ -1,0 +1,50 @@
+# Builds the SmartToll Android APK on GitHub's servers with EAS "local" builds:
+# free (no EAS cloud build minutes), signed with the same keystore stored on Expo,
+# so Google sign-in keeps working. Run it from the repo's Actions tab → "Android APK"
+# → Run workflow; the APK is attached to the run as "SmartToll-apk" (about 20 minutes).
+#
+# Needs one repository secret: EXPO_TOKEN (expo.dev → Account settings → Access tokens).
+name: Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: smarttoll/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: smarttoll/mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install
+        run: npm ci
+
+      - name: Build the APK (preview profile, Railway API)
+        run: eas build --platform android --profile preview --local --non-interactive --output "$GITHUB_WORKSPACE/SmartToll.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartToll-apk
+          path: SmartToll.apk
+          retention-days: 30

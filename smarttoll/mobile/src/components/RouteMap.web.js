@@ -6,7 +6,7 @@ import { TRAFFIC_TILES } from '../lib/traffic';
 
 // Web version of RouteMap (react-native-webview has no web support): the same Leaflet
 // page in an <iframe>, talking through window.postMessage. Same props as RouteMap.js.
-export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, night = false, traffic = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
+export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, simulated = false, night = false, traffic = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
   const frame = useRef(null);
   const [ready, setReady] = useState(false);
   const handlers = useRef({});
@@ -30,8 +30,8 @@ export default function RouteMap({ data, position, follow = false, heading = nul
   }, [ready, data, picking, night, traffic]);
 
   useEffect(() => {
-    if (ready) frame.current?.contentWindow?.moveTo({ position: position || null, follow, heading, headingUp, turn });
-  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp, turn?.step, turn ? Math.round(turn.distance / 10) : null]);
+    if (ready) frame.current?.contentWindow?.moveTo({ position: position || null, follow, heading, headingUp, turn, simulated });
+  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp, turn?.step, turn ? Math.round(turn.distance / 10) : null, simulated]);
 
   return (
     <View style={[styles.box, { height }, style]} onTouchStart={() => onTouching?.(true)} onTouchEnd={() => onTouching?.(false)}>

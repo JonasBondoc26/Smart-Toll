@@ -142,7 +142,7 @@ export default function TrackTrip() {
   );
   const map = (
     <LiveMap
-      mine={mine} data={mapData} headingUp={headingUp}
+      mine={mine} data={mapData} headingUp={headingUp} simulated={mine && tracking.simulated}
       height={landscape ? null : arrived ? 240 : 330} style={landscape ? styles.mapLandscape : undefined}
       follow={driving && follow && tracking.hasPosition}
       onUserMove={stopFollowing} onTouching={onTouchingMap} night={dark} traffic={showTraffic}

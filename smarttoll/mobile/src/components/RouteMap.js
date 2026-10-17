@@ -19,6 +19,7 @@ import { TRAFFIC_TILES } from '../lib/traffic';
  * position {lat, lng} / follow: the phone's live position; only the dot moves on each update.
  * heading (degrees from north) / headingUp: while following, the map turns so the direction of
  *   travel points up, with the vehicle near the bottom (North-up when headingUp is false).
+ * simulated: the sped-up demo drive (steady expressway zoom, no turn close-ups).
  * turn {step, distance}: the next maneuver while following; the map zooms in approaching it and
  *   back out after it (dynamic zoom; the usual zoom also adapts to the speed).
  * night: dark map tiles (Dark appearance).
@@ -27,7 +28,7 @@ import { TRAFFIC_TILES } from '../lib/traffic';
  * the map, so a scrolling parent can pause its own scrolling.
  * onPick(lat, lng): the map was tapped (only while `picking`). onSelect(i): a route line was tapped.
  */
-export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, night = false, traffic = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
+export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, simulated = false, night = false, traffic = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
   const web = useRef(null);
   const [ready, setReady] = useState(false);
 
@@ -36,8 +37,8 @@ export default function RouteMap({ data, position, follow = false, heading = nul
   }, [ready, data, picking, night, traffic]);
 
   useEffect(() => {
-    if (ready) web.current?.injectJavaScript(`window.moveTo(${JSON.stringify({ position: position || null, follow, heading, headingUp, turn })});true;`);
-  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp, turn?.step, turn ? Math.round(turn.distance / 10) : null]);
+    if (ready) web.current?.injectJavaScript(`window.moveTo(${JSON.stringify({ position: position || null, follow, heading, headingUp, turn, simulated })});true;`);
+  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp, turn?.step, turn ? Math.round(turn.distance / 10) : null, simulated]);
 
   const onMessage = (e) => {
     const m = JSON.parse(e.nativeEvent.data);

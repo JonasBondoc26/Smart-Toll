@@ -197,7 +197,12 @@ export const MAP_HTML = `<!doctype html><html><head>
     }
     lastFix = { lat, lng, t: now };
   }
+  let simulated = false;            // the sped-up demo drive (about 900 km/h)
+
   function targetZoom(now) {
+    // The demo drive: the steady expressway view from the first frame. Turn close-ups would
+    // flash by in under a second at that speed, and a close zoom makes it look like a race.
+    if (simulated) return ZOOM_EXPRESSWAY;
     const kmh = speed * 3.6;
     const base = ZOOM_CITY - (ZOOM_CITY - ZOOM_EXPRESSWAY) * clamp((kmh - 20) / 70, 0, 1);
     let z = base;
@@ -314,6 +319,7 @@ export const MAP_HTML = `<!doctype html><html><head>
     const icon = heading != null ? carIcon : meIcon;
     if (!me) me = L.marker(at, { icon, interactive: false, zIndexOffset: 1000 }).addTo(map);
     else if (me.options.icon !== icon) me.setIcon(icon);
+    simulated = !!p.simulated;
     if (!goal || goal.lat !== at[0] || goal.lng !== at[1]) noteSpeed(at[0], at[1], now);
     noteTurn(p.turn || null, now);
     goal = { lat: at[0], lng: at[1] };

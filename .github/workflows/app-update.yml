@@ -1,0 +1,44 @@
+# Publishes an over-the-air update (EAS Update) of the SmartToll app to the "preview" channel,
+# which the installed APK checks when it opens. Run it from the Actions tab → "App update" →
+# Run workflow (write what changed). Done here rather than on a Windows PC because the update
+# must carry the same runtime version (a fingerprint of the native code) as the APK, and the
+# APK is built here on Linux: Windows line endings would give a different fingerprint, and the
+# phone would ignore the update.
+#
+# Needs the EXPO_TOKEN repository secret (the same one as the APK build).
+name: App update
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: What changed (shown in the update list on expo.dev)
+        required: true
+        default: App update
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: smarttoll/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: smarttoll/mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install
+        run: npm ci
+
+      - name: Publish the update (Android, preview channel)
+        run: eas update --channel preview --environment preview --platform android --message "${{ github.event.inputs.message }}" --non-interactive

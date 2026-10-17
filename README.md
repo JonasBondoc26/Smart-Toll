@@ -550,10 +550,7 @@ It's signed with the same keystore as the EAS builds (Google sign-in keeps worki
 
 APKs built from now on can receive updates over the internet, so most changes don't need a new build (and don't use up EAS build minutes):
 
-```bash
-cd smarttoll/mobile
-npm run update:preview -- --message "What changed"
-```
+Publish it from GitHub: **Actions → App update → Run workflow**, write what changed, run (about 3 minutes). Use this rather than publishing from a Windows PC: the update must carry the same runtime version (a fingerprint of the native code) as the APK, and the APK is built on GitHub's Linux machine; Windows line endings change the fingerprint, so the phone would ignore an update published from Windows. (`npm run update:preview -- --message "..."` works from macOS / Linux, or when the APK was built on the same machine.)
 
 The app downloads the update in the background and uses it the next time it's opened (close it fully and open it again to see it at once).
 

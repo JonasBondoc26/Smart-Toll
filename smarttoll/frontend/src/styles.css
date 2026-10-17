@@ -249,22 +249,27 @@ svg { display: block; flex-shrink: 0; }
 .field > label:first-child + input, .field > label:first-child + select { padding-top: 27px; padding-bottom: 9px; min-height: 60px; }
 
 /* ---------- Route line: origin, dotted road, destination ---------- */
-.route-line { display: inline-flex; align-items: center; gap: 10px; min-width: 300px; max-width: 100%; vertical-align: middle; }
-.route-line-end { font-weight: 700; color: var(--ink); line-height: 1.25; max-width: 42%; }
-.route-line-to { text-align: right; }
-.route-line-road { flex: 1; display: flex; flex-direction: column; align-items: stretch; min-width: 56px; }
-.route-line-middle { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); text-align: center; margin-bottom: 3px; white-space: nowrap; }
+.route-line {
+  /* Table rows: fixed columns (origin | road | destination), so the road sits at the same
+     place on every row whatever the place names; long names wrap within their column. */
+  display: grid; grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr); align-items: center; column-gap: 14px;
+  width: 100%; min-width: 340px; vertical-align: middle;
+}
+.route-line-end { font-weight: 700; color: var(--ink); line-height: 1.3; overflow-wrap: anywhere; }
+.route-line-road { position: relative; display: flex; flex-direction: column; justify-content: center; min-width: 56px; }
+/* The time / distance floats above the road, so the dots sit level with the place names. */
+.route-line-middle { position: absolute; bottom: calc(100% + 3px); left: 0; right: 0; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); text-align: center; white-space: nowrap; }
 .route-line-track { display: flex; align-items: center; }
 .route-line-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); flex-shrink: 0; }
 .route-line-dashes { flex: 1; border-top: 2px dashed var(--ink-faint); margin: 0 4px; }
 .route-line-pin { width: 16px; height: 16px; border-radius: 50%; background: var(--green-deep); flex-shrink: 0; }
-.route-line-lg { gap: 20px; width: 100%; max-width: 760px; }
+.route-line-lg { display: inline-flex; gap: 20px; width: 100%; max-width: 760px; min-width: 0; padding-top: 18px; }
 .route-line-lg .route-line-end { flex: 0 1 auto; max-width: none; white-space: nowrap; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
 .route-line-lg .route-line-road { flex: 0 0 150px; }
 .route-line-lg .route-line-middle { font-size: 13px; letter-spacing: 0; font-weight: 600; }
 .route-line-lg .route-line-dot { width: 11px; height: 11px; }
 .route-line-lg .route-line-pin { width: 22px; height: 22px; }
-.route-link { color: inherit; text-decoration: none; display: inline-block; }
+.route-link { color: inherit; text-decoration: none; display: block; }
 .route-link:hover .route-line-end { color: var(--green-deep); }
 /* Drop the native select chrome so it matches the search-select inputs (same height, same chevron at right 12px). */
 .field select {

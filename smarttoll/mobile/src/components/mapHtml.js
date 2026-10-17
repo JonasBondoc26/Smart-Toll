@@ -198,21 +198,24 @@ export const MAP_HTML = `<!doctype html><html><head>
     lastFix = { lat, lng, t: now };
   }
   let simulated = false;            // the sped-up demo drive (about 900 km/h)
+  let followSince = 0;              // when following last started
+  const SIM_SETTLE_MS = 4000;       // demo drive: no turn close-ups in its first seconds
 
   function targetZoom(now) {
-    // The demo drive: the steady expressway view from the first frame. Turn close-ups would
-    // flash by in under a second at that speed, and a close zoom makes it look like a race.
-    if (simulated) return ZOOM_EXPRESSWAY;
-    const kmh = speed * 3.6;
+    // The demo drive's speed is known (expressway-like after the cap), so it starts at the
+    // expressway view instead of estimating up from zero, which began fully zoomed in. Its first
+    // maneuver sits at the start point; turn close-ups wait until it has settled.
+    const kmh = simulated ? 120 : speed * 3.6;
     const base = ZOOM_CITY - (ZOOM_CITY - ZOOM_EXPRESSWAY) * clamp((kmh - 20) / 70, 0, 1);
     let z = base;
-    if (nextTurn && nextTurn.distance != null) {
+    const settling = simulated && now - followSince < SIM_SETTLE_MS;
+    if (!settling && nextTurn && nextTurn.distance != null) {
       // Start zooming about 12 s before the turn (150-450 m), fully in at 40 m.
       const from = clamp(speed * 12, 150, 450);
       const f = smooth(clamp((from - nextTurn.distance) / (from - 40), 0, 1));
       z = base + ZOOM_TURN_EXTRA * f;
     }
-    if (now < holdUntil) z = Math.max(z, holdZoom);
+    if (!settling && now < holdUntil) z = Math.max(z, holdZoom);
     return Math.min(z, ZOOM_MAX);
   }
 
@@ -325,6 +328,7 @@ export const MAP_HTML = `<!doctype html><html><head>
     goal = { lat: at[0], lng: at[1] };
     if (!cam) cam = { lat: at[0], lng: at[1], bearing: map.getBearing(), zoom: map.getZoom() };
     if (follow && !wasFollowing) {
+      followSince = now;
       // From an overview, jump straight to the driving zoom; from close by, ease to it.
       if (map.getZoom() < 14) map.setView(at, targetZoom(now), { animate: false });
       // Start from the vehicle and the map's current rotation and zoom, then ease from there.

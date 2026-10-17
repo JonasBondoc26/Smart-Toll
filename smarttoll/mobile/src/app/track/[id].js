@@ -81,7 +81,10 @@ export default function TrackTrip() {
   const stop = () => confirm('Stop following this trip?', 'The trip stays in progress in your history, and you can start following it again later.', 'Stop', tracking.stop, { cancelLabel: 'Keep Going' });
 
   const r = mine ? tracking.route() : null;
-  const stopFollowing = useCallback(() => setFollow(false), []);
+  // Touching the map frees it (free view); each touch, drag or zoom restarts the idle timer below.
+  const [lastMapTouch, setLastMapTouch] = useState(0);
+  const stopFollowing = useCallback(() => { setFollow(false); setLastMapTouch(Date.now()); }, []);
+  const onTouchingMap = useCallback((on) => { setTouchingMap(on); setLastMapTouch(Date.now()); }, []);
 
   const mapData = useMemo(() => (trip?.map ? {
     origin: { name: trip.origin, ...trip.map.origin },
@@ -96,6 +99,12 @@ export default function TrackTrip() {
   } : null), [trip, mine, tracking.routeVersion]);   // the live position is passed separately, so GPS updates don't redraw the route
 
   const driving = mine && tracking.status === 'tracking';
+  // Free view while driving: after 10 s without touching the map, it follows the car again.
+  useEffect(() => {
+    if (!driving || follow || touchingMap) return undefined;
+    const t = setTimeout(() => setFollow(true), FOLLOW_AGAIN_MS);
+    return () => clearTimeout(t);
+  }, [driving, follow, touchingMap, lastMapTouch]);
   // Light or Dark comes from Account → Appearance, like every other screen (the map goes dark too).
   const dark = theme.dark;
 
@@ -136,13 +145,13 @@ export default function TrackTrip() {
       mine={mine} data={mapData} headingUp={headingUp}
       height={landscape ? null : arrived ? 240 : 330} style={landscape ? styles.mapLandscape : undefined}
       follow={driving && follow && tracking.hasPosition}
-      onUserMove={stopFollowing} onTouching={setTouchingMap} night={dark} traffic={showTraffic}
+      onUserMove={stopFollowing} onTouching={onTouchingMap} night={dark} traffic={showTraffic}
     />
   );
   const mapButtons = driving && (
     <View style={[styles.row, landscape ? styles.mapButtonsOver : { marginTop: -6, marginBottom: 14 }, { flexWrap: 'wrap', gap: 8 }]}>
       <Button small variant="secondary" icon={follow ? 'lock-closed' : 'locate'} title={follow ? 'Following you' : 'Follow my position'}
-        onPress={() => setFollow((f) => !f)} />
+        onPress={() => { setFollow((f) => !f); setLastMapTouch(Date.now()); }} />
       <Button small variant="secondary" icon={headingUp ? 'navigate' : 'compass'} title={headingUp ? 'Heading up' : 'North up'}
         onPress={() => setHeadingUp((h) => !h)} />
       {trafficEnabled && (
@@ -278,6 +287,9 @@ export default function TrackTrip() {
     </Screen>
   );
 }
+
+/** Free view returns to following the car after this long without touching the map. */
+const FOLLOW_AGAIN_MS = 10000;
 
 /**
  * How the driver wants to be alerted, changeable anytime during the trip: Voice (spoken),

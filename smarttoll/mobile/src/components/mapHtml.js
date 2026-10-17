@@ -65,8 +65,14 @@ export const MAP_HTML = `<!doctype html><html><head>
   let picking = false, lastFit = null, follow = false, me = null;
   map.on('click', (e) => { if (picking) post({ type: 'pick', lat: e.latlng.lat, lng: e.latlng.lng }); });
   // A finger (or mouse) moving the map: the app stops following the car until asked again.
-  ['touchstart', 'mousedown', 'wheel'].forEach((ev) => document.getElementById('map').addEventListener(ev, () => {
-    if (follow) { follow = false; post({ type: 'userMoved' }); }
+  let lastMovedPost = 0;
+  ['touchstart', 'touchmove', 'mousedown', 'wheel'].forEach((ev) => document.getElementById('map').addEventListener(ev, () => {
+    const now = Date.now();
+    if (follow || now - lastMovedPost > 500) {
+      follow = false;
+      lastMovedPost = now;
+      post({ type: 'userMoved' });
+    }
   }, { passive: true }));
 
   window.update = (d) => {

@@ -36,6 +36,20 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
 
+      # Gradle settings for this machine (they take priority over the project's): more memory than
+      # the template's 512 MB Metaspace (the build ran out), and phone CPUs only (no emulator x86
+      # builds), which roughly halves the native compiling.
+      - name: Gradle settings
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/gradle.properties <<'PROPS'
+          org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1536m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+          kotlin.daemon.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g
+          org.gradle.parallel=true
+          reactNativeArchitectures=arm64-v8a,armeabi-v7a
+          PROPS
+          cat ~/.gradle/gradle.properties
+
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest

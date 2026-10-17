@@ -6,10 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
+      "channel": "development",
       "distribution": "internal",
       "android": { "buildType": "apk" }
     },
     "preview": {
+      "channel": "preview",
+      "environment": "preview",
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "env": { "EXPO_PUBLIC_API_URL": "https://smart-toll-production.up.railway.app" }

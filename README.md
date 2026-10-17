@@ -537,6 +537,22 @@ The development app above loads its code from your computer. For a standalone AP
 
 Both profiles are signed with the same keystore, so the SHA-1 registered for Google sign-in works for the preview APK too.
 
+### Update the installed app without a new build (EAS Update)
+
+APKs built from now on can receive updates over the internet, so most changes don't need a new build (and don't use up EAS build minutes):
+
+```bash
+cd smarttoll/mobile
+npm run update:preview -- --message "What changed"
+```
+
+The app downloads the update in the background and uses it the next time it's opened (close it fully and open it again to see it at once).
+
+- **Works for:** screens, layout, colours, text, logic, images and fonts (the JavaScript part of the app).
+- **Needs a new APK instead:** changes to `app.json` permissions or plugins, new native packages, or the patches in `patches/`. SmartToll's runtime version is a fingerprint of the native code, so an update is only delivered to APKs it fits; after a native change, build once with `eas build -p android --profile preview`, then go back to updates.
+- The server address comes from the `EXPO_PUBLIC_API_URL` variable stored on EAS for the `preview` environment (`eas env:list preview`); change it there if the API moves.
+- Only APKs built after EAS Update was set up (October 2026) can receive updates; older ones need to be replaced once.
+
 ---
 
 ## Put SmartToll online (Railway)

@@ -7,6 +7,12 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9b48230a-292c-48db-9d7e-89ecdea2a230"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ph.edu.hau.smarttoll"

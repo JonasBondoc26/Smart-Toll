@@ -15,7 +15,7 @@
       "environment": "preview",
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "https://smart-toll-production.up.railway.app" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://smarttoll.onrender.com" }
     }
   }
 }

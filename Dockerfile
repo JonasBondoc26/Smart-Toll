@@ -12,6 +12,12 @@ RUN npm run build
 # 2. The API, with the website's files in its public folder
 FROM dunglas/frankenphp:1-php8.3-bookworm
 RUN install-php-extensions pdo_mysql zip opcache intl
+# The image gives frankenphp a file capability (to open ports 80/443). Hosts that forbid extra
+# privileges, such as Render's free plan, then refuse to run it ("Operation not permitted").
+# SmartToll listens on the host's $PORT (above 1024), so a plain copy without it is enough.
+RUN (setcap -r /usr/local/bin/frankenphp 2>/dev/null || true) \
+ && cp /usr/local/bin/frankenphp /tmp/frankenphp && mv -f /tmp/frankenphp /usr/local/bin/frankenphp \
+ && chmod 755 /usr/local/bin/frankenphp
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 

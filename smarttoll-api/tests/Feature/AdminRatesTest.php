@@ -177,6 +177,34 @@ class AdminRatesTest extends TestCase
         $this->assertTrue(DB::table('toll_rate_logs')->where('source', 'trb-import')->where('old_rate', 1)->exists());
     }
 
+    public function test_an_uploaded_trb_page_is_recognized_and_previewed(): void
+    {
+        if (!is_file(storage_path('app/trb/naiax.html'))) {
+            $this->markTestSkipped('No saved TRB page at storage/app/trb/naiax.html.');
+        }
+        $this->actingAsUser($this->admin());
+        $page = file_get_contents(storage_path('app/trb/naiax.html'));
+        $upload = fn (array $extra = [], string $html = null) => $this->post('/api/admin/rate-import/trb/preview',
+            ['source' => 'upload', 'file' => UploadedFile::fake()->createWithContent('page.html', $html ?? $page)] + $extra,
+            ['Accept' => 'application/json']);
+
+        // No expressway chosen: the page's own address says NAIAX. Rates already match.
+        $upload()->assertOk()
+            ->assertJsonPath('detected', true)
+            ->assertJsonPath('expressway.id', $this->expresswayId('NAIAX'))
+            ->assertJsonPath('total', 0);
+
+        // The NAIAX page can't be loaded into NLEX.
+        $upload(['expressway_id' => $this->expresswayId('NLEX')])->assertStatus(422);
+
+        // Not a rate page at all.
+        $upload([], '<html><body><p>Hello</p></body></html>')->assertStatus(422);
+
+        // A rate page that doesn't say where it came from: ask for the expressway.
+        $upload([], preg_replace('/<!--\s*saved from url=[^>]*-->/i', '', $page))
+            ->assertStatus(422)->assertJsonPath('needs_expressway', true);
+    }
+
     public function test_rates_export_as_csv(): void
     {
         $res = $this->actingAsUser($this->admin())->get('/api/admin/toll-matrix/export?expressway_id=' . $this->expresswayId('CONNECTOR'));

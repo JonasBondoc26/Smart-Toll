@@ -24,6 +24,7 @@ Web Application: https://smarttoll.onrender.com/login
 - [Sign in with Google](#sign-in-with-google)
 - [Mobile app (React Native)](#mobile-app-react-native)
 - [Put SmartToll online (Render + TiDB Cloud, free)](#put-smarttoll-online-render--tidb-cloud-free)
+- [Updating toll rates when TRB changes them](#updating-toll-rates-when-trb-changes-them)
 - [Toll data commands](#toll-data-commands)
 - [Automated tests](#automated-tests)
 - [Troubleshooting](#troubleshooting)
@@ -603,13 +604,23 @@ Online, the website and the mobile app work from anywhere (not only on your Wi-F
 
 ---
 
+## Updating toll rates when TRB changes them
+
+Rates come from the Toll Regulatory Board's rate pages (https://trb.gov.ph/index.php/toll-rates). TRB's site is behind a Cloudflare bot check that blocks scripts and servers, so SmartToll can't download new rates by itself. Instead:
+
+1. **Get told when a page changes (optional).** Watch the TRB rate pages with a free page-change monitor such as Visualping or Distill.io (daily checks). Name each monitor after its page, e.g. "TRB – NLEX/SCTEX", so the email says which expressway changed.
+2. **Save the page.** Open the expressway's TRB rate page in Chrome or Edge and press **Ctrl+S**.
+3. **Upload it.** Admin → **Toll Matrix** → **Import** → **Update from TRB** → *A TRB page saved from your browser* → choose the file → **Preview Changes**. SmartToll reads which expressway the page is from the address the browser saved in the file, refuses a page that doesn't match the chosen expressway, and lists every fare that would change. **Apply** saves them and writes each change to the Change Log.
+
+One TRB page can cover more than one road: NLEX + SCTEX, Skyway Stage 1-2 + SLEX + MCX, CAVITEX + C5 Link.
+
 ## Toll data commands
 
 The toll data is already in `smarttoll.sql`, so **you don't need these to run the app.** They're for refreshing the data when TRB publishes new rates. Run them inside `smarttoll-api/`.
 
 | Command | What it does |
 |---|---|
-| `php artisan trb:fetch` | Downloads the TRB rate pages into `storage/app/trb/` |
+| `php artisan trb:fetch` | Downloads the TRB rate pages into `storage/app/trb/` (often blocked by TRB's Cloudflare check; save the pages from a browser into that folder instead) |
 | `php artisan trb:seed-plazas NLEX storage/app/trb/nlex.html` | Creates the toll plazas named on one TRB page |
 | `php artisan trb:import NLEX storage/app/trb/nlex.html` | Imports that page's toll matrix (safe to re-run; it updates rates) |
 | `php artisan trb:import-naiax storage/app/trb/naiax.html` | Imports NAIAX (short segment / full fares) |
@@ -623,7 +634,7 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 
 ## Automated tests
 
-49 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
+50 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
 
 ```bash
 php artisan test

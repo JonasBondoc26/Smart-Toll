@@ -18,19 +18,34 @@ export default function RateImport({ expressways, onApplied }) {
   );
 }
 
+const TRB_RATES = 'https://trb.gov.ph/index.php/toll-rates';
+
 function TrbImport({ expressways, onApplied }) {
   const [xw, setXw] = useState('');
-  const [source, setSource] = useState('download');
+  const [source, setSource] = useState('upload');
+  const [file, setFile] = useState(null);
+  const [inputKey, setInputKey] = useState(0);   // resets the file input after applying
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(null);
   const [done, setDone] = useState('');
+  const upload = source === 'upload';
+  const reset = () => { setPreview(null); setDone(''); setError(''); };
 
   const run = async () => {
-    if (!xw) return setError('Choose the expressway to update.');
-    setBusy(true); setError(''); setPreview(null); setDone('');
+    if (upload && !file) return setError('Choose the TRB page you saved.');
+    if (!upload && !xw) return setError('Choose the expressway to update.');
+    setBusy(true); reset();
     try {
-      setPreview(await api('/admin/rate-import/trb/preview', { method: 'POST', body: { expressway_id: Number(xw), source } }));
+      if (upload) {
+        const form = new FormData();
+        form.append('source', 'upload');
+        form.append('file', file);
+        if (xw) form.append('expressway_id', xw);
+        setPreview(await apiUpload('/admin/rate-import/trb/preview', form));
+      } else {
+        setPreview(await api('/admin/rate-import/trb/preview', { method: 'POST', body: { expressway_id: Number(xw), source } }));
+      }
     } catch (e) {
       setError(e.message);
     } finally {
@@ -42,8 +57,8 @@ function TrbImport({ expressways, onApplied }) {
     setBusy(true); setError('');
     try {
       const d = await api('/admin/rate-import/trb/apply', { method: 'POST', body: { token: preview.token } });
-      setDone(`Applied ${d.total.toLocaleString()} change${d.total === 1 ? '' : 's'} from TRB. They are in the Change Log.`);
-      setPreview(null);
+      setDone(`Applied ${d.total.toLocaleString()} change${d.total === 1 ? '' : 's'} to ${preview.expressway.name} from TRB. They are in the Change Log.`);
+      setPreview(null); setFile(null); setInputKey((k) => k + 1);
       onApplied();
     } catch (e) {
       setError(e.message);
@@ -57,23 +72,44 @@ function TrbImport({ expressways, onApplied }) {
       <div className="flex gap-8" style={{ marginBottom: 6 }}><Icon name="table" size={18} /><h3 style={{ fontSize: 15 }}>Update from TRB</h3></div>
       <p className="muted mb-16">Reads the Toll Regulatory Board's rate page for an expressway and shows what would change before anything is saved.</p>
       <div className="field">
+        <label>Rates From</label>
+        <label className="radio-row"><input type="radio" name="trb-src" checked={upload} onChange={() => { setSource('upload'); reset(); }} />A TRB page saved from your browser (recommended)</label>
+        <label className="radio-row"><input type="radio" name="trb-src" checked={source === 'download'} onChange={() => { setSource('download'); reset(); }} />The TRB website, downloaded now (TRB often blocks this)</label>
+        <label className="radio-row"><input type="radio" name="trb-src" checked={source === 'saved'} onChange={() => { setSource('saved'); reset(); }} />The copy saved on this server</label>
+      </div>
+      {upload && (
+        <>
+          <ol className="field-hint trb-steps">
+            <li>Open the expressway's page on <a href={TRB_RATES} target="_blank" rel="noreferrer">TRB's toll rates</a> in Chrome or Edge.</li>
+            <li>Press <strong>Ctrl+S</strong> and save it (any "Webpage" option).</li>
+            <li>Choose the saved <code>.html</code> file below. SmartToll reads which expressway it is from the file.</li>
+          </ol>
+          <div className="field">
+            <label htmlFor="trb-file">Saved TRB Page</label>
+            <input key={inputKey} id="trb-file" type="file" accept=".html,.htm,text/html" onChange={(e) => { setFile(e.target.files[0] || null); reset(); }} />
+          </div>
+        </>
+      )}
+      <div className="field">
         <label htmlFor="trb-xw">Expressway</label>
-        <select id="trb-xw" value={xw} onChange={(e) => { setXw(e.target.value); setPreview(null); setDone(''); }}>
-          <option value="">Select an expressway</option>
+        <select id="trb-xw" value={xw} onChange={(e) => { setXw(e.target.value); reset(); }}>
+          <option value="">{upload ? 'Detect from the file' : 'Select an expressway'}</option>
           {expressways.map((x) => <option key={x.expressway_id} value={x.expressway_id}>{x.expressway_name}</option>)}
         </select>
       </div>
-      <div className="field">
-        <label>Rates From</label>
-        <label className="radio-row"><input type="radio" name="trb-src" checked={source === 'download'} onChange={() => setSource('download')} />The TRB website, downloaded now (needs internet)</label>
-        <label className="radio-row"><input type="radio" name="trb-src" checked={source === 'saved'} onChange={() => setSource('saved')} />The copy saved on this server</label>
-      </div>
       <button type="button" className="btn btn-primary btn-block" onClick={run} disabled={busy}>
-        {busy && !preview ? (source === 'download' ? 'Downloading from TRB…' : 'Reading…') : 'Preview Changes'}
+        {busy && !preview ? ({ upload: 'Reading the page…', download: 'Downloading from TRB…', saved: 'Reading…' })[source] : 'Preview Changes'}
       </button>
       {error && <div className="notice notice-error mt-16">{error}</div>}
       {done && <div className="notice notice-ok mt-16">{done}</div>}
-      {preview && <Preview data={preview} busy={busy} onApply={apply} onDiscard={() => setPreview(null)} />}
+      {preview && (
+        <>
+          <div className="notice notice-ok mt-16">
+            {preview.detected ? 'Detected: ' : ''}<strong>{preview.expressway.name}</strong> (TRB page: {preview.expressway.trb_page})
+          </div>
+          <Preview data={preview} busy={busy} onApply={apply} onDiscard={() => setPreview(null)} />
+        </>
+      )}
     </div>
   );
 }

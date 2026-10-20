@@ -14,7 +14,8 @@ use Illuminate\Support\Str;
 /**
  * Updating toll rates from the admin page instead of the terminal.
  *
- *   TRB: download the expressway's current TRB page and run the trb:* importer on it.
+ *   TRB: run the trb:* importer on the expressway's TRB rate page: uploaded after saving it in a
+ *        browser (TRB's Cloudflare check blocks scripts), downloaded now, or the copy on the server.
  *   CSV: upload "entry_plaza,exit_plaza,class,rate" rows for one expressway.
  *
  * Both are two-step. preview runs the import inside a transaction, measures what
@@ -45,13 +46,48 @@ class RateImportController extends Controller
      | TRB
      * ------------------------------------------------------------------ */
 
-    /** POST /api/admin/rate-import/trb/preview   { expressway_id, source: "download" | "saved" } */
+    /**
+     * POST /api/admin/rate-import/trb/preview
+     *   { source: "upload", file, expressway_id? }   a TRB rate page saved from the browser (Ctrl+S);
+     *                                                 the expressway is read from the page's own address
+     *   { source: "download" | "saved", expressway_id }
+     */
     public function trbPreview(Request $r)
     {
-        $d = $r->validate(['expressway_id' => 'required|integer|exists:expressways,expressway_id', 'source' => 'required|in:download,saved']);
+        $d = $r->validate([
+            'source' => 'required|in:upload,download,saved',
+            'expressway_id' => 'nullable|required_unless:source,upload|integer|exists:expressways,expressway_id',
+            'file' => 'required_if:source,upload|file|max:2048',
+        ]);
+
+        if ($d['source'] === 'upload') {
+            $html = file_get_contents($r->file('file')->getRealPath());
+            abort_if(substr_count(strtolower($html), '<table') === 0, 422,
+                'This file has no rate tables. Open the TRB toll rate page in your browser, save it with Ctrl+S, and upload that file.');
+            $chosen = isset($d['expressway_id']) ? (int) $d['expressway_id'] : null;
+            $pageKey = self::trbPageOf($html);
+            if ($pageKey) {
+                $detected = $this->expresswayForPage($pageKey);
+                [, $covers] = TrbFetchCommand::PAGES[$pageKey];
+                abort_if(!$detected, 422, "This is TRB's {$covers} page, but SmartToll has no matching expressway.");
+                $chosenName = $chosen ? DB::table('expressways')->where('expressway_id', $chosen)->value('expressway_name') : null;
+                abort_if($chosen && $chosen !== $detected, 422, "This file is TRB's {$covers} page, not {$chosenName}. Choose \"Detect from the file\" or the matching expressway.");
+                $d['expressway_id'] = $detected;
+            } elseif ($chosen) {
+                $d['expressway_id'] = $chosen;
+            } else {
+                return response()->json([
+                    'message' => "SmartToll couldn't tell which TRB page this is (the file doesn't say where it was saved from). Choose the expressway and preview again.",
+                    'needs_expressway' => true,
+                ], 422);
+            }
+        }
+
         [$key, $pageKey] = $this->trbFor($d['expressway_id']);
 
-        if ($d['source'] === 'download') {
+        if ($d['source'] === 'upload') {
+            // $html was read above.
+        } elseif ($d['source'] === 'download') {
             [$slug] = TrbFetchCommand::PAGES[$pageKey];
             try {
                 $res = Http::timeout(30)->withHeaders([
@@ -63,8 +99,11 @@ class RateImportController extends Controller
                 abort(503, 'Could not reach the TRB website. Check the internet connection, or use the saved copy.');
             }
             $html = $res->successful() ? $res->body() : '';
+            // TRB sits behind Cloudflare's bot check, which answers scripts with a "Just a moment..." page.
+            abort_if($res->status() === 403 || str_contains($res->body(), 'Just a moment'), 503,
+                'The TRB website is blocking automatic downloads. Open the rate page in your browser, save it with Ctrl+S, and upload the file instead.');
             abort_if(substr_count(strtolower($html), '<table') === 0, 503,
-                "The TRB website did not return the rate tables (HTTP {$res->status()}). Try again later, or use the saved copy.");
+                "The TRB website did not return the rate tables (HTTP {$res->status()}). Save the page from your browser and upload it instead.");
         } else {
             $path = storage_path("app/trb/{$pageKey}.html");
             abort_if(!is_file($path), 422, "There is no saved TRB page for {$key} (storage/app/trb/{$pageKey}.html).");
@@ -76,7 +115,49 @@ class RateImportController extends Controller
         file_put_contents("{$this->dir()}/{$token}.json", json_encode(['expressway_id' => (int) $d['expressway_id'], 'source' => $d['source']]));
 
         [$changes, $notes] = $this->runTrb($d['expressway_id'], $token, false, $r->user());
-        return RateLog::summarize($changes) + ['token' => $token, 'notes' => $notes, 'source' => $d['source']];
+        $name = DB::table('expressways')->where('expressway_id', $d['expressway_id'])->value('expressway_name');
+        return RateLog::summarize($changes) + [
+            'token' => $token, 'notes' => $notes, 'source' => $d['source'],
+            'expressway' => ['id' => (int) $d['expressway_id'], 'name' => $name, 'trb_page' => TrbFetchCommand::PAGES[$pageKey][1]],
+            'detected' => $d['source'] === 'upload' && isset($detected),
+        ];
+    }
+
+    /**
+     * Which TRB rate page a saved file is, from the address the browser recorded when saving it
+     * (Chrome/Edge: "<!-- saved from url=...-->"), or the page's canonical / og:url link. Links in
+     * the page body are ignored: every TRB page links to all the others in its menu.
+     */
+    public static function trbPageOf(string $html): ?string
+    {
+        $patterns = [
+            '/<!--\s*saved from url=\(\d+\)(\S+?)\s*-->/i',
+            '/<link[^>]+rel=["\']canonical["\'][^>]*href=["\']([^"\']+)/i',
+            '/<link[^>]+href=["\']([^"\']+)["\'][^>]*rel=["\']canonical["\']/i',
+            '/<meta[^>]+property=["\']og:url["\'][^>]*content=["\']([^"\']+)/i',
+        ];
+        foreach ($patterns as $p) {
+            if (!preg_match($p, $html, $m)) continue;
+            if (!preg_match('#trb\.gov\.ph/(?:index\.php/)?toll-rates/([a-z0-9-]+)#i', $m[1], $s)) continue;
+            foreach (TrbFetchCommand::PAGES as $key => [$slug]) {
+                if (strtolower($s[1]) === $slug) return $key;
+            }
+        }
+        return null;
+    }
+
+    /** The expressway a TRB page key belongs to (e.g. "nlex" → the NLEX / SCTEX row), or null. */
+    private function expresswayForPage(string $pageKey): ?int
+    {
+        $system = null;
+        foreach (self::TRB as $key => [$page]) {
+            if ($page === $pageKey) $system = $key;
+        }
+        if (!$system) return null;
+        foreach (DB::table('expressways')->get(['expressway_id', 'expressway_name']) as $x) {
+            if (TripPlannerService::systemKey($x->expressway_name) === $system) return (int) $x->expressway_id;
+        }
+        return null;
     }
 
     /** POST /api/admin/rate-import/trb/apply   { token } */
@@ -87,7 +168,8 @@ class RateImportController extends Controller
 
         // Keep the page that was applied as the new saved copy (what the trb:* commands read).
         [, $pageKey] = $this->trbFor($meta['expressway_id']);
-        if ($meta['source'] === 'download') {
+        if (in_array($meta['source'], ['download', 'upload'], true)) {
+            if (!is_dir(storage_path('app/trb'))) mkdir(storage_path('app/trb'), 0775, true);
             copy("{$this->dir()}/{$r->input('token')}.html", storage_path("app/trb/{$pageKey}.html"));
         }
         $this->forget($r->input('token'));

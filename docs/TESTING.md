@@ -1,16 +1,16 @@
 # SmartToll automated tests
 
-*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **49 of 49 passed**, 222 assertions.*
+*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **50 of 50 passed**, 230 assertions.* (Updated October 21, 2026 with the TRB page upload.)
 
 The tests use a separate database (`smarttoll_test`) built from `database/smarttoll.sql`; every test runs in a transaction that is rolled back. Outside services are replaced by recorded answers (a real OSRM route for Quezon City → San Fernando via NLEX, Google token checks), so the results are repeatable and run offline.
 
 | Area | Tests | Passed |
 |---|---|---|
 | Accounts: saved routes, Google sign-in, passwords | 6 | 6 |
-| Administration: access, rate rules, change log, CSV/TRB import | 10 | 10 |
+| Administration: access, rate rules, change log, CSV/TRB import | 11 | 11 |
 | Toll computation: TRB fares, segment detection, route comparison | 12 | 12 |
 | Trips and RFID: planning, landmarks, live traffic, saving, deduction, tracking, directions | 21 | 21 |
-| **Total** | **49** | **49** |
+| **Total** | **50** | **50** |
 
 ## Accounts: saved routes, Google sign-in, passwords
 
@@ -32,6 +32,7 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 - ✅ Csv preview changes nothing and apply updates and logs
 - ✅ Csv errors are reported by line
 - ✅ Trb import from the saved page restores an edited rate
+- ✅ An uploaded trb page is recognized and previewed
 - ✅ Rates export as csv
 
 ## Toll computation: TRB fares, segment detection, route comparison

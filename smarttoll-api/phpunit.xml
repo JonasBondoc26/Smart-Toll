@@ -29,6 +29,7 @@
         <env name="DB_DATABASE" value="smarttoll_test"/>
         <env name="GOOGLE_CLIENT_ID" value="test-client-id.apps.googleusercontent.com"/>
         <env name="DB_URL" value=""/>
+        <env name="TOMTOM_API_KEY" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

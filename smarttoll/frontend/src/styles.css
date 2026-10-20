@@ -688,6 +688,8 @@ div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !impor
 .field label.radio-row { display: flex; align-items: center; gap: 8px; font: 500 13.5px 'Manrope', sans-serif; color: var(--ink); text-transform: none; letter-spacing: 0; margin: 6px 0 0; cursor: pointer; }
 .radio-row input { width: auto; accent-color: var(--green-deep); }
 .import-grid { align-items: start; }
+.trb-steps { margin: 0 0 16px; padding-left: 18px; line-height: 1.6; }
+.trb-steps a { color: var(--green-dark); font-weight: 600; }
 .import-preview { border-top: 1px solid var(--concrete-line); padding-top: 14px; }
 .import-preview-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
 .import-preview-table { max-height: 320px; overflow-y: auto; border: 1px solid var(--concrete-line); border-radius: var(--radius-sm); }

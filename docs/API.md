@@ -62,7 +62,7 @@
 | POST | `/api/admin/rate-import/csv/apply` | Apply a previewed CSV import (logged) |
 | POST | `/api/admin/rate-import/csv/preview` | Preview a CSV rate import (changes nothing) |
 | POST | `/api/admin/rate-import/trb/apply` | Apply a previewed TRB import (logged) |
-| POST | `/api/admin/rate-import/trb/preview` | Preview rates from the TRB website (changes nothing) *(max 10 per 1 min)* |
+| POST | `/api/admin/rate-import/trb/preview` | Preview rates from a TRB page (changes nothing): an uploaded page saved from the browser, whose expressway is read from the file, or a download / the server's copy *(max 10 per 1 min)* |
 | GET | `/api/admin/rate-log` | Toll rate change log |
 | GET | `/api/admin/summary` | Dashboard counts and the Needs Attention list |
 | GET | `/api/admin/toll-matrix` | Browse toll rates (filters, search, pages) |

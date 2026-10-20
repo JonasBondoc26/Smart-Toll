@@ -1,4 +1,4 @@
-# SmartToll on a server (Railway, or any Docker host): the Laravel API and the React website in one
+# SmartToll on a server (Render, Railway, or any Docker host): the Laravel API and the React website in one
 # container, served by FrankenPHP (a production PHP server). See README → Put SmartToll online.
 
 # 1. Build the React website

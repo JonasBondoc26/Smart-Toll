@@ -29,8 +29,8 @@ class AppServiceProvider extends ServiceProvider
         ResetPassword::createUrlUsing(fn ($user, string $token) => rtrim(config('app.frontend_url'), '/')
             . '/reset-password?token=' . $token . '&email=' . urlencode($user->getEmailForPasswordReset()));
 
-        // MAIL_MAILER=brevo: send email through Brevo's HTTPS API instead of SMTP (Railway's
-        // Trial/Hobby plans block outgoing SMTP). The sender (MAIL_FROM_ADDRESS) must be a
+        // MAIL_MAILER=brevo: send email through Brevo's HTTPS API instead of SMTP (free hosts
+        // such as Render block outgoing SMTP). The sender (MAIL_FROM_ADDRESS) must be a
         // sender verified in Brevo.
         Mail::extend('brevo', fn () => (new BrevoTransportFactory(null, HttpClient::create(['timeout' => 15])))
             ->create(new Dsn('brevo+api', 'default', (string) config('services.brevo.key'))));

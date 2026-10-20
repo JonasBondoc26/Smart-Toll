@@ -1,0 +1,38 @@
+# SmartToll on Render (free plan): the website and the API in one Docker service, built from
+# the Dockerfile. The database is a free MySQL-compatible TiDB Cloud Starter instance (Render's own
+# free database is Postgres and expires after 30 days). See README → Put SmartToll online.
+#
+# Render → New → Blueprint → this repository. Values marked sync: false are asked for once.
+services:
+  - type: web
+    name: smarttoll
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: DB_URL
+        sync: false
+      # TiDB Cloud only accepts encrypted connections; this is the image's own CA bundle.
+      - key: MYSQL_ATTR_SSL_CA
+        value: /etc/ssl/certs/ca-certificates.crt
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: MAIL_MAILER
+        value: brevo
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: SmartToll
+      - key: TOMTOM_API_KEY
+        sync: false

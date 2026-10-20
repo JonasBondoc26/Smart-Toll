@@ -44,7 +44,7 @@ It was built as a capstone project at Holy Angel University (HAU) and is evaluat
 - **Toll is charged once, when a trip is saved.** Driving only notifies at plazas; it never deducts again.
 - **Free, keyless map services:** OpenStreetMap tiles (Leaflet), OSRM routing, Valhalla for toll-free routes, Nominatim place names, Photon landmark search. Public servers with rate limits; the app must cope when they are slow or down.
 - **Terminology:** "toll plaza" (entry / exit), "vehicle class" (Class 1/2/3, as TRB defines), "RFID account" (Easytrip, Autosweep), "trip" (planned → in progress → completed), "saved route", "Plan Again".
-- Hosted on Railway (free tier) at smart-toll-production.up.railway.app; emails via Brevo.
+- Hosted free on Render (website + API) with a TiDB Cloud database; emails via Brevo.
 
 ## Brand Commitments
 

@@ -124,16 +124,19 @@ The toll is not charged again while driving: it was deducted when the trip was s
 ```mermaid
 flowchart LR
     GH["GitHub repository"] -- "push → build" --> RW
-    subgraph RW["Railway"]
+    subgraph RW["Render (free web service)"]
         C["Container (Dockerfile)<br/>FrankenPHP: Laravel API<br/>+ built React website"]
-        MY[("MySQL")]
-        C --> MY
     end
+    subgraph DB["TiDB Cloud Starter"]
+        MY[("MySQL-compatible database")]
+    end
+    C -- "TLS" --> MY
+    GH -. "Keep awake: /up every 10 min" .-> C
     Browser["Web browser"] -- "https://&lt;domain&gt;" --> C
     APK["Android APK<br/>(built with Expo EAS)"] -- "https://&lt;domain&gt;/api" --> C
 ```
 
-On start, the container sets up the database by itself (`php artisan smarttoll:install`: loads `smarttoll.sql` into an empty database, then runs newer migrations). Debug mode is off in production; https ends at Railway's proxy, which Laravel trusts.
+On start, the container sets up the database by itself (`php artisan smarttoll:install`: loads `smarttoll.sql` into an empty database, then runs newer migrations). Debug mode is off in production; https ends at Render's proxy, which Laravel trusts. The database connection is encrypted (TiDB Cloud accepts TLS only; `MYSQL_ATTR_SSL_CA` points at the image's CA bundle). Render's free service sleeps after 15 idle minutes, so a scheduled GitHub workflow opens `/up` every 10 minutes.
 
 ## Security measures
 

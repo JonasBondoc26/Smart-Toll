@@ -38,7 +38,7 @@ return [
     'mailers' => [
 
         // Brevo's HTTPS API (MAIL_MAILER=brevo + BREVO_API_KEY): for hosts that block outgoing
-        // SMTP, such as Railway's Trial/Hobby plans. Registered in AppServiceProvider.
+        // SMTP, such as Render's free plan. Registered in AppServiceProvider.
         'brevo' => [
             'transport' => 'brevo',
         ],

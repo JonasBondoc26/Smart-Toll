@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // On a host like Railway, https ends at the host's proxy: trust it, so Laravel knows
+        // On a host like Render, https ends at the host's proxy: trust it, so Laravel knows
         // the request was https (correct links) and sees the visitor's IP (rate limits).
         $middleware->trustProxies(at: '*');
     })

@@ -23,7 +23,7 @@ Web Application: https://smart-toll-production.up.railway.app/login
 - [Live traffic (TomTom, optional)](#live-traffic-tomtom-optional)
 - [Sign in with Google](#sign-in-with-google)
 - [Mobile app (React Native)](#mobile-app-react-native)
-- [Put SmartToll online (Railway)](#put-smarttoll-online-railway)
+- [Put SmartToll online (Render + TiDB Cloud, free)](#put-smarttoll-online-render--tidb-cloud-free)
 - [Toll data commands](#toll-data-commands)
 - [Automated tests](#automated-tests)
 - [Troubleshooting](#troubleshooting)
@@ -366,13 +366,13 @@ Reset links expire after **30 minutes**. The email design is in `smarttoll-api/r
 
 ### Emails from the online server (Brevo)
 
-Railway (and most free hosts) block the SMTP ports, so Gmail SMTP only works on your own computer. Online, SmartToll sends emails through **Brevo's web API** instead (free plan: 300 emails a day, no card needed):
+Most hosts (Render's and Railway's free plans included) block the SMTP ports, so Gmail SMTP only works on your own computer. Online, SmartToll sends emails through **Brevo's web API** instead (free plan: 300 emails a day, no card needed):
 
 1. Sign up at https://www.brevo.com and choose the **Free** plan.
 2. **Senders, Domains & Dedicated IPs → Senders → Add a sender** with your email, then click the link Brevo emails you so it shows **Verified**.
 3. **SMTP & API → API Keys → Generate a new API key.** It starts with `xkeysib-` (a key starting with `xsmtpsib-` is the SMTP key and won't work).
-4. **Security → Authorized IPs:** turn the restriction off. Railway's address changes, and Brevo would reject it.
-5. Set the variables (on Railway, or in `.env` to try it locally):
+4. **Security → Authorized IPs:** turn the restriction off. The server's address changes, and Brevo would reject it.
+5. Set the variables (on Render → **Environment**, or in `.env` to try it locally):
 
 ```env
 MAIL_MAILER=brevo
@@ -390,7 +390,7 @@ Brevo → **Transactional → Logs** shows every email the server sent and wheth
 Routing (OSRM) has no traffic, so its times are for an empty road. With a free TomTom key SmartToll adds live traffic:
 
 1. Create a free account at https://developer.tomtom.com (Freemium plan, no credit card) and copy your **API key**.
-2. Put it in `smarttoll-api/.env` (and on Railway → **Variables**): `TOMTOM_API_KEY=your-key`. Run `php artisan config:clear` locally.
+2. Put it in `smarttoll-api/.env` (and on Render → **Environment**): `TOMTOM_API_KEY=your-key`. Run `php artisan config:clear` locally.
 
 What changes:
 - **Plan a Trip:** each route shows its time *now* and a traffic chip (green light / amber moderate / red heavy, "+18 min traffic"). "Fastest" and the fastest-vs-cheapest comparison use live times, and a saved trip keeps the estimate it was planned with. A note says "Times include live traffic" (or "Typical travel times" when traffic is off).
@@ -532,7 +532,7 @@ If Google answers with "doesn't recognise this build" (Android's `DEVELOPER_ERRO
 
 The development app above loads its code from your computer. For a standalone APK that runs on its own (for example, for a demonstration):
 
-1. In `smarttoll/mobile/eas.json`, set `EXPO_PUBLIC_API_URL` under `preview` → `env` to the API's address: the online one from [Put SmartToll online](#put-smarttoll-online-railway) (e.g. `https://smarttoll.up.railway.app`), or a computer on your Wi-Fi (e.g. `http://192.168.1.10:8000`). An installed app isn't started from your computer, so it can't find the API by itself.
+1. In `smarttoll/mobile/eas.json`, set `EXPO_PUBLIC_API_URL` under `preview` → `env` to the API's address: the online one from [Put SmartToll online](#put-smarttoll-online-render--tidb-cloud-free) (e.g. `https://smarttoll.onrender.com`), or a computer on your Wi-Fi (e.g. `http://192.168.1.10:8000`). An installed app isn't started from your computer, so it can't find the API by itself.
 2. Build it: `eas build -p android --profile preview`, then open the link it prints on the phone to install.
 
 Both profiles are signed with the same keystore, so the SHA-1 registered for Google sign-in works for the preview APK too.
@@ -544,7 +544,7 @@ The Expo Free plan includes a limited number of cloud builds a month. The same b
 1. **Once:** on expo.dev → **Account settings → Access tokens → Create token**, copy it. On GitHub → the repository → **Settings → Secrets and variables → Actions → New repository secret**: name `EXPO_TOKEN`, value the token.
 2. GitHub → **Actions → Android APK → Run workflow**. After about 20 minutes, open the finished run and download **SmartToll-apk** (a zip with `SmartToll.apk`) at the bottom.
 
-It's signed with the same keystore as the EAS builds (Google sign-in keeps working) and uses the preview profile (the Railway API, the `preview` update channel).
+It's signed with the same keystore as the EAS builds (Google sign-in keeps working) and uses the preview profile (the online API, the `preview` update channel).
 
 ### Update the installed app without a new build (EAS Update)
 
@@ -561,35 +561,44 @@ The app downloads the update in the background and uses it the next time it's op
 
 ---
 
-## Put SmartToll online (Railway)
+## Put SmartToll online (Render + TiDB Cloud, free)
 
-Online, the website and the mobile app work from anywhere (not only on your Wi-Fi), over https. The repository is ready for [Railway](https://railway.com): the `Dockerfile` builds the website and the API into one service at one address, and on every start it sets up the database by itself (`smarttoll:install` loads `smarttoll.sql` into an empty database and runs newer migrations).
+Online, the website and the mobile app work from anywhere (not only on your Wi-Fi), over https. The `Dockerfile` builds the website and the API into one service at one address, and on every start it sets up the database by itself (`smarttoll:install` loads `smarttoll.sql` into an empty database and runs newer migrations).
 
-**Cost:** Railway gives trial credit; after that, about US$5 a month for this project.
+**Cost:** free, no card needed:
+- **[Render](https://render.com) (free web service)** runs the Docker service (`render.yaml`). It sleeps after 15 minutes without visitors, and the next visit then takes about a minute. The **Keep awake** workflow (`.github/workflows/keep-awake.yml`) opens the site every 10 minutes so this doesn't happen. One service running all month fits in Render's 750 free hours.
+- **[TiDB Cloud](https://tidbcloud.com) Starter** holds the database. It's MySQL-compatible, free up to 5 GiB, and doesn't sleep or expire. Render's own free database is Postgres and is deleted after 30 days, so it isn't used.
 
-1. **Create the project.** Sign in at https://railway.com with GitHub → **New Project** → **Deploy from GitHub repo** → choose `Smart-Toll`. Railway finds the `Dockerfile` and `railway.json` and starts building (the first build takes a few minutes; it fails until step 3 is done, that's expected).
-2. **Add the database.** In the project: **+ Create** → **Database** → **MySQL**.
-3. **Set the variables.** Open the `Smart-Toll` service → **Variables** → add:
+1. **Create the database.**
+   1. Sign up at https://tidbcloud.com. Create a **Starter** instance in **AWS Singapore (ap-southeast-1)**.
+   2. Open **SQL Editor** and run `CREATE DATABASE smarttoll;`.
+   3. Go to **Connect** → **Connect With: General** → **Generate Password**.
+   4. Build the address from the host, user and password shown: `mysql://USER:PASSWORD@HOST:4000/smarttoll`. The user looks like `xxxx.root`. If the password has `@`, `:` or `/`, generate another one.
+2. **Create the service.** Sign in at https://render.com with GitHub → **New** → **Blueprint** → choose `Smart-Toll`. Render reads `render.yaml` and asks for these values:
 
    | Variable | Value |
    |---|---|
-   | `APP_KEY` | run `php artisan key:generate --show` in `smarttoll-api` and paste the result (`base64:…`) |
-   | `DB_URL` | `${{MySQL.MYSQL_URL}}` (Railway fills in the database address) |
-   | `SEED_DEMO` | `1` for the first start (adds the demo accounts once), then delete it |
+   | `APP_KEY` | run `php artisan key:generate --show` in `smarttoll-api` and paste the result (`base64:…`). Moving from another host? Use the same key as before. |
+   | `DB_URL` | the TiDB address from step 1 |
+   | `APP_URL`, `FRONTEND_URL` | `https://smarttoll.onrender.com` (the service's address: Render shows it at the top of the service page; if the name was taken it has a suffix, so use what Render shows) |
    | `GOOGLE_CLIENT_ID` | the same as in your local `.env` (optional) |
    | `TOMTOM_API_KEY` | your TomTom key, for live traffic (optional; see [Live traffic](#live-traffic-tomtom-optional)) |
-   | `MAIL_MAILER`, `BREVO_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | `brevo` and your Brevo details, for password-reset emails (Railway blocks SMTP; see [Emails from the online server](#emails-from-the-online-server-brevo)) |
+   | `BREVO_API_KEY`, `MAIL_FROM_ADDRESS` | your Brevo details, for password-reset emails (free hosts block SMTP; see [Emails from the online server](#emails-from-the-online-server-brevo)) |
 
-   Debug mode is off and cache/sessions use files by default (set in the `Dockerfile`).
-4. **Get the address.** Service → **Settings** → **Networking** → **Generate Domain**, e.g. `smarttoll-production.up.railway.app`. Add two more variables with it: `APP_URL` and `FRONTEND_URL`, both `https://` + that domain. Railway redeploys.
-   For faster responses from the Philippines, set **Settings** → **Region** to Southeast Asia (Singapore).
-5. **Check it.** `https://<your domain>/up` shows a green "Application up" page, and `https://<your domain>` is the website. Log in as the demo motorist or admin (see [Setup step 4](#4-set-up-the-laravel-api)).
-6. **Google sign-in online.** In Google Cloud Console → your **Web** OAuth client → **Authorized JavaScript origins** → add `https://<your domain>`.
-7. **The mobile app.** Put `https://<your domain>` in `smarttoll/mobile/eas.json` (`preview` → `env` → `EXPO_PUBLIC_API_URL`) and build the installable APK: `eas build -p android --profile preview` (see [Build an installable APK](#build-an-installable-apk-for-demos-optional)). The app then works anywhere with mobile data.
+   `MYSQL_ATTR_SSL_CA` is already set in `render.yaml`, because TiDB only accepts encrypted connections. Debug mode is off and cache and sessions use files (set in the `Dockerfile`). For the demo accounts, add `SEED_DEMO` = `1` under **Environment** for the first start, then delete it.
+3. **Check it.** `https://<your address>/up` shows a green "Application up" page, and `https://<your address>` is the website. The first build takes a few minutes.
+4. **Keep it awake.** On GitHub: **Settings** → **Secrets and variables** → **Actions** → **Variables** → **New repository variable**. Name it `SITE_URL` with the value `https://<your address>`. The Keep awake workflow then runs by itself. GitHub pauses scheduled workflows after 60 days without commits; re-enable it in the **Actions** tab if that happens.
+5. **Google sign-in online.** In Google Cloud Console → your **Web** OAuth client → **Authorized JavaScript origins**, add `https://<your address>`.
+6. **The mobile app.**
+   1. Put `https://<your address>` in `smarttoll/mobile/eas.json` (`preview` → `env` → `EXPO_PUBLIC_API_URL`).
+   2. Put the same address in the EAS environment variable on expo.dev (project → **Environment variables** → `EXPO_PUBLIC_API_URL`, environment **preview**).
+   3. Run **Actions** → **App update** ([Update the installed app](#update-the-installed-app-without-a-new-build-eas-update)). Installed apps switch to the new address the next time they open, with no new APK needed.
 
-**Updating:** push to GitHub; Railway rebuilds and redeploys automatically, and new migrations run on start. Your data stays in the MySQL service.
+**Updating:** push to GitHub. Render rebuilds and redeploys automatically, and new migrations run on start. Your data stays in TiDB.
 
-**Logs:** service → **Deployments** → the latest one → **View logs** (errors show here, since debug mode is off on the site).
+**Logs:** the Render service → **Logs** (errors show here, since debug mode is off on the site).
+
+**Paid alternative:** `railway.json` is still there for [Railway](https://railway.com) (about US$5 a month). New Project → Deploy from GitHub repo, add a MySQL database, then set the same variables with `DB_URL` = `${{MySQL.MYSQL_URL}}` and no `MYSQL_ATTR_SSL_CA`.
 
 ---
 
@@ -646,10 +655,11 @@ The tests use a separate database, **`smarttoll_test`**, built automatically fro
 | Port 5173 is already in use | Vite picks the next free port automatically. Use the address it prints, and set `FRONTEND_URL` in `.env` to match so reset links work. |
 | The map is grey, or "The routing service could not be reached" | Check your internet connection. Map tiles and routing come from online services. |
 | "The routing service found no route" or slow routes | The public OSRM server allows about one request per second and can be busy. Wait a moment and try again. |
-| Railway: the deploy fails at start with a database error | Check `DB_URL` is `${{MySQL.MYSQL_URL}}` and that the MySQL service is running in the same project. |
-| Railway: "No application encryption key has been specified" | Add `APP_KEY` (from `php artisan key:generate --show`). |
+| Render: the deploy fails at start with a database error | Check `DB_URL` (`mysql://USER:PASSWORD@HOST:4000/smarttoll`, the database created in TiDB) and that `MYSQL_ATTR_SSL_CA` is `/etc/ssl/certs/ca-certificates.crt`. TiDB refuses unencrypted connections. |
+| Online site or app is slow on the first visit | Render's free service was asleep. Check that the `SITE_URL` variable is set and the **Keep awake** workflow is enabled in the Actions tab. |
+| Online: "No application encryption key has been specified" | Add `APP_KEY` (from `php artisan key:generate --show`). |
 | Forgot password says the link was sent, but no email arrives | The reply is the same for any email (so nobody can test which accounts exist); use an account with a real inbox. Online, check `MAIL_MAILER=brevo`, an `xkeysib-` API key, a **verified** sender and Brevo's Authorized IPs turned off, then look in Brevo → Transactional → Logs and your spam folder. |
-| Forgot password: "We could not send the email right now" | The mail settings are wrong or the mail service refused it. The reason is in the logs (Railway: Deployments → View logs). |
+| Forgot password: "We could not send the email right now" | The mail settings are wrong or the mail service refused it. The reason is in the logs (Render: the service → Logs). |
 | Mobile app: "Cannot reach the SmartToll server" | Start the API with `php artisan serve --host 0.0.0.0`, check that the phone and the computer are on the same Wi-Fi, and allow PHP through the Windows firewall. The log-in screen shows the address the app is using. |
 | Mobile app: "Google sign-in works in the installed SmartToll app, not in Expo Go" | Expected in Expo Go. Build and install the development app, see [Google sign-in on the phone](#google-sign-in-on-the-phone). |
 | Mobile app: "Google doesn't recognise this build of SmartToll" | The Android OAuth client's package name must be `ph.edu.hau.smarttoll` and its SHA-1 must match `eas credentials -p android`. |

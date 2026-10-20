@@ -14,5 +14,5 @@ fi
 php artisan config:cache
 php artisan view:cache
 
-# Railway (and most hosts) tell the app which port to listen on in $PORT.
+# Render (and most hosts) tell the app which port to listen on in $PORT.
 exec frankenphp php-server --root public/ --listen ":${PORT:-8080}"

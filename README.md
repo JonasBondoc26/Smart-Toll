@@ -608,7 +608,21 @@ Online, the website and the mobile app work from anywhere (not only on your Wi-F
 
 Rates come from the Toll Regulatory Board's rate pages (https://trb.gov.ph/index.php/toll-rates). TRB's site is behind a Cloudflare bot check that blocks scripts and servers, so SmartToll can't download new rates by itself. Instead:
 
-1. **Get told when a page changes (optional).** Watch the TRB rate pages with a free page-change monitor such as Visualping or Distill.io (daily checks). Name each monitor after its page, e.g. "TRB – NLEX/SCTEX", so the email says which expressway changed.
+1. **Get told when a page changes.** The admin watches the TRB rate pages with the free **Distill Web Monitor** Chrome extension (signed in, so alerts arrive by email). It checks the pages inside the admin's own Chrome, which TRB's Cloudflare check lets through, unlike cloud monitors, which run on servers. Checks run while Chrome is open, and catch up when it's opened again. One monitor per page, each set to check daily and watching only the rate tables (not the menu), named after its page so the email says which expressway changed:
+
+   | Monitor | TRB page |
+   |---|---|
+   | TRB – NLEX/SCTEX | `toll-rates/nlex-toll-rate` |
+   | TRB – SLEX/Skyway 1-2/MCX | `toll-rates/slex-toll-rate` |
+   | TRB – TPLEX | `toll-rates/tplex-toll-rate` |
+   | TRB – Skyway Stage 3 | `toll-rates/metro-manila-skyway-stage-3` |
+   | TRB – STAR | `toll-rates/star-tollway-toll-rate` |
+   | TRB – CALAX | `toll-rates/calax` |
+   | TRB – CAVITEX/C5 Link | `toll-rates/cavitex-toll-rate` |
+   | TRB – NAIAX | `toll-rates/naiax-expressway` |
+   | TRB – NLEX-SLEX Connector | `toll-rates/nlex-slex-connector-road-toll-rate` |
+
+   (All under `https://trb.gov.ph/index.php/`.) If a monitor's preview shows "Just a moment…" instead of fares, open the page normally in Chrome once and re-select its table.
 2. **Save the page.** Open the expressway's TRB rate page in Chrome or Edge and press **Ctrl+S**.
 3. **Upload it.** Admin → **Toll Matrix** → **Import** → **Update from TRB** → *A TRB page saved from your browser* → choose the file → **Preview Changes**. SmartToll reads which expressway the page is from the address the browser saved in the file, refuses a page that doesn't match the chosen expressway, and lists every fare that would change. **Apply** saves them and writes each change to the Change Log.
 

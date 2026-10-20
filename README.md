@@ -556,7 +556,7 @@ The app downloads the update in the background and uses it the next time it's op
 
 - **Works for:** screens, layout, colours, text, logic, images and fonts (the JavaScript part of the app).
 - **Needs a new APK instead:** changes to `app.json` permissions or plugins, new native packages, or the patches in `patches/`. SmartToll's runtime version is a fingerprint of the native code, so an update is only delivered to APKs it fits; after a native change, build once with `eas build -p android --profile preview`, then go back to updates.
-- The server address comes from the `EXPO_PUBLIC_API_URL` variable stored on EAS for the `preview` environment (`eas env:list preview`); change it there if the API moves.
+- The server address in an update comes from the `EXPO_PUBLIC_API_URL` variable stored on EAS for the `preview` environment (`eas env:list preview`). It must match `eas.json`. If the API moves, change both and build a new APK (see [step 6 of Put SmartToll online](#put-smarttoll-online-render--tidb-cloud-free)).
 - Only APKs built after EAS Update was set up (October 2026) can receive updates; older ones need to be replaced once.
 
 ---
@@ -589,10 +589,11 @@ Online, the website and the mobile app work from anywhere (not only on your Wi-F
 3. **Check it.** `https://<your address>/up` shows a green "Application up" page, and `https://<your address>` is the website. The first build takes a few minutes.
 4. **Keep it awake.** On GitHub: **Settings** → **Secrets and variables** → **Actions** → **Variables** → **New repository variable**. Name it `SITE_URL` with the value `https://<your address>`. The Keep awake workflow then runs by itself. GitHub pauses scheduled workflows after 60 days without commits; re-enable it in the **Actions** tab if that happens.
 5. **Google sign-in online.** In Google Cloud Console → your **Web** OAuth client → **Authorized JavaScript origins**, add `https://<your address>`.
-6. **The mobile app.**
-   1. Put `https://<your address>` in the EAS environment variable on expo.dev (project → **Environment variables** → `EXPO_PUBLIC_API_URL`, environment **preview**).
-   2. Run **Actions** → **App update** ([Update the installed app](#update-the-installed-app-without-a-new-build-eas-update)). Installed apps switch to the new address the next time they open, with no new APK needed.
-   3. Don't change `eas.json` for this. The whole file is part of the app's runtime version (fingerprint), so editing it would make installed apps ignore every update. Change `EXPO_PUBLIC_API_URL` in `eas.json` only right before you build a new APK.
+6. **The mobile app.** The server address is built into the app, in two places that must match:
+   - `EXPO_PUBLIC_API_URL` in `smarttoll/mobile/eas.json` (`preview` → `env`), used when an APK is built. It's already `https://smarttoll.onrender.com`.
+   - The EAS environment variable on expo.dev (project → **Environment variables** → `EXPO_PUBLIC_API_URL`, environment **preview**), used by [App updates](#update-the-installed-app-without-a-new-build-eas-update).
+
+   After changing the address, build a new APK (**Actions** → **Android APK**) and share it. APKs built before the change keep the old address. `eas.json` is part of the app's runtime version (fingerprint), so changing it always needs a new APK: updates published afterwards only reach APKs built after the change.
 
 **Updating:** push to GitHub. Render rebuilds and redeploys automatically, and new migrations run on start. Your data stays in TiDB.
 

@@ -24,6 +24,9 @@ services:
       # TiDB Cloud only accepts encrypted connections; this is the image's own CA bundle.
       - key: MYSQL_ATTR_SSL_CA
         value: /etc/ssl/certs/ca-certificates.crt
+      # Reuse database connections between requests (a new encrypted connection is slow).
+      - key: DB_PERSISTENT
+        value: "true"
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: MAIL_MAILER

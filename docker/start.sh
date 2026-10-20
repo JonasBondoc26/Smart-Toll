@@ -12,6 +12,8 @@ else
 fi
 
 php artisan config:cache
+php artisan route:cache
+php artisan event:cache
 php artisan view:cache
 
 # Render (and most hosts) tell the app which port to listen on in $PORT.

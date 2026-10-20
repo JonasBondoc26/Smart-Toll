@@ -8,6 +8,16 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>SmartToll</title>
+    <script>
+      // Apply the saved Appearance (Profile → Appearance) before the page draws, so a dark page
+      // doesn't flash white first. src/theme.js keeps it up to date after that.
+      (function () {
+        var p = 'system';
+        try { p = localStorage.getItem('st_appearance') || 'system'; } catch (e) {}
+        var dark = p === 'dark' || (p !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

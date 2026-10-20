@@ -6,6 +6,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import Icon from '../components/Icon.jsx';
 import Brand from '../components/Brand.jsx';
 import LogoutModal from '../components/LogoutModal.jsx';
+import AppearanceCard from '../components/AppearanceCard.jsx';
 
 const NAV = [
   ['/dashboard', 'grid', 'Home'], ['/vehicles', 'car', 'Vehicles'], ['/rfid', 'card', 'RFID'],
@@ -13,7 +14,7 @@ const NAV = [
 ];
 
 const initialsOf = (name) => name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-const errorStyle = { color: '#B3261E' };
+const errorStyle = { color: 'var(--error)' };
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -91,6 +92,8 @@ export default function Profile() {
               </div>
             </div>
           </div>
+
+          <AppearanceCard className="mb-24" />
 
           <div className="grid-2 mb-24">
             <form className="card" onSubmit={save} noValidate>

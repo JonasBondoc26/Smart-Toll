@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Icon from '../Icon.jsx';
 
-const errorStyle = { color: '#B3261E', marginTop: 8 };
+const errorStyle = { color: 'var(--error)', marginTop: 8 };
 
 /**
  * Add / edit form in a modal (mockups 18, 23, 26, 28, 30-35).

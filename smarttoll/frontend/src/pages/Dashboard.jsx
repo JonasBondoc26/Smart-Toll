@@ -66,7 +66,7 @@ export default function Dashboard() {
             <Link to="/trip-planner" className="btn btn-amber"><Icon name="plus" stroke={2.5} />Plan a Trip</Link>
           </div>
 
-          {error && <p className="muted mb-24" style={{ color: '#B3261E' }}>{error}</p>}
+          {error && <p className="muted mb-24" style={{ color: 'var(--error)' }}>{error}</p>}
           {!data && !error && <p className="muted">Loading…</p>}
           {data && (<>
             <div className="kpi-grid mb-24">

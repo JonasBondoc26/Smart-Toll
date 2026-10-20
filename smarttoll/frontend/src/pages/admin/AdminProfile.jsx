@@ -5,6 +5,7 @@ import { useAuth } from '../../AuthContext.jsx';
 import AdminLayout, { initialsOf } from '../../components/admin/AdminLayout.jsx';
 import Icon from '../../components/Icon.jsx';
 import LogoutModal from '../../components/LogoutModal.jsx';
+import AppearanceCard from '../../components/AppearanceCard.jsx';
 import { ChangePasswordModal, DoneModal, ResetLinkModal } from '../Profile.jsx';
 
 // Mockup 37 (plus the password flow of mockups 38-38d, shared with the motorist profile).
@@ -64,6 +65,8 @@ export default function AdminProfile() {
         </div>
       </div>
 
+      <AppearanceCard className="mb-24" />
+
       <div className="grid-2 mb-24">
         <form className="card" onSubmit={save} noValidate>
           <h3 style={{ fontSize: 15, marginBottom: 18 }}>Personal Information</h3>
@@ -75,7 +78,7 @@ export default function AdminProfile() {
             <label htmlFor="a-email">Email Address</label>
             <input id="a-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
-          {formError && <div className="field-hint" style={{ color: '#B3261E', marginTop: 8 }}>{formError}</div>}
+          {formError && <div className="field-hint" style={{ color: 'var(--error)', marginTop: 8 }}>{formError}</div>}
           {savedMsg && !dirty && <div className="field-hint" style={{ color: 'var(--green-mid)', marginTop: 8 }}>{savedMsg}</div>}
           <div className="modal-footer">
             <button type="button" className="btn btn-ghost" onClick={cancel} disabled={saving || !dirty}>Cancel</button>

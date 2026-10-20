@@ -92,7 +92,7 @@ export default function TollMatrix() {
       title="Toll Matrix" subtitle="Official rates per entry–exit plaza pair and vehicle class, sourced from TRB / expressway operators."
       action={tab === 'rates' && <button className="btn btn-primary" onClick={openAdd}><Icon name="plus" stroke={2.5} />Add Rate Entry</button>}
     >
-      {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+      {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
 
       <div className="tabs mb-24" role="tablist">
         {TABS.map(([k, label]) => (

@@ -371,7 +371,7 @@ export default function TripPlanner() {
             </div>
           </div>
 
-          {loadError && <p className="muted" style={{ color: '#B3261E' }}>{loadError}</p>}
+          {loadError && <p className="muted" style={{ color: 'var(--error)' }}>{loadError}</p>}
           {!loaded && !loadError && <p className="muted">Loading…</p>}
           {notice && !guest && (
             <div className="notice notice-ok mb-24 save-done">
@@ -489,7 +489,7 @@ export default function TripPlanner() {
                           <Icon name="clock" size={15} stroke={2.3} />{saving ? 'Saving…' : 'Save to History'}
                         </button>
                       )}
-                      {saveError && <div className="field-hint" style={{ color: '#B3261E' }}>{saveError}</div>}
+                      {saveError && <div className="field-hint" style={{ color: 'var(--error)' }}>{saveError}</div>}
                       {!saved[selected] && !toll.complete && (
                         <div className="field-hint">Only the priced part of the toll is saved.</div>
                       )}
@@ -821,7 +821,7 @@ function BalanceModal({ rfid, deduction, onClose, onSaved }) {
             </div>
             <div className="field-hint">Reload your {rfid.network} account, then enter the balance shown in your {rfid.network} app or receipt.</div>
           </div>
-          {error && <div className="field-hint" style={{ color: '#B3261E', marginTop: 8 }}>{error}</div>}
+          {error && <div className="field-hint" style={{ color: 'var(--error)', marginTop: 8 }}>{error}</div>}
 
           <div className="modal-footer">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>

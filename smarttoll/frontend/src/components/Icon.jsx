@@ -33,6 +33,9 @@ export const PATHS = {
   classes: 'M2 6h12v10H2zM14 9h4.5L22 12.5V16h-8M6 20a2 2 0 100-4 2 2 0 000 4zM18 20a2 2 0 100-4 2 2 0 000 4z', // truck (vehicle classes)
   table: 'M3 4h18v16H3zM3 9h18M9 4v16M13 13h5M13 16h3',                                                 // rate table (toll matrix)
   logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
+  sun: ['M12 17a5 5 0 100-10 5 5 0 000 10z', 'M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4'],
+  moon: 'M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z',
+  monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
 };
 
 export default function Icon({ name, size = 16, stroke = 2, color = 'currentColor' }) {

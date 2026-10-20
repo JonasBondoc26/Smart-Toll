@@ -43,7 +43,7 @@ export default function VehicleClasses() {
       title="Vehicle Classifications" subtitle="Ensures toll fees are computed using the correct rate category."
       action={<button className="btn btn-primary" onClick={openAdd}><Icon name="plus" stroke={2.5} />Add Classification</button>}
     >
-      {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+      {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
       {!rows && !error && <p className="muted">Loading…</p>}
 
       {rows && (

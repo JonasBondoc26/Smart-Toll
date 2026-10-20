@@ -35,7 +35,7 @@ export default function RegisterModal({ onClose, onRegistered, onLogin }) {
     }
   };
 
-  const error = (k) => errors[k] && <div className="field-hint" style={{ color: '#B3261E' }}>{errors[k]}</div>;
+  const error = (k) => errors[k] && <div className="field-hint" style={{ color: 'var(--error)' }}>{errors[k]}</div>;
 
   return (
     <div className="modal-backdrop" onClick={() => !busy && onClose()}>
@@ -71,7 +71,7 @@ export default function RegisterModal({ onClose, onRegistered, onLogin }) {
             {error('confirm')}
           </div>
         </div>
-        {errors.form && <div className="field-hint" style={{ color: '#B3261E', marginTop: 8 }}>{errors.form}</div>}
+        {errors.form && <div className="field-hint" style={{ color: 'var(--error)', marginTop: 8 }}>{errors.form}</div>}
 
         <div className="modal-footer">
           <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>

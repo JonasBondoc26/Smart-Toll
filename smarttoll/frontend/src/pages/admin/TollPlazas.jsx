@@ -82,7 +82,7 @@ export default function TollPlazas() {
       title="Toll Plazas" subtitle="Latitude/longitude let the system detect which plazas fall along a computed route."
       action={<button className="btn btn-primary" onClick={openAdd}><Icon name="plus" stroke={2.5} />Add Toll Plaza</button>}
     >
-      {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+      {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
       {!plazas && !error && <p className="muted">Loading…</p>}
 
       {plazas && (

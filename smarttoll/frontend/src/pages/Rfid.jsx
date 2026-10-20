@@ -91,7 +91,7 @@ export default function Rfid() {
             </button>
           </div>
 
-          {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+          {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
           {accounts === null && !error && <p className="muted">Loading…</p>}
 
           {accounts && accounts.length === 0 && (
@@ -179,7 +179,7 @@ export default function Rfid() {
                   />
                 </div>
               </div>
-              {formError && <div className="field-hint" style={{ color: '#B3261E' }}>{formError}</div>}
+              {formError && <div className="field-hint" style={{ color: 'var(--error)' }}>{formError}</div>}
 
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={close} disabled={saving}>Cancel</button>
@@ -217,7 +217,7 @@ export default function Rfid() {
                 </div>
                 <div className="field-hint">Enter the balance shown on your {modal.account.network} app or receipt after your last reload.</div>
               </div>
-              {formError && <div className="field-hint" style={{ color: '#B3261E', marginTop: 8 }}>{formError}</div>}
+              {formError && <div className="field-hint" style={{ color: 'var(--error)', marginTop: 8 }}>{formError}</div>}
 
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={close} disabled={saving}>Cancel</button>

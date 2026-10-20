@@ -43,7 +43,7 @@ export default function RateLog({ reloadKey }) {
         </div>
       </div>
 
-      {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+      {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
       {!data && !error && <p className="muted">Loading…</p>}
       {data && (
         <>

@@ -43,7 +43,7 @@ export default function TripHistory() {
             </div>
           </div>
 
-          {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+          {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
           {trips === null && !error && <p className="muted">Loading…</p>}
 
           {trips && trips.length === 0 && (

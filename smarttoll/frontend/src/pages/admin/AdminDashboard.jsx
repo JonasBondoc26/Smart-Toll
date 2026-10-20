@@ -37,7 +37,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout title="Admin Dashboard" subtitle="Overview of the reference data that powers route planning and toll computation.">
-      {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+      {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
       {!data && !error && <p className="muted">Loading…</p>}
 
       {data && (

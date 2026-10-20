@@ -81,7 +81,7 @@ export default function TripDetail() {
             {trip && <> / <span>{day(trip.date_created)}</span></>}
           </div>
 
-          {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+          {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
           {!trip && !error && <p className="muted">Loading…</p>}
 
           {trip && (
@@ -209,7 +209,7 @@ export default function TripDetail() {
               <strong style={{ color: 'var(--ink)', fontWeight: 700 }}>{trip.origin} → {trip.destination}</strong>{' '}
               will be removed from your trip history. This action cannot be undone.
             </p>
-            {deleteError && <div className="field-hint" style={{ color: '#B3261E', marginTop: 8 }}>{deleteError}</div>}
+            {deleteError && <div className="field-hint" style={{ color: 'var(--error)', marginTop: 8 }}>{deleteError}</div>}
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => setConfirming(false)} disabled={deleting}>Cancel</button>
               <button className="btn btn-danger" onClick={remove} disabled={deleting}>{deleting ? 'Deleting…' : 'Yes, Delete Trip'}</button>

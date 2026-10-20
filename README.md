@@ -50,6 +50,7 @@ Web Application: https://smarttoll.onrender.com/login
 - **Trip History:** a list of saved trips, and a detail page per trip with its map, toll breakdown and RFID payment.
   - **Plan Again** opens a past trip in Plan a Trip with the same origin, destination and vehicle, priced with today's toll rates.
 - **Dashboard:** your vehicles, RFID balances (low ones flagged), trips planned, tolls this month and recent trips.
+- **Light / Dark appearance:** Profile → Appearance: **Light**, **Dark** or **System** (follows the computer's or phone's own setting), remembered in the browser, as in the mobile app. Night uses the app's dark palette, and the maps go dark too (admins have the same setting on their profile).
 
 **Mobile app** (Android and iPhone, built with React Native / Expo, see [Mobile app](#mobile-app-react-native))
 - Everything a motorist does on the website: dashboard, vehicles, RFID accounts, Plan a Trip with the map, Trip History with Plan Again, and profile.

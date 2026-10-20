@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../AuthContext.jsx';
+import { useTheme } from '../theme.js';
 
 // Google Identity Services, loaded once and shared by every button on the page.
 let gisScript = null;
@@ -28,6 +29,7 @@ let clientIdRequest = null;   // GET /auth/google/config, asked once per page lo
  */
 export default function GoogleButton({ onSuccess, text = 'continue_with', divider = 'or' }) {
   const { googleLogin } = useAuth();
+  const { dark } = useTheme();
   const el = useRef(null);
   const [clientId, setClientId] = useState(undefined);   // undefined = checking, null = off
   const [error, setError] = useState('');
@@ -64,13 +66,13 @@ export default function GoogleButton({ onSuccess, text = 'continue_with', divide
       });
       el.current.innerHTML = '';
       window.google.accounts.id.renderButton(el.current, {
-        type: 'standard', theme: 'outline', size: 'large', shape: 'pill', text, logo_alignment: 'center',
+        type: 'standard', theme: dark ? 'filled_black' : 'outline',   // Google's own dark button at night size: 'large', shape: 'pill', text, logo_alignment: 'center',
         locale: 'en',   // match the app's English text (otherwise Google follows the browser language)
         width: Math.min(400, el.current.offsetWidth || 320),
       });
     }).catch((e) => !cancelled && setError(e.message));
     return () => { cancelled = true; };
-  }, [clientId, text]);
+  }, [clientId, text, dark]);
 
   if (!clientId) return null;
   return (
@@ -78,7 +80,7 @@ export default function GoogleButton({ onSuccess, text = 'continue_with', divide
       {divider && <div className="or-divider"><span>{divider}</span></div>}
       <div ref={el} className="google-signin-button" aria-busy={busy} />
       {busy && <div className="field-hint" style={{ textAlign: 'center' }}>Signing you in…</div>}
-      {error && <div className="field-hint" style={{ color: '#B3261E', textAlign: 'center' }}>{error}</div>}
+      {error && <div className="field-hint" style={{ color: 'var(--error)', textAlign: 'center' }}>{error}</div>}
     </div>
   );
 }

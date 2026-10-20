@@ -56,7 +56,7 @@ export default function LoginModal({ reason, onClose, onLoggedIn, onRegister }) 
             <Link to="/forgot-password" style={linkStyle}>Forgot password?</Link>
           </div>
         </div>
-        {error && <div className="field-hint" style={{ color: '#B3261E', marginTop: 4 }}>{error}</div>}
+        {error && <div className="field-hint" style={{ color: 'var(--error)', marginTop: 4 }}>{error}</div>}
 
         <div className="modal-footer">
           <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>

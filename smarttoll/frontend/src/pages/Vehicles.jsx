@@ -92,7 +92,7 @@ export default function Vehicles() {
             <button className="btn btn-primary" onClick={openAdd}><Icon name="plus" stroke={2.5} />Add Vehicle</button>
           </div>
 
-          {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+          {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
           {vehicles === null && !error && <p className="muted">Loading…</p>}
 
           {vehicles && vehicles.length === 0 && (
@@ -164,7 +164,7 @@ export default function Vehicles() {
                   ))}
                 </select>
               </div>
-              {formError && <div className="field-hint" style={{ color: '#B3261E' }}>{formError}</div>}
+              {formError && <div className="field-hint" style={{ color: 'var(--error)' }}>{formError}</div>}
 
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={close} disabled={saving}>Cancel</button>
@@ -189,7 +189,7 @@ export default function Vehicles() {
               </strong>{' '}
               from your account. Any RFID account linked to this vehicle will be unlinked. This action cannot be undone.
             </p>
-            {formError && <div className="field-hint" style={{ color: '#B3261E', marginTop: 8 }}>{formError}</div>}
+            {formError && <div className="field-hint" style={{ color: 'var(--error)', marginTop: 8 }}>{formError}</div>}
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={close} disabled={saving}>Cancel</button>
               <button className="btn btn-danger" onClick={confirmDelete} disabled={saving}>

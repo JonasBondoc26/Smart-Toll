@@ -45,7 +45,7 @@ export default function Expressways() {
       title="Expressways" subtitle="Records used in route computation and toll fee estimation."
       action={<button className="btn btn-primary" onClick={openAdd}><Icon name="plus" stroke={2.5} />Add Expressway</button>}
     >
-      {error && <p className="muted" style={{ color: '#B3261E' }}>{error}</p>}
+      {error && <p className="muted" style={{ color: 'var(--error)' }}>{error}</p>}
       {!rows && !error && <p className="muted">Loading…</p>}
 
       {rows && (

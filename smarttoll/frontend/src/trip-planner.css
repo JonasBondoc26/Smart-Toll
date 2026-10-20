@@ -6,14 +6,14 @@
 
 /* Map */
 .planner-map { height: 420px; isolation: isolate; }
-.planner-map .map-canvas { position: absolute; inset: 0; background: #E8ECE3; }
+.planner-map .map-canvas { position: absolute; inset: 0; background: var(--map-ground); }
 .planner-map .map-legend { z-index: 500; pointer-events: none; }
 .planner-map .leaflet-container { font-family: 'Manrope', sans-serif; }
 @media (max-width: 480px) { .planner-map { height: 300px; } }
 
 .map-status {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 500;
-  background: var(--white); border-radius: 8px; padding: 9px 14px; font-size: 12.5px; font-weight: 600;
+  background: var(--surface); border-radius: 8px; padding: 9px 14px; font-size: 12.5px; font-weight: 600;
   box-shadow: var(--shadow-card); color: var(--ink); max-width: 88%; text-align: center;
 }
 .map-status.is-error { background: var(--red-pale); color: var(--red); }
@@ -24,8 +24,8 @@
   font-family: 'Manrope', sans-serif; font-size: 11.5px; font-weight: 700; color: var(--amber-dark);
   border: none; box-shadow: var(--shadow-card); border-radius: 6px; padding: 4px 9px;
 }
-.st-plaza-tip.is-entry.leaflet-tooltip { color: #15803D; }
-.st-plaza-tip.is-exit.leaflet-tooltip { color: #C2410C; }
+.st-plaza-tip.is-entry.leaflet-tooltip { color: var(--tip-entry); }
+.st-plaza-tip.is-exit.leaflet-tooltip { color: var(--tip-exit); }
 
 /* Form */
 .swap-row { display: flex; justify-content: flex-end; margin: -8px 0 6px; }
@@ -43,8 +43,8 @@
 .traffic-chip.is-light { background: var(--green-pale); color: var(--green-deep); }
 .traffic-chip.is-moderate { background: var(--amber-pale); color: var(--amber-dark); }
 .traffic-chip.is-heavy { background: var(--red-pale); color: var(--red); }
-.map-traffic-toggle { position: absolute; top: 14px; right: 14px; z-index: 500; border: none; cursor: pointer; padding: 9px 16px; border-radius: 999px; background: var(--white); color: var(--green-deep); font: 700 13px 'Manrope', sans-serif; box-shadow: var(--shadow-card); }
-.map-traffic-toggle.is-on { background: var(--action); color: var(--white); }
+.map-traffic-toggle { position: absolute; top: 14px; right: 14px; z-index: 500; border: none; cursor: pointer; padding: 9px 16px; border-radius: 999px; background: var(--surface); color: var(--green-deep); font: 700 13px 'Manrope', sans-serif; box-shadow: var(--shadow-card); }
+.map-traffic-toggle.is-on { background: var(--action); color: var(--on-action); }
 /* Origin / Destination: the label sits inside the search field (like the other fields); Pin on map stays above it. */
 .field:has(> .field-label-row + .search-select) { position: relative; }
 .field-label-row:has(+ .search-select) { justify-content: flex-end; min-height: 24px; margin-bottom: 6px; }
@@ -64,7 +64,7 @@
 /* Route option cards */
 .route-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
 .route-option {
-  text-align: left; background: var(--white); border: 1.5px solid var(--concrete-line); border-radius: var(--radius-md);
+  text-align: left; background: var(--surface); border: 1.5px solid var(--concrete-line); border-radius: var(--radius-md);
   padding: 14px 16px; cursor: pointer; font-family: 'Manrope', sans-serif; color: var(--ink); box-shadow: var(--shadow-card);
 }
 .route-option.is-selected { border-color: var(--green-deep); box-shadow: 0 0 0 3px rgba(11,79,63,0.12); }
@@ -80,7 +80,7 @@
 .tradeoff-question { font-weight: 700; font-size: 14px; color: var(--green-deep); margin-bottom: 10px; }
 .tradeoff-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
 .tradeoff-option {
-  text-align: left; background: var(--white); border: 1.5px solid var(--concrete-line); border-radius: var(--radius-md);
+  text-align: left; background: var(--surface); border: 1.5px solid var(--concrete-line); border-radius: var(--radius-md);
   padding: 12px 14px; cursor: pointer; font-family: 'Manrope', sans-serif; color: var(--ink);
 }
 .tradeoff-option.is-selected { border-color: var(--green-deep); box-shadow: 0 0 0 3px rgba(11,79,63,0.12); }
@@ -96,15 +96,15 @@
 .gantry-plaza-road { color: #A9CDBB; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; }
 
 .notice { border-radius: var(--radius-md); padding: 12px 16px; font-size: 13px; line-height: 1.5; }
-.notice-warn { background: var(--amber-pale); color: var(--amber-dark); border: 1px solid #F0D9A8; }
+.notice-warn { background: var(--amber-pale); color: var(--amber-dark); border: 1px solid var(--line-warn); }
 .notice ul { margin: 6px 0 0 18px; }
-.notice-ok { background: var(--green-pale); color: var(--green-deep); border: 1px solid #BFE0CC; }
-.notice-error { background: var(--red-pale); color: var(--red); border: 1px solid #F3C4C0; }
+.notice-ok { background: var(--green-pale); color: var(--green-deep); border: 1px solid var(--line-ok); }
+.notice-error { background: var(--red-pale); color: var(--red); border: 1px solid var(--line-error); }
 
 /* RFID balance card (Plan a Trip) */
-.balance-card.is-short { border-color: #F3C4C0; }
+.balance-card.is-short { border-color: var(--line-error); }
 .balance-after {
-  padding: 14px 0 0; margin-top: 8px; border-top: 2px solid var(--green-dark);
+  padding: 14px 0 0; margin-top: 8px; border-top: 2px solid var(--ink);
   font-weight: 700; font-size: 15px;
 }
 .balance-after-value { font-family: 'Barlow Condensed'; font-weight: 700; font-size: 26px; color: var(--green-deep); }
@@ -131,7 +131,7 @@
 .saved-routes { margin: -4px 0 18px; padding-bottom: 16px; border-bottom: 1px solid var(--concrete-line); }
 .saved-routes-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
 .saved-routes-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.saved-route { display: inline-flex; align-items: stretch; border: 1.5px solid var(--concrete-line); border-radius: 999px; background: var(--white); overflow: hidden; max-width: 100%; }
+.saved-route { display: inline-flex; align-items: stretch; border: 1.5px solid var(--concrete-line); border-radius: 999px; background: var(--surface); overflow: hidden; max-width: 100%; }
 .saved-route:hover { border-color: var(--green-mid); }
 .saved-route-go {
   background: none; border: none; cursor: pointer; font: 600 12.5px 'Manrope', sans-serif; color: var(--green-deep);

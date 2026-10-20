@@ -4,7 +4,7 @@ SmartToll is a web app and an Android / iPhone app for motorists in Luzon, Phili
 
 It was built as a capstone project at Holy Angel University.
 
-Web Application: https://smart-toll-production.up.railway.app/login
+Web Application: https://smarttoll.onrender.com/login
 
 **Expressways covered:** NLEX / SCTEX, TPLEX, Skyway / SLEX / MCX, Skyway Stage 3, NLEX-SLEX Connector, NAIAX, STAR Tollway, CALAX, CAVITEX / C5 Link. That's 95 toll plazas and 2,311 published rates, taken from the Toll Regulatory Board (TRB) matrices.
 
@@ -590,9 +590,9 @@ Online, the website and the mobile app work from anywhere (not only on your Wi-F
 4. **Keep it awake.** On GitHub: **Settings** → **Secrets and variables** → **Actions** → **Variables** → **New repository variable**. Name it `SITE_URL` with the value `https://<your address>`. The Keep awake workflow then runs by itself. GitHub pauses scheduled workflows after 60 days without commits; re-enable it in the **Actions** tab if that happens.
 5. **Google sign-in online.** In Google Cloud Console → your **Web** OAuth client → **Authorized JavaScript origins**, add `https://<your address>`.
 6. **The mobile app.**
-   1. Put `https://<your address>` in `smarttoll/mobile/eas.json` (`preview` → `env` → `EXPO_PUBLIC_API_URL`).
-   2. Put the same address in the EAS environment variable on expo.dev (project → **Environment variables** → `EXPO_PUBLIC_API_URL`, environment **preview**).
-   3. Run **Actions** → **App update** ([Update the installed app](#update-the-installed-app-without-a-new-build-eas-update)). Installed apps switch to the new address the next time they open, with no new APK needed.
+   1. Put `https://<your address>` in the EAS environment variable on expo.dev (project → **Environment variables** → `EXPO_PUBLIC_API_URL`, environment **preview**).
+   2. Run **Actions** → **App update** ([Update the installed app](#update-the-installed-app-without-a-new-build-eas-update)). Installed apps switch to the new address the next time they open, with no new APK needed.
+   3. Don't change `eas.json` for this. The whole file is part of the app's runtime version (fingerprint), so editing it would make installed apps ignore every update. Change `EXPO_PUBLIC_API_URL` in `eas.json` only right before you build a new APK.
 
 **Updating:** push to GitHub. Render rebuilds and redeploys automatically, and new migrations run on start. Your data stays in TiDB.
 

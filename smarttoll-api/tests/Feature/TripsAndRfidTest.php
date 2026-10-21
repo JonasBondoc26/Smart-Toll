@@ -189,8 +189,10 @@ class TripsAndRfidTest extends TestCase
         $this->postJson("/api/trips/{$tripId}/complete", ['lat' => 14.676, 'lng' => 121.0437])
             ->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'km from San Fernando'));
 
-        // Within a few hundred metres of the destination: completed.
+        // About 250 m away is not there yet; within 100 m of the pin it is.
         $this->postJson("/api/trips/{$tripId}/complete", ['lat' => 15.0300, 'lng' => 120.6880])
+            ->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, ' m from '));
+        $this->postJson("/api/trips/{$tripId}/complete", ['lat' => 15.0291, 'lng' => 120.6902])
             ->assertOk()->assertJsonPath('trip.status', 'completed');
         $this->getJson("/api/trips/{$tripId}")->assertJsonPath('trip.status', 'completed')
             ->assertJsonPath('trip.completed_at', fn ($t) => $t !== null);

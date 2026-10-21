@@ -112,7 +112,7 @@ sequenceDiagram
             API-->>App: New route and directions from here
         end
     end
-    App->>API: POST /trips/{id}/complete (position checked: within 1 km)
+    App->>API: POST /trips/{id}/complete (position checked: within 100 m)
     API-->>App: completed
     App->>D: "You have arrived" → trip shows Completed in history
 ```
@@ -147,7 +147,7 @@ On start, the container sets up the database by itself (`php artisan smarttoll:i
 - **Consistent balances:** the RFID balance is locked during a save, so two saves can't both spend the same balance.
 - **Google sign-in:** the ID token is verified with Google and must be issued for SmartToll's own client ID, for a verified email.
 - **Rate limits:** login-related, routing and import endpoints are throttled (see API.md).
-- **Arrival check:** a trip can only be completed within 1 km of its saved destination.
+- **Arrival check:** a trip can only be completed within 100 m of its saved destination (the app marks it on reaching the pin: within 50 m, or at the very end of the route).
 
 ## Related documents
 

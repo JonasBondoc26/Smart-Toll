@@ -476,7 +476,7 @@ The app finds the API on its own: it uses the computer Expo is running on, port 
    - **Directions:** each turn is announced ahead ("In 400 meters, turn right onto Mindanao Avenue"; about 1 km ahead on expressways) and again at the turn ("Turn right onto Mindanao Avenue").
    - **Toll warnings:** "Approaching Mindanao Avenue toll plaza. You will enter NLEX / SCTEX.", then "Entering NLEX / SCTEX at Mindanao Avenue toll plaza.", and at the end "Exiting NLEX / SCTEX at San Simon toll plaza." (with the toll, which was already paid). The phone vibrates at each plaza.
    - **Wrong turn:** after a few seconds off the route, the app says "Rerouting", gets a new route from where you are, and continues the directions. The toll already paid doesn't change.
-5. Within about 200 m of the destination, the app says **You have arrived** and the trip becomes **Completed** in Trip History. (The API checks the position: a trip can't be completed more than 1 km from its destination.)
+5. On reaching the destination's pin (within about 50 m, or at the very end of the route when the pin sits on a building beside the road), the app says **You have arrived** and the trip becomes **Completed** in Trip History. (The API checks the position: a trip can't be completed more than 100 m from its destination.) Arriving has nothing to do with the toll: it was deducted when the trip was saved, and toll plaza alerts work on their own along the way.
 
 **Alerts:** at the top of the trip screen, tap **Voice**, **Text** or **Graphic** to turn each on or off at any time. Voice speaks the directions and toll warnings; Text shows them written; Graphic shows the big turn arrow and the green (entry) / orange (exit) toll-gate cards. Any mix works, and the phone remembers the choice.
 

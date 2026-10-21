@@ -56,7 +56,8 @@ const PLAZA_SNAP_M = 3000;       // ... and so does reaching its spot on the rou
                                  // coordinates lie up to this far off the road
 const PLAZA_WARN_M = 800;        // "Approaching ... toll plaza" this far ahead
 const ALERTS_KEY = 'st_alerts';   // the driver's alert choice, kept on the phone
-const ARRIVE_M = 200;            // this close to the destination counts as arrived
+const ARRIVE_M = 50;             // this close to the destination's pin counts as arrived (GPS is good to ~5-15 m)
+const ARRIVE_END_M = 100;        // ... or this close once at the very end of the route (a pin on a building beside the road)
 const MAX_ACCURACY_M = 60;       // GPS fixes less accurate than this are ignored
 const OFF_ROUTE_M = 70;          // further than this from the route ...
 const OFF_ROUTE_FIXES = 3;       // ... this many fixes in a row means a wrong turn
@@ -329,10 +330,10 @@ export function TrackingProvider({ children }) {
       tollAlert: tollAlert || s.tollAlert, offRoute: offRoute.current >= OFF_ROUTE_FIXES, fixes: s.fixes + 1,
     }));
 
-    // Arrived: at the destination, or at the end of the route when the destination itself
-    // lies a little off the road (the API accepts up to 1 km).
+    // Arrived: at the destination's pin, or at the end of the route when the pin itself lies a
+    // little off the road (the API accepts up to 100 m).
     const toDestination = metersBetween(lat, lng, r.destination.lat, r.destination.lng);
-    if (toDestination <= ARRIVE_M || (remaining < 50 && toDestination <= 1000)) complete(trip.trip_id, lat, lng, trip.destination);
+    if (toDestination <= ARRIVE_M || (remaining < 25 && toDestination <= ARRIVE_END_M)) complete(trip.trip_id, lat, lng, trip.destination);
   };
 
   // Real GPS: in the background (screen off / other apps) when allowed, else while on screen.

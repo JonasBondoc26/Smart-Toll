@@ -156,8 +156,11 @@ class TripController extends Controller
      | GPS tracking (mobile app): planned -> in_progress -> completed
      * ------------------------------------------------------------------ */
 
-    /** The phone must be this close to the destination for the trip to count as arrived. */
-    private const ARRIVED_KM = 1.0;
+    /**
+     * The phone must be this close to the destination's pin for the trip to count as arrived:
+     * GPS is good to about 5-15 m, and a pin on a building can sit a little off the road.
+     */
+    private const ARRIVED_M = 100;
 
     /** POST /api/trips/{id}/start — the motorist set off; the phone is now tracking the trip. */
     public function start(Request $r, int $id)
@@ -186,7 +189,10 @@ class TripController extends Controller
         abort_if(!$route, 422, 'This trip has no saved destination to track.');
 
         $km = TripPlannerService::haversineKm((float) $d['lat'], (float) $d['lng'], (float) $route->destination_lat, (float) $route->destination_lng);
-        abort_if($km > self::ARRIVED_KM, 422, sprintf('You are still %.1f km from %s.', $km, $trip->destination));
+        $m = $km * 1000;
+        abort_if($m > self::ARRIVED_M, 422, $m >= 1000
+            ? sprintf('You are still %.1f km from %s.', $km, $trip->destination)
+            : sprintf('You are still %d m from %s.', round($m), $trip->destination));
 
         DB::table('trips')->where('trip_id', $id)->update([
             'status' => 'completed', 'completed_at' => now(), 'started_at' => $trip->started_at ?? now(),

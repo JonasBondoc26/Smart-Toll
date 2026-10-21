@@ -193,10 +193,15 @@ class TripsAndRfidTest extends TestCase
         $this->assertSame(['depart', 'turn', 'left', 'Tandang Sora Avenue'], [$route['steps'][0]['type'], $route['steps'][1]['type'], $route['steps'][1]['modifier'], $route['steps'][1]['name']]);
         $this->assertSame('arrive', end($route['steps'])['type']);
         $this->assertContains('North Luzon Expressway', array_column($route['steps'], 'name'));
+        // Lane arrows where the map has turn lanes: at least one maneuver, with at least one lane leading to it.
+        $withLanes = array_values(array_filter($route['steps'], fn ($s) => !empty($s['lanes'])));
+        $this->assertNotEmpty($withLanes);
+        $this->assertContains(true, array_column($withLanes[0]['lanes'], 'v'));
 
         $tripId = $this->postJson('/api/trips', $this->tripBody($vehicle, ['steps' => $route['steps']]))->assertCreated()->json('trip_id');
-        $this->getJson("/api/trips/{$tripId}")->assertJsonPath('trip.map.steps.1.name', 'Tandang Sora Avenue')
-            ->assertJsonCount(count($route['steps']), 'trip.map.steps');
+        $saved = $this->getJson("/api/trips/{$tripId}")->assertJsonPath('trip.map.steps.1.name', 'Tandang Sora Avenue')
+            ->assertJsonCount(count($route['steps']), 'trip.map.steps')->json('trip.map.steps');
+        $this->assertSame(count($withLanes), count(array_filter($saved, fn ($s) => !empty($s['lanes']))), 'lanes are kept when the trip is saved');
     }
 
     public function test_a_motorist_off_the_route_gets_new_directions_to_the_destination(): void

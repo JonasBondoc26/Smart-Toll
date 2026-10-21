@@ -23,12 +23,16 @@ import { TRAFFIC_TILES } from '../lib/traffic';
  * turn {step, distance}: the next maneuver while following; the map zooms in approaching it and
  *   back out after it (dynamic zoom; the usual zoom also adapts to the speed).
  * night: dark map tiles (Dark appearance).
+ * bare: fill the parent edge to edge (no card frame), for screens that float panels over the map.
+ * offsetX: while following, the vehicle sits this many pixels right of centre (a panel covers the left).
+ * data.pad {top, right, bottom, left}: pixels covered by floating panels, kept clear when fitting the route.
+ * data.routes[i].label: a tag drawn on that route line (time · toll); data.feeTags: fee tags at exit plazas.
  * traffic: show live traffic (green / orange / red roads) on the map.
  * onUserMove(): the driver touched the map (stop following). onTouching(bool): a finger is on
  * the map, so a scrolling parent can pause its own scrolling.
  * onPick(lat, lng): the map was tapped (only while `picking`). onSelect(i): a route line was tapped.
  */
-export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, simulated = false, night = false, traffic = false, height = 300, picking = false, onPick, onSelect, onUserMove, onTouching, style }) {
+export default function RouteMap({ data, position, follow = false, heading = null, headingUp = true, turn = null, simulated = false, night = false, traffic = false, height = 300, picking = false, bare = false, offsetX = 0, onPick, onSelect, onUserMove, onTouching, style }) {
   const web = useRef(null);
   const [ready, setReady] = useState(false);
 
@@ -37,8 +41,8 @@ export default function RouteMap({ data, position, follow = false, heading = nul
   }, [ready, data, picking, night, traffic]);
 
   useEffect(() => {
-    if (ready) web.current?.injectJavaScript(`window.moveTo(${JSON.stringify({ position: position || null, follow, heading, headingUp, turn, simulated })});true;`);
-  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp, turn?.step, turn ? Math.round(turn.distance / 10) : null, simulated]);
+    if (ready) web.current?.injectJavaScript(`window.moveTo(${JSON.stringify({ position: position || null, follow, heading, headingUp, turn, simulated, offsetX })});true;`);
+  }, [ready, position?.lat, position?.lng, follow, heading == null ? null : Math.round(heading), headingUp, turn?.step, turn ? Math.round(turn.distance / 10) : null, simulated, offsetX]);
 
   const onMessage = (e) => {
     const m = JSON.parse(e.nativeEvent.data);
@@ -50,7 +54,7 @@ export default function RouteMap({ data, position, follow = false, heading = nul
 
   return (
     <View
-      style={[styles.box, { height }, style]}
+      style={[bare ? styles.bare : styles.box, bare ? null : { height }, style]}
       onTouchStart={() => onTouching?.(true)} onTouchEnd={() => onTouching?.(false)} onTouchCancel={() => onTouching?.(false)}
     >
       <WebView
@@ -71,4 +75,6 @@ export default function RouteMap({ data, position, follow = false, heading = nul
 
 const styles = themed(() => StyleSheet.create({
   box: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.line, backgroundColor: colors.concrete, marginBottom: 14 },
+  // Full-screen map under floating panels (Trip in Progress, Plan a Trip)
+  bare: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.concrete },
 }));

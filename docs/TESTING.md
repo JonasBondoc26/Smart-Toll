@@ -1,6 +1,6 @@
 # SmartToll automated tests
 
-*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **50 of 50 passed**, 230 assertions.* (Updated October 21, 2026 with the TRB page upload.)
+*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **50 of 50 passed**, 233 assertions.* (Updated October 21, 2026 with the TRB page upload.)
 
 The tests use a separate database (`smarttoll_test`) built from `database/smarttoll.sql`; every test runs in a transaction that is rolled back. Outside services are replaced by recorded answers (a real OSRM route for Quezon City → San Fernando via NLEX, Google token checks), so the results are repeatable and run offline.
 

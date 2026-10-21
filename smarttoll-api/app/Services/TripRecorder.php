@@ -100,7 +100,24 @@ class TripRecorder
                 'name' => $text($st['name'] ?? null, 150), 'ref' => $text($st['ref'] ?? null, 50),
                 'toward' => $text($st['toward'] ?? null, 150),
                 'distance' => is_numeric($st['distance'] ?? null) ? max(0, (int) $st['distance']) : 0,
+                'lanes' => self::cleanLanes($st['lanes'] ?? null),
             ];
+        }
+        return $out;
+    }
+
+    private const LANE_ARROWS = ['none', 'uturn', 'sharp right', 'right', 'slight right', 'straight', 'slight left', 'left', 'sharp left'];
+
+    /** Lane arrows for one maneuver ([{i: [...], v: bool}], 2 to 12 lanes), or null. */
+    private static function cleanLanes($lanes): ?array
+    {
+        if (!is_array($lanes) || count($lanes) < 2 || count($lanes) > 12) {
+            return null;
+        }
+        $out = [];
+        foreach ($lanes as $l) {
+            $arrows = array_values(array_intersect(is_array($l['i'] ?? null) ? $l['i'] : [], self::LANE_ARROWS));
+            $out[] = ['i' => $arrows ?: ['none'], 'v' => (bool) ($l['v'] ?? false)];
         }
         return $out;
     }

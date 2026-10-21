@@ -19,6 +19,19 @@ export const MAP_HTML = `<!doctype html><html><head>
   .fee { background: #12261F; color: #fff; font-weight: 700; font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 0; box-shadow: none; }
   .leaflet-tooltip.fee:before { display: none; }
   .picking { cursor: crosshair; }
+  /* Route options in Plan a Trip: time and toll on each line; the selected one dark, like the gantry. */
+  .rlabel { background: #fff; color: #14201C; font: 700 12.5px -apple-system, Roboto, sans-serif; padding: 5px 9px; border-radius: 12px;
+            border: 0; box-shadow: 0 2px 8px rgba(11,38,31,.22); white-space: nowrap; cursor: pointer; }
+  .rlabel .toll { color: ${colors.amberDark}; }
+  .rlabel.on { background: #12261F; color: #fff; box-shadow: 0 3px 10px rgba(11,38,31,.35); }
+  .rlabel.on .toll { color: #E8A33D; }
+  .leaflet-tooltip.rlabel:before { display: none; }
+  /* Toll paid at an exit plaza: an amber tag with the fee. */
+  .feetag { background: #E8A33D; color: #12261F; font: 800 11.5px -apple-system, Roboto, sans-serif; padding: 2px 7px; border-radius: 8px; border: 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .leaflet-tooltip.feetag:before { display: none; }
+  body.night .rlabel:not(.on) { background: #16201C; color: #E6EEEA; box-shadow: 0 0 0 1px #25332D; }
+  body.night .rlabel:not(.on) .toll { color: #E0A74F; }
   body.night, body.night #map { background: #0B1512; }
   body.night .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
   body.night .leaflet-control-attribution { background: rgba(11,21,18,0.8); color: #9DB3A8; }
@@ -122,6 +135,14 @@ export const MAP_HTML = `<!doctype html><html><head>
       L.polyline(d.trail, { color: '${colors.freeRoad}', weight: 5 }).addTo(layer);
       bounds.push(...d.trail);
     }
+    // The fee where it's paid: an amber tag at each exit plaza of the selected route.
+    if (d.feeTags && sel) {
+      (sel.segments || []).forEach((sg) => {
+        if (!sg.exit || sg.exit.lat == null || sg.fee == null) return;
+        L.tooltip({ permanent: true, direction: 'right', className: 'feetag', offset: [8, 0] })
+          .setLatLng([sg.exit.lat, sg.exit.lng]).setContent('₱' + Math.round(sg.fee)).addTo(layer);
+      });
+    }
     (d.plazas || []).forEach((p) => {
       L.circleMarker([p.lat, p.lng], { radius: p.passed ? 7 : 5, color: '#fff', weight: 2, fillColor: p.passed ? '${colors.exit}' : '${colors.greenDeep}', fillOpacity: p.passed ? 1 : 0.7 })
         .bindTooltip(p.name, { className: 'fee', direction: 'top', offset: [0, -5] }).addTo(layer);
@@ -131,9 +152,48 @@ export const MAP_HTML = `<!doctype html><html><head>
     if (!follow && d.fitKey !== lastFit && bounds.length) {
       lastFit = d.fitKey;
       map.setBearing(0);   // overviews are shown north-up
-      if (bounds.length === 1) map.setView(bounds[0], 14); else map.fitBounds(bounds, { padding: [28, 28] });
+      // pad: room taken by panels floating over the map (search card, bottom sheet), in pixels.
+      const pad = d.pad || {};
+      if (bounds.length === 1) map.setView(bounds[0], 14);
+      else map.fitBounds(bounds, { paddingTopLeft: [(pad.left || 0) + 28, (pad.top || 0) + 28], paddingBottomRight: [(pad.right || 0) + 28, (pad.bottom || 0) + 28], animate: false });
     }
+    tagRoutes(routes, d.selected, d.pad || {});
   };
+  /*
+   * Each route's time and toll, on the line itself (Plan a Trip); tapping a tag picks that route.
+   * Placed after the map has framed the routes, in screen pixels: a tag goes where its route runs
+   * furthest from the other routes, and moves along its route until it clears the tags already
+   * placed (routes on parallel roads a few kilometres apart would otherwise stack their tags).
+   */
+  function tagRoutes(routes, selected, pad) {
+    const tagged = routes.map((r, i) => ({ r, i })).filter(({ r }) => r.label && r.geometry && r.geometry.length > 1);
+    if (!tagged.length) return;
+    const px = (p) => map.latLngToContainerPoint(p);
+    const size = map.getSize();
+    // Only where the map is actually visible: not under the floating search card or bottom sheet.
+    const onScreen = (q) => q.x > (pad.left || 0) + 60 && q.x < size.x - (pad.right || 0) - 60
+      && q.y > (pad.top || 0) + 40 && q.y < size.y - (pad.bottom || 0) - 16;
+    const pts = tagged.map(({ r }) => {
+      const step = Math.max(1, Math.floor(r.geometry.length / 80));
+      return r.geometry.filter((_, k) => k % step === 0).map((p) => ({ p, q: px(p) }));
+    });
+    const placed = [];
+    // The selected route first, so its tag gets the best spot.
+    const order = tagged.map((t, k) => k).sort((a, b) => (tagged[b].i === selected) - (tagged[a].i === selected));
+    order.forEach((k) => {
+      const { r, i } = tagged[k];
+      const others = pts.filter((_, j) => j !== k).flat();
+      const gap = (q) => (others.length ? Math.min(...others.map((o) => Math.hypot(o.q.x - q.x, o.q.y - q.y))) : 0);
+      const clear = (q) => placed.every((c) => Math.abs(c.x - q.x) > 110 || Math.abs(c.y - q.y) > 34);
+      const candidates = pts[k].filter((c) => onScreen(c.q)).sort((a, b) => gap(b.q) - gap(a.q));
+      const pick = candidates.find((c) => clear(c.q)) || candidates[0] || pts[k][Math.floor(pts[k].length / 2)];
+      placed.push(pick.q);
+      const tip = L.tooltip({ permanent: true, direction: 'top', className: 'rlabel' + (i === selected ? ' on' : ''), interactive: true, offset: [0, -4] })
+        .setLatLng(pick.p).setContent(r.label).addTo(layer);
+      const el = tip.getElement();
+      if (el) el.addEventListener('click', (e) => { e.stopPropagation(); post({ type: 'select', index: i }); });
+    });
+  }
   /* ---------------------------------------------------------------------------------
    | Following the vehicle. Heading-up: the map turns so the direction of travel points to
    | the top of the screen, with the vehicle near the bottom-centre (more road ahead).
@@ -144,6 +204,7 @@ export const MAP_HTML = `<!doctype html><html><head>
   const VEHICLE_Y = 0.72;          // heading-up: the vehicle sits 72% down the map
   const MAX_TURN_DEG_S = 90;       // fastest the map may rotate
   let headingUp = true;
+  let offsetX = 0;                 // px: the vehicle sits this far right of centre (landscape side panel)
   let goal = null;                 // { lat, lng, heading } latest from the phone
   let cam = null;                  // { lat, lng, bearing, zoom } what is on screen now
   let heading = null;              // last known direction of travel (degrees from north)
@@ -269,6 +330,8 @@ export const MAP_HTML = `<!doctype html><html><head>
         const px = map.getSize().y * (VEHICLE_Y - 0.5);
         center = ahead(cam.lat, cam.lng, -cam.bearing, px * metresPerPixel(cam.lat, cam.zoom));
       }
+      // A panel over the left of the map: centre left of the vehicle, so it sits in the open part.
+      if (offsetX) center = ahead(center[0], center[1], -cam.bearing - 90, offsetX * metresPerPixel(cam.lat, cam.zoom));
       if (Math.abs(cam.zoom - map.getZoom()) > 0.002) {
         map._move(L.latLng(center), cam.zoom, { pinch: true });   // pinch: tiles and route scale now, reload at refresh
         dirty = zoomDirty = true;
@@ -311,6 +374,7 @@ export const MAP_HTML = `<!doctype html><html><head>
     const now = performance.now();
     follow = !!p.follow;
     headingUp = p.headingUp !== false;
+    offsetX = p.offsetX || 0;
     if (p.heading != null && !isNaN(p.heading)) heading = p.heading;
     if (!p.position) {
       if (me) { map.removeLayer(me); me = null; }

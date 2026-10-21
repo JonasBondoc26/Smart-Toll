@@ -70,6 +70,26 @@ const SIM_TICK_MS = 200;         // ... every 0.2 s (about 3 km a minute)
 const TRAFFIC_EVERY_MS = 180000; // live traffic on the road ahead: checked every 3 minutes ...
 const TRAFFIC_SIM_EVERY_MS = 25000; // ... and every 25 s in the sped-up simulation
 const INCIDENT_TELL_M = 20000;   // incidents are announced when they're within 20 km
+const THEN_WITHIN_M = 500;       // "Then ...": the maneuver after the next one, when it's this close after it
+// The sped-up simulation covers about 900 km/h, which a speedometer can't show sensibly; its
+// speed bubble shows a typical speed for the road instead (labelled as simulated on screen).
+const SIM_KMH_EXPRESSWAY = 100;
+const SIM_KMH_ROAD = 40;
+
+/**
+ * Lane arrows for a maneuver, left to right: [{ arrow, on }] where `arrow` is the one painted
+ * arrow that matters (the maneuver's own direction on lanes that lead to it) and `on` whether
+ * the lane leads to it. Null when the map has no lanes there, or when every lane works anyway.
+ */
+function lanesFor(step) {
+  const lanes = step.lanes;
+  if (!Array.isArray(lanes) || lanes.length < 2 || lanes.every((l) => l.v)) return null;
+  const want = step.modifier || 'straight';
+  return lanes.map((l) => ({
+    arrow: l.v && l.i.includes(want) ? want : l.i.find((x) => x !== 'none') || 'straight',
+    on: !!l.v,
+  }));
+}
 
 export function TrackingProvider({ children }) {
   const [state, setState] = useState(IDLE);
@@ -89,6 +109,7 @@ export function TrackingProvider({ children }) {
   const heading = useRef(null);     // smoothed direction of travel, degrees from north
   const lastFix = useRef(null);     // previous position, for the heading off the route
   const lastPos = useRef(null);     // the latest position, for the traffic check
+  const speedFix = useRef(null);    // { lat, lng, t }: the previous fix, for the speed when the GPS gives none
   const trafficBusy = useRef(false);
 
   useEffect(() => () => stopper.current?.(), []);
@@ -231,6 +252,20 @@ export function TrackingProvider({ children }) {
       }
     }
 
+    // Speed for the speed bubble (km/h). Real GPS: the phone's own speed, else distance over time.
+    let speed = null;
+    if (simulated) {
+      const onToll = r.plazas.some((p) => p.role === 'entry' && p.along != null && travelled >= p.along
+        && r.plazas.some((x) => x.role === 'exit' && x.key.split(':')[0] === p.key.split(':')[0] && x.along != null && travelled <= x.along));
+      speed = onToll ? SIM_KMH_EXPRESSWAY : SIM_KMH_ROAD;
+    } else if (gps && gps.speed != null && gps.speed >= 0) {
+      speed = gps.speed * 3.6;
+    } else if (speedFix.current) {
+      const dt = (Date.now() - speedFix.current.t) / 1000;
+      if (dt > 0.5 && dt < 30) speed = (metersBetween(speedFix.current.lat, speedFix.current.lng, lat, lng) / dt) * 3.6;
+    }
+    speedFix.current = { lat, lng, t: Date.now() };
+
     // Off the route? (Only real GPS can make a wrong turn.)
     if (!simulated) {
       offRoute.current = fromRoute > OFF_ROUTE_M ? offRoute.current + 1 : 0;
@@ -266,7 +301,15 @@ export function TrackingProvider({ children }) {
       const words = instruction(step);
       const toGo = step.along - travelled;
       if (words) {
-        guidance = { ...words, distance: toGo, road: step.name || step.ref || null, step: k };
+        // The maneuver after this one, when it comes soon after ("Then turn right"), as on Google Maps.
+        let then = null;
+        for (let j = k + 1; j < r.steps.length; j++) {
+          const w = instruction(r.steps[j]);
+          if (!w) continue;
+          if (r.steps[j].along != null && r.steps[j].along - step.along <= THEN_WITHIN_M) then = w;
+          break;
+        }
+        guidance = { ...words, distance: toGo, road: step.name || step.ref || null, step: k, then, lanes: lanesFor(step) };
         const far = isHighway(step) ? 1000 : 400;
         const near = isHighway(step) ? 150 : 60;
         const roomBefore = step.along - (r.steps[k - 1].along ?? 0);   // only warn early if there's time to
@@ -282,6 +325,7 @@ export function TrackingProvider({ children }) {
 
     setState((s) => ({
       ...s, position: { lat, lng }, heading: heading.current, travelled, remaining, passed: passed.current, guidance,
+      speed: speed == null ? s.speed : Math.round(speed),
       tollAlert: tollAlert || s.tollAlert, offRoute: offRoute.current >= OFF_ROUTE_FIXES, fixes: s.fixes + 1,
     }));
 
@@ -466,7 +510,7 @@ export function TrackingProvider({ children }) {
 
 const IDLE = {
   status: 'idle', tripId: null, trip: null, simulated: false, startedAt: null, completedAt: null,
-  position: null, heading: null, travelled: 0, remaining: 0, passed: {}, tollAlert: null, guidance: null, hasDirections: false,
+  position: null, heading: null, speed: null, travelled: 0, remaining: 0, passed: {}, tollAlert: null, guidance: null, hasDirections: false,
   offRoute: false, rerouting: false, reroutes: 0, routeVersion: 0, background: false, traffic: null, faster: null, trafficAlert: null, alerts: { voice: true, text: true, graphic: true }, fixes: 0, error: '',
 };
 

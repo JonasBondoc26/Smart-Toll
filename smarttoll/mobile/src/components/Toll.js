@@ -5,10 +5,13 @@ import { api } from '../lib/api';
 import { peso } from '../lib/format';
 import { colors } from '../lib/theme';
 
+// bare: no card around it, for use inside a sheet that is already a surface (Plan a Trip).
+const Box = ({ bare, children }) => (bare ? <View style={{ marginBottom: 22 }}>{children}</View> : <Card>{children}</Card>);
+
 /** Fee per expressway, entry plaza → exit plaza, and the total (from the API's toll object). */
-export function TollBreakdown({ toll, title = 'Toll Fee Breakdown' }) {
+export function TollBreakdown({ toll, title = 'Toll Fee Breakdown', bare }) {
   return (
-    <Card>
+    <Box bare={bare}>
       <CardTitle icon="receipt">{title}</CardTitle>
       {toll.segments.length === 0 && <Row first label="No toll plazas on this route" value={peso(0)} />}
       {toll.segments.map((sg, i) => (
@@ -25,7 +28,7 @@ export function TollBreakdown({ toll, title = 'Toll Fee Breakdown' }) {
         <Text style={s.total}>{peso(toll.total)}</Text>
       </View>
       {!toll.complete && toll.notes?.length > 0 && <Notice tone="warn" style={{ marginTop: 12, marginBottom: 0 }}>{toll.notes.join(' ')}</Notice>}
-    </Card>
+    </Box>
   );
 }
 
@@ -33,13 +36,13 @@ export function TollBreakdown({ toll, title = 'Toll Fee Breakdown' }) {
  * The vehicle's RFID balance against a toll: current balance, deduction, balance after.
  * `paid` (after saving) holds what the server actually did: { before, deducted, balance }.
  */
-export function BalanceCard({ rfid, toll, paid, onUpdate }) {
+export function BalanceCard({ rfid, toll, paid, onUpdate, bare }) {
   if (!rfid) {
     return (
-      <Card>
+      <Box bare={bare}>
         <CardTitle icon="card">RFID Balance</CardTitle>
         <T.Muted>This vehicle has no RFID account, so saving records the trip without a deduction. Add one under Account → RFID Accounts.</T.Muted>
-      </Card>
+      </Box>
     );
   }
   const before = paid ? paid.before : Number(rfid.balance);
@@ -47,7 +50,7 @@ export function BalanceCard({ rfid, toll, paid, onUpdate }) {
   const after = paid ? paid.balance : before - deduct;
   const short = !paid && after < 0;
   return (
-    <Card>
+    <Box bare={bare}>
       <CardTitle icon="card" right={<T.Small>{rfid.network}</T.Small>}>RFID Balance</CardTitle>
       <Row first label={paid ? 'Balance before' : 'Current balance'} value={peso(before)} />
       <Row label={paid ? 'Deducted' : 'Toll to deduct'} value={`− ${peso(deduct)}`} />
@@ -60,7 +63,7 @@ export function BalanceCard({ rfid, toll, paid, onUpdate }) {
           <Button title="Update Balance" icon="create" variant="secondary" onPress={onUpdate} />
         </>
       )}
-    </Card>
+    </Box>
   );
 }
 

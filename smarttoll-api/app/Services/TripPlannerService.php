@@ -162,10 +162,26 @@ class TripPlannerService
                     'ref'      => trim($step['ref'] ?? '') ?: null,   // e.g. "E1"
                     'toward'   => trim($step['destinations'] ?? '') ?: null,
                     'distance' => round($step['distance'] ?? 0),      // metres until the next maneuver
+                    'lanes'    => self::lanesOf($step),
                 ];
             }
         }
         return $out;
+    }
+
+    /**
+     * The lanes approaching a maneuver, for the lane arrows under the phone's turn banner:
+     * [{ i: ["left", "straight"], v: true }, ...] left to right (i: the arrows painted on the
+     * lane, v: whether the lane leads to this maneuver). OSRM gives them on the maneuver's own
+     * intersection, where OpenStreetMap has turn lanes mapped; null when it doesn't.
+     */
+    private static function lanesOf(array $step): ?array
+    {
+        $lanes = $step['intersections'][0]['lanes'] ?? null;
+        if (!is_array($lanes) || count($lanes) < 2) {
+            return null;
+        }
+        return array_map(fn ($l) => ['i' => array_values($l['indications'] ?? ['none']), 'v' => (bool) ($l['valid'] ?? false)], $lanes);
     }
 
     /**

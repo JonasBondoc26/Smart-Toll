@@ -235,7 +235,7 @@ Every trip in SmartToll is drawn the same way: an origin, a dotted road carrying
 
 The mood is clear, sturdy and trustworthy. Titles are large, sentence-case and medium weight, so the hierarchy feels calm; the weight is spent on figures instead (pesos, kilometres, minutes in Manrope 800), because the toll is the number the motorist came for. Pastel washes (green, amber, sky) carry figure tiles, badges, notices and selected states; they are tinted toward the road's green, never lavender.
 
-On the road the system changes register on purpose. The Trip in Progress screen is a high-contrast gantry sign: overhead-green direction banners, Barlow Condensed uppercase plaza names and figures, thick outlines on toll alerts. The softness is for planning at home; the driving screen is for a glance. The app ships Light, Dark and System appearances; the website is light only. Confirmed rejections: the lavender consumer-travel template (candy tiles, illustrated mascots), gradients and glassy effects, and promo clutter (vouchers, points, discount banners, ratings, favourite hearts).
+On the road the system changes register on purpose. The Trip in Progress screen is a high-contrast gantry sign: overhead-green direction banners, Barlow Condensed uppercase plaza names and figures, thick outlines on toll alerts. The softness is for planning at home; the driving screen is for a glance. The app and the website both ship Light, Dark and System appearances (the website's choice is under Profile → Appearance). Confirmed rejections: the lavender consumer-travel template (candy tiles, illustrated mascots), gradients and glassy effects, and promo clutter (vouchers, points, discount banners, ratings, favourite hearts).
 
 **Key Characteristics:**
 - Trips drawn as route lines: origin, dotted road with time and km, destination with a green pin.
@@ -371,7 +371,16 @@ Soft, confident pills that are easy to hit.
 The trip as a route: origin on the left (15px bold, two lines max), a road in the middle with the time and kilometres above a 2px dashed Ink Faint line between a 9px Ink dot and a 20px Sign Green pin with a white flag, destination on the right aligned right. The large variant (21px semibold app, 28px web) heads trip detail. Used for every trip row on Home, History and the website's tables; in trip rows it is followed by a date and vehicle meta line and the dark price pill.
 
 ### Driving Screen (signage register)
-Deliberately bold and high-contrast. The direction banner and next-plaza sign are Overhead Green panels with white text, Barlow Condensed plaza names in uppercase (26px) and amber meta lines. Toll alerts are white cards with a 2px coloured outline, a 62px tinted icon block and the plaza name in Barlow Condensed. Trip stats sit in outlined tiles with Barlow figures. This register stays on the driving screen.
+Deliberately bold and high-contrast, and map-first like Google Maps / Waze: the map fills the screen and everything floats over it, so nothing scrolls while driving.
+- **Gantry banner** (top): an Overhead Green panel, dark in both themes, with the amber maneuver arrow, the distance in Barlow Condensed and the instruction in Manrope bold white. Under it, on a darker band: lane arrows where the map has turn lanes (lanes that lead to the turn in white, the others faded), and "Then ↱ …" when the following maneuver comes within 500 m.
+- **Next toll plaza**: an amber pill under the banner (plaza name in Barlow Condensed uppercase, "entry · 1.7 km" / "exit · ₱266 · 12 km"). Near the plaza, and on entering or exiting, the full toll alert takes its place: a surface card with a 2px entry-green / exit-orange outline, a tinted icon block and the plaza name in Barlow Condensed. Incidents use the same card, compact.
+- **Map controls**: 48 dp round buttons down the right edge (follow, heading up, traffic, voice), sign green when on. The speed bubble sits bottom left: a 64 dp circle with an Overhead Green ring and the km/h in Barlow Condensed ("sim" in the demo drive).
+- **Bottom sheet**: collapsed, it shows the time left in Barlow Condensed (34px, sign green), distance and arrival, "₱266 paid · 1/2 plazas" and a round red Stop. Dragged up: the Voice / Text / Graphic alert switches, the plaza checklist and Stop Following. Back closes it first.
+- **Landscape**: the same pieces in a panel down the left; the vehicle sits in the open part of the map on the right.
+This register stays on the driving screen.
+
+### Plan a Trip (map first)
+The map fills the screen. A floating card on top holds From, To (coloured dots, label above the value) and the vehicle, with a round swap button. Routes load as soon as both places are set. Each route line carries a tag with its time and toll ("1h 31m · ₱266", "3h 19m · Free"; the selected one Overhead Green), placed where the routes run apart; exit plazas carry an amber ₱ fee tag. The bottom sheet shows the routes as swipeable cards (badges, time, toll, km and roads, traffic chip; selected: green wash with a sign-green outline) and a sticky action bar: the RFID balance before → after, then **Save Trip · ₱266** (Update Balance when short, Start Trip once saved). Dragged up, it holds the toll breakdown and the RFID balance, flat inside the sheet (no cards inside it).
 
 ## Do's and Don'ts
 

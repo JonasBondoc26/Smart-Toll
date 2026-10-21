@@ -210,8 +210,10 @@ class TripPlannerService
 
     /**
      * A short readable name for a pinned spot, e.g. "M. Roxas Avenue, Diliman,
-     * Quezon City", from OpenStreetMap Nominatim. Null when the lookup fails, so
-     * the caller can fall back to coordinates. Successful lookups are cached.
+     * Quezon City". From OpenStreetMap Nominatim (best at naming buildings and malls), else
+     * from Photon: Nominatim turns away shared cloud servers such as the online host's, and
+     * Photon (already used for landmark search) answers them. Null when both fail, so the
+     * caller can fall back to coordinates. Successful lookups are cached.
      */
     public function placeName(float $lat, float $lng): ?string
     {
@@ -219,10 +221,18 @@ class TripPlannerService
         if ($cached = Cache::get($key)) {
             return $cached;
         }
+        $name = $this->nominatimName($lat, $lng) ?? $this->photonName($lat, $lng);
+        if ($name) {
+            Cache::put($key, $name, now()->addDays(30));
+        }
+        return $name;
+    }
 
+    private function nominatimName(float $lat, float $lng): ?string
+    {
         try {
             $res = Http::withHeaders(['User-Agent' => config('smarttoll.user_agent')])
-                ->timeout(8)
+                ->timeout(6)
                 ->get(rtrim(config('smarttoll.nominatim_url'), '/') . '/reverse', [
                     'format' => 'jsonv2', 'lat' => $lat, 'lon' => $lng,
                     'zoom' => 17, 'addressdetails' => 1, 'accept-language' => 'en',
@@ -233,23 +243,45 @@ class TripPlannerService
         if (!$res->successful() || $res->json('error')) {
             return null;
         }
-
         $a = $res->json('address') ?? [];
-        $first = trim($res->json('name') ?? '') ?: ($a['road'] ?? null);
-        $area = $a['suburb'] ?? $a['quarter'] ?? $a['village'] ?? $a['neighbourhood'] ?? $a['hamlet'] ?? null;
-        $locality = $a['city'] ?? $a['town'] ?? $a['municipality'] ?? null;
-        $parts = array_values(array_unique(array_filter([$first, $area, $locality])));
-        // Outside Metro Manila the province helps ("Lias, Marilao, Bulacan").
-        if (count($parts) < 3 && !empty($a['state']) && ($a['region'] ?? '') !== 'Metro Manila') {
-            $parts[] = $a['state'];
-        }
-        if (!$parts) {
+        return self::shortName(
+            trim($res->json('name') ?? '') ?: ($a['road'] ?? null),
+            $a['suburb'] ?? $a['quarter'] ?? $a['village'] ?? $a['neighbourhood'] ?? $a['hamlet'] ?? null,
+            $a['city'] ?? $a['town'] ?? $a['municipality'] ?? null,
+            ($a['region'] ?? '') !== 'Metro Manila' ? ($a['state'] ?? null) : null,
+        );
+    }
+
+    private function photonName(float $lat, float $lng): ?string
+    {
+        try {
+            $res = Http::withHeaders(['User-Agent' => config('smarttoll.user_agent')])
+                ->timeout(6)
+                ->get(rtrim(config('smarttoll.photon_url'), '/') . '/reverse', ['lat' => $lat, 'lon' => $lng, 'lang' => 'en']);
+        } catch (\Throwable $e) {
             return null;
         }
+        $p = $res->successful() ? $res->json('features.0.properties') : null;
+        if (!$p) {
+            return null;
+        }
+        // A street's own name is in "name"; for a building it's the building, and the street is separate.
+        return self::shortName(
+            trim($p['name'] ?? '') ?: ($p['street'] ?? null),
+            $p['locality'] ?? $p['district'] ?? null,
+            $p['city'] ?? $p['county'] ?? null,
+            ($p['state'] ?? '') !== 'Metro Manila' ? ($p['state'] ?? null) : null,
+        );
+    }
 
-        $name = implode(', ', array_slice(array_values(array_unique($parts)), 0, 3));
-        Cache::put($key, $name, now()->addDays(30));
-        return $name;
+    /** "Place, area, city", up to three parts; outside Metro Manila the province helps ("Lias, Marilao, Bulacan"). */
+    private static function shortName(?string $first, ?string $area, ?string $locality, ?string $province): ?string
+    {
+        $parts = array_values(array_unique(array_filter([$first, $area, $locality])));
+        if (count($parts) < 3 && $province) {
+            $parts[] = $province;
+        }
+        return $parts ? implode(', ', array_slice(array_values(array_unique($parts)), 0, 3)) : null;
     }
 
     /* ------------------------------------------------------------------

@@ -30,6 +30,26 @@ class TripsAndRfidTest extends TestCase
         $this->assertEquals(266, $res->json('routes.0.toll.total'));
     }
 
+    public function test_a_map_pin_is_named_even_when_nominatim_turns_the_server_away(): void
+    {
+        // Nominatim refuses shared cloud servers (the online host); Photon names the spot instead.
+        Http::fake([
+            'nominatim.openstreetmap.org/*' => Http::response('Access blocked', 403),
+            'photon.komoot.io/reverse*' => Http::response(['features' => [['properties' => [
+                'name' => 'Lapu-Lapu Street', 'locality' => 'Teopaco Subdivision', 'city' => 'San Fernando', 'state' => 'Pampanga',
+            ]]]]),
+        ]);
+        $this->getJson('/api/trip-planner/place-name?lat=15.0286&lng=120.6898')
+            ->assertOk()->assertJsonPath('name', 'Lapu-Lapu Street, Teopaco Subdivision, San Fernando');
+    }
+
+    public function test_a_map_pin_without_any_name_service_falls_back_to_its_coordinates(): void
+    {
+        Http::fake(['*' => Http::response('', 503)]);
+        // No name: the app shows "Pinned: lat, lng" instead.
+        $this->getJson('/api/trip-planner/place-name?lat=15.1286&lng=120.6898')->assertOk()->assertJsonPath('name', null);
+    }
+
     public function test_landmarks_can_be_searched_and_planned_from(): void
     {
         $this->fakeOsrm();

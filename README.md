@@ -650,7 +650,7 @@ The page keys are `nlex`, `tplex`, `slex`, `calax`, `cavitex`, `star`, `skyway3`
 
 ## Automated tests
 
-50 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
+52 tests check the parts that must be right. Run them in `smarttoll-api/` with MySQL running:
 
 ```bash
 php artisan test
@@ -660,7 +660,7 @@ What they cover:
 - **Toll calculation:** fares from the TRB matrix per vehicle class, fares stored one way pricing both directions, and a recorded NLEX route detected as Mindanao Avenue → San Simon (₱266 for Class 1).
 - **Trips and RFID:** saving a trip re-prices it on the server (a fee sent by the browser is ignored), deducts the toll, refuses an insufficient balance and changes nothing, keeps what's needed to plan a trip again, and keeps each motorist's trips private. Visitors can plan but not save.
 - **Admin:** only admins reach the admin API; duplicate and cross-expressway rates are rejected; classes and plazas still in use can't be deleted; every rate change is written to the change log; CSV and TRB imports change nothing on preview and log everything they apply.
-- **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions and lane arrows (saved with the trip), and a motorist off the route gets new directions without the toll changing. Live traffic sets route times but never the toll, works without a key, reports only the incidents on the road ahead, and offers a faster route around heavy traffic without touching the toll already paid. Landmarks found by the search can be planned from (duplicates and places outside Luzon are left out), and one not in the cache is looked up again.
+- **GPS trip tracking:** a saved trip goes planned → in progress → completed; it can't be completed far from its destination or started again once completed; the toll is deducted only once (when saved); only the owner can track a trip; a vehicle with trips in its history can't be deleted. Planned routes carry their turn-by-turn directions and lane arrows (saved with the trip), and a motorist off the route gets new directions without the toll changing. Live traffic sets route times but never the toll, works without a key, reports only the incidents on the road ahead, and offers a faster route around heavy traffic without touching the toll already paid. A pin on the map gets a place name (from Photon when Nominatim turns the server away). Landmarks found by the search can be planned from (duplicates and places outside Luzon are left out), and one not in the cache is looked up again.
 - **Accounts:** saved routes are private to their owner; Google sign-in creates one account per person and rejects tokens made for other apps, unverified emails and admin accounts; a Google account sets its first password without a current one, and needs it from then on.
 
 The tests use a separate database, **`smarttoll_test`**, built automatically from `database/smarttoll.sql`. They never touch the real `smarttoll` database, and each test's changes are rolled back. The routing server (OSRM) and Google are replaced by recorded answers (`tests/Fixtures/`), so the tests run offline.

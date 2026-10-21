@@ -1,6 +1,6 @@
 # SmartToll automated tests
 
-*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **50 of 50 passed**, 233 assertions.* (Updated October 21, 2026 with the TRB page upload.)
+*Run on October 13, 2026 with `php artisan test` (PHPUnit 11, PHP 8.2, MariaDB 10.4): **52 of 52 passed**, 237 assertions.* (Updated October 21, 2026 with the TRB page upload.)
 
 The tests use a separate database (`smarttoll_test`) built from `database/smarttoll.sql`; every test runs in a transaction that is rolled back. Outside services are replaced by recorded answers (a real OSRM route for Quezon City → San Fernando via NLEX, Google token checks), so the results are repeatable and run offline.
 
@@ -9,8 +9,8 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 | Accounts: saved routes, Google sign-in, passwords | 6 | 6 |
 | Administration: access, rate rules, change log, CSV/TRB import | 11 | 11 |
 | Toll computation: TRB fares, segment detection, route comparison | 12 | 12 |
-| Trips and RFID: planning, landmarks, live traffic, saving, deduction, tracking, directions | 21 | 21 |
-| **Total** | **50** | **50** |
+| Trips and RFID: planning, landmarks, map pins, live traffic, saving, deduction, tracking, directions | 23 | 23 |
+| **Total** | **52** | **52** |
 
 ## Accounts: saved routes, Google sign-in, passwords
 
@@ -53,6 +53,8 @@ The tests use a separate database (`smarttoll_test`) built from `database/smartt
 ## Trips and RFID: planning, landmarks, live traffic, saving, deduction, tracking, directions
 
 - ✅ Visitors can plan a trip by vehicle class
+- ✅ A map pin is named even when nominatim turns the server away
+- ✅ A map pin without any name service falls back to its coordinates
 - ✅ Landmarks can be searched and planned from
 - ✅ Without a traffic key routes keep their usual times
 - ✅ Live traffic sets the travel time but never the toll

@@ -8,11 +8,10 @@ import MapSheet from '../../components/MapSheet';
 import MapButton from '../../components/MapButton';
 import PlacePicker, { pinPlace, placeNameOf } from '../../components/PlacePicker';
 import SavedRoutes from '../../components/SavedRoutes';
-import TrafficChip from '../../components/TrafficChip';
 import { Bone, SkeletonForm } from '../../components/Skeleton';
-import { useTrafficEnabled } from '../../lib/traffic';
+import { trafficText, useTrafficEnabled } from '../../lib/traffic';
 import { BalanceCard, BalanceSheet, TollBreakdown } from '../../components/Toll';
-import { Badge, Button, EmptyState, Notice, Screen, Sheet, T } from '../../components/ui';
+import { Button, EmptyState, Notice, Screen, Sheet, T } from '../../components/ui';
 import { api } from '../../lib/api';
 import { km, minutes, peso, roadsOf } from '../../lib/format';
 import { colors, fonts, themed, useTheme } from '../../lib/theme';
@@ -34,6 +33,8 @@ export default function Plan() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+  const landscape = width > height;
+  const panelW = Math.min(400, Math.round(width * 0.42));   // landscape: places and routes in a panel on the left
   const [vehicles, setVehicles] = useState(null);
   const [locations, setLocations] = useState([]);
   const [vehicleId, setVehicleId] = useState(null);
@@ -154,9 +155,9 @@ export default function Plan() {
     })) : [],
     selected,
     feeTags: true,
-    pad: { top: searchH, bottom: peekH, right: 56 },
+    pad: landscape ? { left: panelW + 20, top: 10, bottom: 10, right: 56 } : { top: searchH, bottom: peekH, right: 56 },
     fitKey: trip ? `${origin?.id}|${destination?.id}|${trip.routes.length}` : `${origin?.id}|${destination?.id}`,
-  }), [origin, destination, trip, selected, searchH, peekH]);
+  }), [origin, destination, trip, selected, searchH, peekH, landscape, panelW]);
 
   if (!vehicles) return <Screen><SkeletonForm /></Screen>;
   if (vehicles.length === 0) {
@@ -171,7 +172,7 @@ export default function Plan() {
 
   const balanceAfter = rfid && route ? Number(rfid.balance) - route.toll.total : null;
   const insufficient = rfid && route && !done && balanceAfter < 0;
-  const cardW = trip && trip.routes.length > 1 ? Math.min(300, Math.round((width - 36) * 0.8)) : width - 36;
+  const cardW = landscape ? null : trip && trip.routes.length > 1 ? Math.min(310, Math.round((width - 36) * 0.82)) : width - 36;
 
   // ---- The sheet's always-visible part ----
   let header;
@@ -207,13 +208,15 @@ export default function Plan() {
       </View>
     );
   } else {
-    header = (
+    const cards = trip.routes.map((r, i) => (
+      <RouteCard key={i} route={r} width={cardW} on={i === selected} onPress={() => setSelected(i)}
+        tags={[i === trip.picks.fastest && 'Fastest', i === trip.picks.shortest && 'Shortest', i === trip.picks.cheapest && 'Cheapest'].filter(Boolean).join(' · ')} />
+    ));
+    // Portrait: swipe sideways through the routes. Landscape: they stack in the side panel.
+    header = landscape ? <View style={{ gap: 8 }}>{cards}</View> : (
       <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={cardW + 10} decelerationRate="fast"
         contentContainerStyle={{ gap: 10, paddingRight: 18 }} style={{ marginRight: -18 }}>
-        {trip.routes.map((r, i) => (
-          <RouteCard key={i} route={r} width={cardW} on={i === selected} onPress={() => setSelected(i)}
-            badges={[i === trip.picks.fastest && ['ok', 'Fastest'], i === trip.picks.shortest && ['neutral', 'Shortest'], i === trip.picks.cheapest && ['warn', 'Cheapest']].filter(Boolean)} />
-        ))}
+        {cards}
       </ScrollView>
     );
   }
@@ -232,11 +235,14 @@ export default function Plan() {
       </View>
     ) : (
       <View>
-        <Text style={[styles.footerNote, insufficient && { color: colors.red }]} numberOfLines={2}>
-          {!rfid ? 'No RFID account on this vehicle: the trip is saved without a deduction.'
-            : insufficient ? `${rfid.network} balance ${peso(rfid.balance)} is short by ${peso(-balanceAfter)} for this trip.`
-              : `${rfid.network} ${peso(rfid.balance)} → ${peso(balanceAfter)} after this trip`}
-        </Text>
+        {/* Landscape has little height: the balance line only when it matters (short); it's in the panel too. */}
+        {(!landscape || insufficient) && (
+          <Text style={[styles.footerNote, insufficient && { color: colors.red }]} numberOfLines={2}>
+            {!rfid ? 'No RFID account on this vehicle: the trip is saved without a deduction.'
+              : insufficient ? `${rfid.network} balance ${peso(rfid.balance)} is short by ${peso(-balanceAfter)} for this trip.`
+                : `${rfid.network} ${peso(rfid.balance)} → ${peso(balanceAfter)} after this trip`}
+          </Text>
+        )}
         {insufficient
           ? <Button title="Update Balance" icon="create" variant="secondary" onPress={() => setBalanceOpen(true)} />
           : <Button title={`Save Trip · ${route.toll.segments.length ? peso(route.toll.total) : 'No toll'}`} icon="bookmark" onPress={save} busy={saving} />}
@@ -244,69 +250,57 @@ export default function Plan() {
     )
   ) : null;
 
-  // Open, the sheet stops just under the search card, so the places stay in view.
-  const sheetH = Math.max(320, (areaH || height - 80) - searchH - 10);
-  return (
-    <View style={styles.fill} onLayout={(e) => setAreaH(Math.round(e.nativeEvent.layout.height))}>
-      <RouteMap bare data={mapData} picking={!!pinFor} onPick={onMapPick} onSelect={setSelected} night={theme.dark} traffic={showTraffic} />
-
-      {/* Places and vehicle, floating over the map */}
-      <View style={[styles.search, { top: insets.top + 8 }]} onLayout={(e) => setSearchH(Math.round(e.nativeEvent.layout.height) + insets.top + 8)}>
-        <View style={styles.searchCard}>
-          <View style={{ flex: 1 }}>
-            <PlaceRow dot={colors.greenDeep} label="From" place={origin} empty="Choose a starting point" onPress={() => setPicker('origin')} />
-            <View style={styles.sep} />
-            <PlaceRow dot={colors.amberDark} label="To" place={destination} empty="Where to?" onPress={() => setPicker('destination')} />
-            <View style={styles.sep} />
-            <Pressable onPress={() => setVehicleOpen(true)} style={({ pressed }) => [styles.placeRow, pressed && { opacity: 0.7 }]}
-              accessibilityRole="button" accessibilityLabel={`Vehicle: ${vehicle?.vehicle_name}, ${vehicle?.class_name}. Change`}>
-              <Ionicons name="car" size={17} color={colors.inkSoft} style={{ width: 22, textAlign: 'center' }} />
-              <Text style={styles.vehicleText} numberOfLines={1}>{vehicle?.vehicle_name} · {vehicle?.class_name}</Text>
-              <Ionicons name="chevron-down" size={16} color={colors.inkFaint} />
-            </Pressable>
-          </View>
-          <Pressable onPress={swap} style={styles.swap} hitSlop={6} accessibilityRole="button" accessibilityLabel="Swap origin and destination">
-            <Ionicons name="swap-vertical" size={20} color={colors.greenDeep} />
-          </Pressable>
-        </View>
-        {pinFor && (
-          <View style={styles.pinNote}>
-            <Ionicons name="pin" size={16} color={colors.white} />
-            <Text style={styles.pinNoteText}>Tap the map to set the {pinFor === 'origin' ? 'starting point' : 'destination'}</Text>
-            <Pressable onPress={() => setPinFor(null)} hitSlop={10} accessibilityRole="button"><Text style={styles.pinCancel}>Cancel</Text></Pressable>
-          </View>
-        )}
+  const searchCard = (
+    <View style={[styles.searchCard, landscape && styles.searchCardTight]}>
+      <View style={{ flex: 1 }}>
+        <PlaceRow dot={colors.greenDeep} label="From" place={origin} empty="Choose a starting point" onPress={() => setPicker('origin')} />
+        <View style={styles.sep} />
+        <PlaceRow dot={colors.amberDark} label="To" place={destination} empty="Where to?" onPress={() => setPicker('destination')} />
+        <View style={styles.sep} />
+        <Pressable onPress={() => setVehicleOpen(true)} style={({ pressed }) => [styles.placeRow, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button" accessibilityLabel={`Vehicle: ${vehicle?.vehicle_name}, ${vehicle?.class_name}. Change`}>
+          <Ionicons name="car" size={16} color={colors.inkSoft} style={{ width: 22, textAlign: 'center' }} />
+          <Text style={styles.vehicleText} numberOfLines={1} maxFontSizeMultiplier={1.25}>{vehicle?.vehicle_name} · {vehicle?.class_name}</Text>
+          <Ionicons name="chevron-down" size={16} color={colors.inkFaint} />
+        </Pressable>
       </View>
-
-      {trafficEnabled && (
-        <View style={[styles.mapButtons, { bottom: peekH + 14 }]}>
-          <MapButton icon={showTraffic ? 'speedometer' : 'speedometer-outline'} on={showTraffic} label={showTraffic ? 'Hide traffic' : 'Show traffic'} onPress={() => setShowTraffic((t) => !t)} />
-        </View>
+      <Pressable onPress={swap} style={styles.swap} hitSlop={6} accessibilityRole="button" accessibilityLabel="Swap origin and destination">
+        <Ionicons name="swap-vertical" size={20} color={colors.greenDeep} />
+      </Pressable>
+    </View>
+  );
+  const pinNote = pinFor ? (
+    <View style={styles.pinNote}>
+      <Ionicons name="pin" size={16} color={colors.white} />
+      <Text style={styles.pinNoteText}>Tap the map to set the {pinFor === 'origin' ? 'starting point' : 'destination'}</Text>
+      <Pressable onPress={() => setPinFor(null)} hitSlop={10} accessibilityRole="button"><Text style={styles.pinCancel}>Cancel</Text></Pressable>
+    </View>
+  ) : null;
+  // Further down: the toll breakdown and the RFID balance.
+  const details = trip && route ? (
+    <>
+      {status.text ? <Notice tone={status.tone}>{status.text}</Notice> : null}
+      <T.Small style={{ marginBottom: 4 }}>
+        {trip.routes.some((r) => r.traffic) ? 'Times include live traffic.' : 'Typical travel times (live traffic is not available).'}
+      </T.Small>
+      {trip.tradeoff && (
+        <T.Small style={{ marginBottom: 4 }}>
+          {trip.tradeoff.extra_duration_s >= 60
+            ? `The cheapest route saves ${peso(trip.tradeoff.savings)} in toll but takes ${minutes(trip.tradeoff.extra_duration_s / 60)} longer.`
+            : `The cheapest route saves ${peso(trip.tradeoff.savings)} in toll and takes about the same time.`}
+        </T.Small>
       )}
-
-      <MapSheet open={sheetOpen} onOpenChange={setSheetOpen} height={sheetH} onPeekChange={setPeekH} footer={footer} bottomInset={RAISED_TAB}
-        header={<View style={{ paddingHorizontal: 18, paddingBottom: 14 }}>{header}</View>}>
-        {trip && route && (
-          <>
-            {status.text ? <Notice tone={status.tone}>{status.text}</Notice> : null}
-            <T.Small style={{ marginBottom: 4 }}>
-              {trip.routes.some((r) => r.traffic) ? 'Times include live traffic.' : 'Typical travel times (live traffic is not available).'}
-            </T.Small>
-            {trip.tradeoff && (
-              <T.Small style={{ marginBottom: 4 }}>
-                {trip.tradeoff.extra_duration_s >= 60
-                  ? `The cheapest route saves ${peso(trip.tradeoff.savings)} in toll but takes ${minutes(trip.tradeoff.extra_duration_s / 60)} longer.`
-                  : `The cheapest route saves ${peso(trip.tradeoff.savings)} in toll and takes about the same time.`}
-              </T.Small>
-            )}
-            <View style={{ height: 14 }} />
-            <TollBreakdown toll={route.toll} bare />
-            <BalanceCard rfid={rfid} toll={route.toll.total} paid={done?.rfid} onUpdate={() => setBalanceOpen(true)} bare />
-            <SavedRoutes locations={locations} origin={origin} destination={destination} onApply={(o, d) => { setOrigin(o); setDestination(d); }} />
-          </>
-        )}
-      </MapSheet>
-
+      <View style={{ height: 14 }} />
+      <TollBreakdown toll={route.toll} bare />
+      <BalanceCard rfid={rfid} toll={route.toll.total} paid={done?.rfid} onUpdate={() => setBalanceOpen(true)} bare />
+      <SavedRoutes locations={locations} origin={origin} destination={destination} onApply={(o, d) => { setOrigin(o); setDestination(d); }} />
+    </>
+  ) : null;
+  const trafficButton = trafficEnabled ? (
+    <MapButton icon={showTraffic ? 'speedometer' : 'speedometer-outline'} on={showTraffic} label={showTraffic ? 'Hide traffic' : 'Show traffic'} onPress={() => setShowTraffic((t) => !t)} />
+  ) : null;
+  const modals = (
+    <>
       <PlacePicker
         visible={!!picker} title={picker === 'origin' ? 'Starting point' : 'Destination'} locations={locations}
         onClose={() => setPicker(null)}
@@ -335,6 +329,50 @@ export default function Plan() {
           );
         })}
       </Sheet>
+    </>
+  );
+  const map = <RouteMap bare data={mapData} picking={!!pinFor} onPick={onMapPick} onSelect={setSelected} night={theme.dark} traffic={showTraffic} />;
+
+  // ---- Landscape: places, routes and the action in a panel on the left, the map on the right ----
+  if (landscape) {
+    return (
+      <View style={styles.fill}>
+        {map}
+        <View style={[styles.side, { left: insets.left + 10, top: insets.top + 8, bottom: 8, width: panelW }]}>
+          {searchCard}
+          {pinNote}
+          <View style={styles.sidePanel}>
+            <ScrollView contentContainerStyle={{ padding: 14 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {header}
+              {details ? <View style={{ height: 16 }} /> : null}
+              {details}
+            </ScrollView>
+            {footer ? <View style={styles.sideFooter}>{footer}</View> : null}
+          </View>
+        </View>
+        {trafficButton ? <View style={[styles.mapButtons, { right: insets.right + 12, bottom: 14 }]}>{trafficButton}</View> : null}
+        {modals}
+      </View>
+    );
+  }
+
+  // ---- Portrait ----
+  // Open, the sheet stops just under the search card, so the places stay in view.
+  const sheetH = Math.max(320, (areaH || height - 80) - searchH - 10);
+  return (
+    <View style={styles.fill} onLayout={(e) => setAreaH(Math.round(e.nativeEvent.layout.height))}>
+      {map}
+      {/* Places and vehicle, floating over the map */}
+      <View style={[styles.search, { top: insets.top + 8 }]} onLayout={(e) => setSearchH(Math.round(e.nativeEvent.layout.height) + insets.top + 8)}>
+        {searchCard}
+        {pinNote}
+      </View>
+      {trafficButton ? <View style={[styles.mapButtons, { bottom: peekH + 14 }]}>{trafficButton}</View> : null}
+      <MapSheet open={sheetOpen} onOpenChange={setSheetOpen} height={sheetH} onPeekChange={setPeekH} footer={footer} bottomInset={RAISED_TAB}
+        header={<View style={{ paddingHorizontal: 18, paddingBottom: 12 }}>{header}</View>}>
+        {details}
+      </MapSheet>
+      {modals}
     </View>
   );
 }
@@ -350,31 +388,32 @@ function PlaceRow({ dot, label, place, empty, onPress }) {
     <Pressable onPress={onPress} style={({ pressed }) => [styles.placeRow, pressed && { opacity: 0.7 }]}
       accessibilityRole="button" accessibilityLabel={`${label}: ${place ? place.name : 'not set'}. Change`}>
       <View style={{ width: 22, alignItems: 'center' }}><View style={[styles.dot, { backgroundColor: dot }]} /></View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.placeLabel}>{label}</Text>
-        <Text style={[styles.placeName, !place && { color: colors.inkFaint }]} numberOfLines={1}>{place ? place.name : empty}</Text>
-      </View>
+      <Text style={[styles.placeName, !place && { color: colors.inkFaint }]} numberOfLines={1} maxFontSizeMultiplier={1.25}>{place ? place.name : empty}</Text>
     </Pressable>
   );
 }
 
-/** One route option: badges, time, distance and roads, traffic, and the toll. */
-function RouteCard({ route: r, width, on, onPress, badges }) {
+/**
+ * One route option in two lines: time, what it's best at and the toll; then distance, roads and
+ * traffic. Compact, so the map keeps most of the screen.
+ */
+function RouteCard({ route: r, width, on, onPress, tags }) {
   const roads = roadsOf(r.toll);
+  const trafficColor = { light: colors.greenDeep, moderate: colors.amberDark, heavy: colors.red }[r.traffic?.level] || colors.inkSoft;
+  const toll = r.toll.segments.length ? peso(r.toll.total) : 'No toll';
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.routeCard, { width }, on && styles.routeCardOn, pressed && { opacity: 0.85 }]}
-      accessibilityRole="radio" accessibilityState={{ checked: on }}>
-      <View style={[styles.row, { gap: 6, minHeight: 22, flexWrap: 'wrap' }]}>
-        {badges.map(([tone, text]) => <Badge key={text} tone={tone}>{text}</Badge>)}
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.routeCard, width ? { width } : null, on && styles.routeCardOn, pressed && { opacity: 0.85 }]}
+      accessibilityRole="radio" accessibilityState={{ checked: on }}
+      accessibilityLabel={`${minutes(r.duration_s / 60)}, ${toll}${tags ? `, ${tags}` : ''}, ${km(r.distance_m)}`}>
+      <View style={styles.routeTop}>
+        <Text style={styles.routeTime} maxFontSizeMultiplier={1.2}>{minutes(r.duration_s / 60)}</Text>
+        <Text style={styles.routeTags} numberOfLines={1} maxFontSizeMultiplier={1.2}>{tags}</Text>
+        <Text style={[styles.routeToll, !r.toll.segments.length && { color: colors.greenDeep }]} maxFontSizeMultiplier={1.2}>{toll}</Text>
       </View>
-      <View style={[styles.row, { alignItems: 'flex-end', marginTop: 8 }]}>
-        <Text style={styles.routeTime}>{minutes(r.duration_s / 60)}</Text>
-        <Text style={[styles.routeToll, !r.toll.segments.length && { color: colors.greenDeep }]}>
-          {r.toll.segments.length ? peso(r.toll.total) : 'No toll'}
-        </Text>
-      </View>
-      <Text style={styles.routeMeta} numberOfLines={1}>{km(r.distance_m)} · {roads.length ? `via ${roads.join(', ')}` : 'ordinary roads'}</Text>
-      {r.traffic && <TrafficChip traffic={r.traffic} style={{ marginTop: 8 }} />}
+      <Text style={styles.routeMeta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+        {km(r.distance_m)} · {roads.length ? `via ${roads.join(', ')}` : 'ordinary roads'}
+        {r.traffic ? <Text style={{ color: trafficColor, fontFamily: fonts.semibold }}> · {trafficText(r.traffic)}</Text> : null}
+      </Text>
     </Pressable>
   );
 }
@@ -389,10 +428,11 @@ const styles = themed(() => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 22, paddingVertical: 4, paddingLeft: 12, paddingRight: 10,
     borderWidth: 1, borderColor: colors.cardEdge, shadowColor: '#0B261F', shadowOpacity: 0.16, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 8,
   },
-  placeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 50, paddingVertical: 6 },
+  placeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 46, paddingVertical: 4 },
+  // Landscape: shorter rows (only about 340 px of height above the tab bar)
+  searchCardTight: { paddingVertical: 0 },
   dot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2.5, borderColor: colors.surface },
-  placeLabel: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.inkFaint },
-  placeName: { fontFamily: fonts.semibold, fontSize: 15.5, color: colors.ink },
+  placeName: { flex: 1, fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
   vehicleText: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.inkSoft },
   sep: { height: 1, backgroundColor: colors.line, marginLeft: 32 },
   swap: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.field, alignItems: 'center', justifyContent: 'center' },
@@ -403,15 +443,23 @@ const styles = themed(() => StyleSheet.create({
   pinNoteText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.white },
   pinCancel: { fontFamily: fonts.bold, fontSize: 13, color: colors.amber, marginLeft: 4 },
   mapButtons: { position: 'absolute', right: 12 },
+  side: { position: 'absolute', gap: 8 },
+  sidePanel: {
+    flex: 1, backgroundColor: colors.surface, borderRadius: 22, borderWidth: 1, borderColor: colors.cardEdge, overflow: 'hidden',
+    shadowColor: '#0B261F', shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 8,
+  },
+  sideFooter: { borderTopWidth: 1, borderTopColor: colors.line, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 12 },
 
   // Sheet
   sheetTitle: { fontFamily: fonts.semibold, fontSize: 22, color: colors.ink, letterSpacing: -0.4, marginBottom: 6 },
-  routeCard: { backgroundColor: colors.field, borderRadius: 20, borderWidth: 2, borderColor: colors.field, padding: 14 },
+  routeCard: { backgroundColor: colors.field, borderRadius: 16, borderWidth: 2, borderColor: colors.field, paddingVertical: 10, paddingHorizontal: 12 },
   routeCardOn: { backgroundColor: colors.greenPale, borderColor: colors.greenDeep },
-  routeTime: { fontFamily: fonts.heavy, fontSize: 24, color: colors.ink, letterSpacing: -0.4, flex: 1 },
-  routeToll: { fontFamily: fonts.heavy, fontSize: 19, color: colors.ink, letterSpacing: -0.3, marginBottom: 1 },
-  routeMeta: { fontFamily: fonts.medium, fontSize: 13, color: colors.inkSoft, marginTop: 4 },
-  footerNote: { fontFamily: fonts.semibold, fontSize: 13, color: colors.inkSoft, marginBottom: 8 },
+  routeTop: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  routeTime: { fontFamily: fonts.heavy, fontSize: 20, color: colors.ink, letterSpacing: -0.3 },
+  routeTags: { flex: 1, fontFamily: fonts.bold, fontSize: 12, color: colors.greenDeep },
+  routeToll: { fontFamily: fonts.heavy, fontSize: 17, color: colors.ink, letterSpacing: -0.3 },
+  routeMeta: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.inkSoft, marginTop: 3 },
+  footerNote: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.inkSoft, marginBottom: 6 },
   vehicleOption: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, backgroundColor: colors.field, marginBottom: 8, borderWidth: 1.5, borderColor: colors.field },
   vehicleOptionOn: { backgroundColor: colors.greenPale, borderColor: colors.greenDeep },
   vehicleName: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },

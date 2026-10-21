@@ -139,7 +139,7 @@ export default function TripDetail() {
                 </div>
               </div>
 
-              <div className="grid-3 mb-24">
+              <div className="grid-3 trip-stats mb-24">
                 <div className="kpi-card">
                   <div className="kpi-icon"><Icon name="pin" size={19} /></div>
                   <div className="kpi-value">{Number(trip.route_distance).toFixed(1)} km</div>

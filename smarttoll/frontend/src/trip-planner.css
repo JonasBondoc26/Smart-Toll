@@ -189,3 +189,26 @@
   .planner-map.is-full .map-status { left: 50%; max-width: 88%; }
   .planner-panel { position: static; width: auto; margin: -24px 12px 0; overflow: visible; box-shadow: var(--shadow-card); }
 }
+
+/* ---------- Phones: Trip Details and the planner's map ----------
+   (styles.css loads after this file, so these rules are one step more specific than the ones they adjust) */
+@media (max-width: 600px) {
+  /* The legend would cover most of a small map; the entry / exit tags on the map name the plazas. */
+  .planner-map .map-legend { display: none; }
+  .planner-map:not(.is-full) { height: 300px; }
+  /* Trip title: origin ⋯ road ⋯ destination in three columns that wrap, not one line wider than the screen. */
+  .page-head .route-line-lg { display: grid; grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr); gap: 10px; width: 100%; max-width: 100%; padding-top: 18px; }
+  .page-head .route-line-lg .route-line-end { white-space: normal; font-size: 19px; line-height: 1.25; }
+  .page-head .route-line-lg .route-line-end:last-child { text-align: right; }
+  .page-head .route-line-lg .route-line-road { flex: none; }
+  .page-head .route-line-lg .route-line-middle { font-size: 11px; white-space: nowrap; }
+  /* Distance, time and toll side by side, compact */
+  .grid-3.trip-stats { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
+  .grid-3.trip-stats .kpi-card { padding: 12px 10px; border-radius: 16px; }
+  .grid-3.trip-stats .kpi-icon { width: 30px; height: 30px; margin-bottom: 8px; }
+  .grid-3.trip-stats .kpi-value { font-size: 16px; overflow-wrap: anywhere; }
+  .grid-3.trip-stats .kpi-label { font-size: 11px; }
+  /* Plan Again / Delete Trip share one row */
+  .page-head .flex.gap-12 { width: 100%; }
+  .page-head .flex.gap-12 > * { flex: 1; justify-content: center; }
+}

@@ -78,8 +78,18 @@ const makePin = (lat, lng) => {
 
 /** Width of the panel floating over the map (px); the map keeps routes clear of it. */
 const PANEL_W = 400;
+const WIDE = '(min-width: 1025px)';   // matches the stylesheet's breakpoint for the floating panel
 
 export default function TripPlanner() {
+  // Wide screens: the panel floats over the map's left side (the map keeps routes clear of it).
+  // Narrow screens: the panel sits below the map, so the whole map is free.
+  const [panelFloats, setPanelFloats] = useState(() => window.matchMedia(WIDE).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(WIDE);
+    const on = () => setPanelFloats(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
   const { user } = useAuth();
   // Visitors (not logged in as a motorist) can plan by vehicle class; saving asks them to log in.
   const guest = !user || user.role !== 'motorist';
@@ -368,7 +378,7 @@ export default function TripPlanner() {
         {!guest && <Sidebar />}
         <div className={`main planner-main${guest ? ' main-guest' : ''}`}>
           <RouteMap
-            full padLeft={PANEL_W + 16}
+            full padLeft={panelFloats ? PANEL_W + 16 : 0}
             origin={origin} destination={destination} routes={routes} selected={selected}
             onSelect={setSelected} status={mapStatus.text} statusIsError={mapStatus.error}
             pinMode={pinMode} onPick={onMapPick} onMove={placePin} trafficAvailable={trafficAvailable}

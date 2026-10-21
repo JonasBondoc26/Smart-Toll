@@ -19,7 +19,9 @@ const pinIcon = (letter, cls) => L.divIcon({
 
 // pinMode: 'origin' | 'destination' | null. While set, a click on the map calls
 // onPick(lat, lng). The A / B markers can always be dragged; onMove(role, lat, lng).
-export default function RouteMap({ origin, destination, routes, selected, onSelect, status, statusIsError, pinMode, onPick, onMove, trafficAvailable = false }) {
+// full: the map fills its container edge to edge (Plan a Trip), with a panel floating over its
+// left `padLeft` pixels: routes are fitted clear of it and the zoom buttons sit bottom right.
+export default function RouteMap({ origin, destination, routes, selected, onSelect, status, statusIsError, pinMode, onPick, onMove, trafficAvailable = false, full = false, padLeft = 0 }) {
   const [showTraffic, setShowTraffic] = useState(false);
   const trafficLayer = useRef(null);
   const el = useRef(null);
@@ -28,10 +30,15 @@ export default function RouteMap({ origin, destination, routes, selected, onSele
   // Leaflet handlers are bound once, so they read the latest props through refs.
   const cb = useRef({});
   cb.current = { onSelect, onPick, onMove, pinMode };
+  const fit = { paddingTopLeft: [40 + padLeft, 40], paddingBottomRight: [40, 40] };
 
   // Create the map once.
   useEffect(() => {
-    const m = L.map(el.current, { scrollWheelZoom: true }).setView([14.9, 120.9], 8);   // Central Luzon
+    const m = L.map(el.current, { scrollWheelZoom: true, zoomControl: !full }).setView([14.9, 120.9], 8);   // Central Luzon
+    if (full) L.control.zoom({ position: 'bottomright' }).addTo(m);
+    // The container changes size with the window (full screen): keep the map's idea of its size right.
+    const resized = new ResizeObserver(() => m.invalidateSize());
+    resized.observe(el.current);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       // Attribution required by OpenStreetMap and by the OSRM demo server's terms.
@@ -49,7 +56,7 @@ export default function RouteMap({ origin, destination, routes, selected, onSele
     layers.current = {
       routes: L.layerGroup().addTo(m), plazas: L.layerGroup().addTo(m), ends: L.layerGroup().addTo(m),
     };
-    return () => { m.remove(); map.current = null; };
+    return () => { resized.disconnect(); m.remove(); map.current = null; };
   }, []);
 
   useEffect(() => {
@@ -78,7 +85,7 @@ export default function RouteMap({ origin, destination, routes, selected, onSele
       pts.push([loc.lat, loc.lng]);
     });
     if (!routes.length) {
-      if (pts.length === 2) m.fitBounds(pts, { padding: [40, 40] });
+      if (pts.length === 2) m.fitBounds(pts, fit);
       else if (pts.length === 1) m.setView(pts[0], Math.max(m.getZoom(), 11));
     }
   }, [origin, destination, routes]);
@@ -108,7 +115,7 @@ export default function RouteMap({ origin, destination, routes, selected, onSele
       L.polyline(line, { color: '#FFFFFF', weight: 9, opacity: 0.9, interactive: false }).addTo(layers.current.routes);
       L.polyline(line, { color: GREEN, weight: 5, interactive: false }).addTo(layers.current.routes);
     });
-    if (sel.geometry.length) m.fitBounds(sel.geometry, { padding: [40, 40] });
+    if (sel.geometry.length) m.fitBounds(sel.geometry, fit);
 
     sel.toll.segments.forEach((s) => {
       [['entry', s.entry], ['exit', s.exit]].forEach(([role, plaza]) => {
@@ -122,7 +129,7 @@ export default function RouteMap({ origin, destination, routes, selected, onSele
   }, [routes, selected]);
 
   return (
-    <div className="map-block planner-map">
+    <div className={`map-block planner-map${full ? ' is-full' : ''}`} style={full ? { '--pad-left': `${padLeft}px` } : undefined}>
       <div className="map-canvas" ref={el} role="application" aria-label="Route map" />
       {status && <div className={`map-status${statusIsError ? ' is-error' : ''}`} role="status">{status}</div>}
       {trafficAvailable && (

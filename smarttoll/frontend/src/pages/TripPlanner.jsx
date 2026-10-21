@@ -75,6 +75,10 @@ const makePin = (lat, lng) => {
   return { id: `pin:${lat.toFixed(5)},${lng.toFixed(5)}`, kind: 'pin', name: 'Finding place name…', meta: coords, lat, lng };
 };
 
+
+/** Width of the panel floating over the map (px); the map keeps routes clear of it. */
+const PANEL_W = 400;
+
 export default function TripPlanner() {
   const { user } = useAuth();
   // Visitors (not logged in as a motorist) can plan by vehicle class; saving asks them to log in.
@@ -358,42 +362,47 @@ export default function TripPlanner() {
         )}
       </div>
 
-      <div className="app-shell">
+      {/* Map first, like Waze: the map fills the page beside the navigation; everything else
+          sits in one panel floating over its left side. */}
+      <div className="app-shell planner-shell">
         {!guest && <Sidebar />}
-        <div className={`main${guest ? ' main-guest' : ''}`}>
-          <div className="page-head">
-            <div>
+        <div className={`main planner-main${guest ? ' main-guest' : ''}`}>
+          <RouteMap
+            full padLeft={PANEL_W + 16}
+            origin={origin} destination={destination} routes={routes} selected={selected}
+            onSelect={setSelected} status={mapStatus.text} statusIsError={mapStatus.error}
+            pinMode={pinMode} onPick={onMapPick} onMove={placePin} trafficAvailable={trafficAvailable}
+          />
+
+          <aside className="planner-panel" aria-label="Plan a trip">
+            <div className="planner-panel-head">
               <h1>Plan a Trip</h1>
               <div className="subtitle">
-                Enter your origin and destination to see the route, toll plazas, and estimated cost.
-                {guest && ' No account needed. Log in to check your RFID balance and save trips.'}
+                The route, every toll plaza and the toll for your vehicle{guest ? '. No account needed: log in to check your RFID balance and save trips.' : ', checked against your RFID balance.'}
               </div>
             </div>
-          </div>
 
-          {loadError && <p className="muted" style={{ color: 'var(--error)' }}>{loadError}</p>}
-          {!loaded && !loadError && <p className="muted">Loading…</p>}
-          {notice && !guest && (
-            <div className="notice notice-ok mb-24 save-done">
-              <Icon name="check" size={16} stroke={2.5} /><span>{notice}</span>
-            </div>
-          )}
+            {loadError && <p className="muted" style={{ color: 'var(--error)' }}>{loadError}</p>}
+            {!loaded && !loadError && <p className="muted">Loading…</p>}
+            {notice && !guest && (
+              <div className="notice notice-ok mb-16 save-done">
+                <Icon name="check" size={16} stroke={2.5} /><span>{notice}</span>
+              </div>
+            )}
 
-          {loaded && !guest && vehicles && vehicles.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-icon"><Icon name="car" size={30} /></div>
-              <h3>Add a vehicle first</h3>
-              <p>Toll fees depend on the vehicle's class, so SmartToll needs a vehicle before it can plan a trip.</p>
-              <button type="button" className="btn btn-primary" onClick={() => setVehicleModal({ vehicle_name: '', classification_id: classId })}>
-                <Icon name="plus" stroke={2.5} />Add a Vehicle
-              </button>
-            </div>
-          )}
+            {loaded && !guest && vehicles && vehicles.length === 0 && (
+              <div className="empty-state" style={{ padding: '24px 8px' }}>
+                <div className="empty-icon"><Icon name="car" size={30} /></div>
+                <h3>Add a vehicle first</h3>
+                <p>Toll fees depend on the vehicle's class, so SmartToll needs a vehicle before it can plan a trip.</p>
+                <button type="button" className="btn btn-primary" onClick={() => setVehicleModal({ vehicle_name: '', classification_id: classId })}>
+                  <Icon name="plus" stroke={2.5} />Add a Vehicle
+                </button>
+              </div>
+            )}
 
-          {loaded && (guest || (vehicles && vehicles.length > 0)) && (
-            <div className="planner-grid">
-              {/* ---------- Left: trip form and summary ---------- */}
-              <div className="card">
+            {loaded && (guest || (vehicles && vehicles.length > 0)) && (
+              <>
                 {!guest && savedRoutes.length > 0 && (
                   <div className="saved-routes">
                     <div className="saved-routes-label"><Icon name="star" size={13} stroke={2.2} />Saved routes</div>
@@ -464,60 +473,7 @@ export default function TripPlanner() {
                 {route && (
                   <>
                     <div className="divider" />
-                    <div className="card-row"><span className="muted">Distance</span><span style={strong}>{km(route.distance_m)}</span></div>
-                    <div className="card-row mt-16"><span className="muted">Est. Travel Time</span><span style={strong}>{duration(route.duration_s)}</span></div>
-                    <div className="card-row mt-16">
-                      <span className="muted">Expressways Used</span>
-                      <span style={{ ...strong, textAlign: 'right', maxWidth: '60%' }}>{roads.length ? roads.join(', ') : 'None'}</span>
-                    </div>
-                    <div className="card-row mt-16">
-                      <span className="muted">Estimated Toll</span>
-                      <span style={strong}>{toll.segments.length ? peso(toll.total) + (toll.complete ? '' : ' +') : 'No toll'}</span>
-                    </div>
-
-                    <div className="mt-24">
-                      {saved[selected] ? (
-                        <div className="notice notice-ok">
-                          <div className="save-done">
-                            <Icon name="check" size={16} stroke={2.5} />
-                            <span>Saved to your trip history. <Link to={`/trip-history/${saved[selected].id}`}>View trip</Link></span>
-                          </div>
-                          <div className="save-rfid">{rfidMessage(saved[selected].rfid)}</div>
-                        </div>
-                      ) : (
-                        <button type="button" className="btn btn-secondary btn-block" onClick={onSaveClick} disabled={saving || busy}>
-                          <Icon name="clock" size={15} stroke={2.3} />{saving ? 'Saving…' : 'Save to History'}
-                        </button>
-                      )}
-                      {saveError && <div className="field-hint" style={{ color: 'var(--error)' }}>{saveError}</div>}
-                      {!saved[selected] && !toll.complete && (
-                        <div className="field-hint">Only the priced part of the toll is saved.</div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* ---------- Right: map and results ---------- */}
-              <div>
-                <RouteMap
-                  origin={origin} destination={destination} routes={routes} selected={selected}
-                  onSelect={setSelected} status={mapStatus.text} statusIsError={mapStatus.error}
-                  pinMode={pinMode} onPick={onMapPick} onMove={placePin} trafficAvailable={trafficAvailable}
-                />
-
-                {!route && (
-                  <div className="card mt-24">
-                    <div className="planner-hint">
-                      Choose an origin and a destination, then press <strong>Find Route</strong>.<br />
-                      The map will show the route, and the toll and your RFID balance will appear here.
-                    </div>
-                  </div>
-                )}
-
-                {route && (
-                  <>
-                    <h3 style={{ fontSize: 15, margin: '24px 0 12px' }}>Route Options</h3>
+                    <h3 className="planner-section">Route options</h3>
                     {trip.tradeoff && <TradeoffChoice trip={trip} selected={selected} onSelect={setSelected} />}
                     <div className="route-options">
                       {routes.map((r, i) => {
@@ -527,22 +483,24 @@ export default function TripPlanner() {
                             type="button" key={i} aria-pressed={i === selected}
                             className={`route-option${i === selected ? ' is-selected' : ''}`} onClick={() => setSelected(i)}
                           >
-                            <div className="route-option-badges">
-                              {i === trip.picks.fastest && <span className="badge badge-ok">Fastest</span>}
-                              {i === trip.picks.shortest && <span className="badge badge-neutral">Shortest</span>}
-                              {i === trip.picks.cheapest && <span className="badge badge-warn">Cheapest</span>}
+                            <div className="route-option-top">
+                              <span className="route-option-time">{duration(r.duration_s)}</span>
+                              <span className="route-option-tags">
+                                {[i === trip.picks.fastest && 'Fastest', i === trip.picks.shortest && 'Shortest', i === trip.picks.cheapest && 'Cheapest'].filter(Boolean).join(' · ')}
+                              </span>
+                              <span className="route-option-toll">
+                                {r.toll.segments.length === 0 ? 'No toll' : peso(r.toll.total)}
+                                {r.toll.segments.length > 0 && !r.toll.complete && <small>+ unpriced section</small>}
+                              </span>
                             </div>
-                            <div className="route-option-toll">
-                              {r.toll.segments.length === 0 ? 'No toll' : peso(r.toll.total)}
-                              {r.toll.segments.length > 0 && !r.toll.complete && <small>+ unpriced section</small>}
+                            <div className="route-option-meta">
+                              {km(r.distance_m)} · {via.length ? 'via ' + via.join(', ') : 'no expressway'}
+                              {r.traffic && (
+                                <span className={`route-option-traffic is-${r.traffic.level}`}>
+                                  {' · '}{r.traffic.delay_s >= 60 ? `+${duration(r.traffic.delay_s)} traffic` : 'light traffic'}
+                                </span>
+                              )}
                             </div>
-                            <div className="route-option-meta">{km(r.distance_m)} · {duration(r.duration_s)}{r.traffic ? ' now' : ''}</div>
-                            {r.traffic && (
-                              <div className={`traffic-chip is-${r.traffic.level}`}>
-                                {r.traffic.delay_s >= 60 ? `+${duration(r.traffic.delay_s)} traffic` : 'Light traffic'}
-                              </div>
-                            )}
-                            <div className="route-option-via">{via.length ? 'via ' + via.join(', ') : 'No expressway'}</div>
                           </button>
                         );
                       })}
@@ -551,7 +509,7 @@ export default function TripPlanner() {
                       {routes.some((r) => r.traffic) ? 'Times include live traffic. ' : 'Typical travel times (live traffic is not available). '}
                       {routes.length === 1
                         ? 'The routing service returned one route for this trip, so it is the fastest, shortest and cheapest option available.'
-                        : `Comparing ${routes.length} routes. Tap a card or a grey line on the map to switch.`}
+                        : 'Pick a card or a grey line on the map to switch.'}
                     </div>
 
                     {/* Anything that could not be priced is said plainly, not hidden in the total. */}
@@ -562,52 +520,51 @@ export default function TripPlanner() {
                       </div>
                     )}
 
-
-                    <div className="gantry mt-24">
-                      <div className="gantry-title">Toll Plazas Along Route{roads.length ? ' — ' + roads.join(' → ') : ''}</div>
-                      <svg className="route-svg" viewBox="0 0 400 20" height="20" aria-hidden="true">
-                        <path d="M20 10 L380 10" stroke="rgba(255,255,255,0.15)" strokeWidth="4" strokeLinecap="round" />
-                        <path d="M20 10 L380 10" stroke="#E8A33D" strokeWidth="4" strokeLinecap="round" strokeDasharray="2 12" />
-                      </svg>
-                      <div className="gantry-plazas is-segments">
-                        {toll.segments.length === 0 && (
-                          <div className="gantry-plaza is-wide"><div className="gantry-plaza-name">This route uses no toll road</div></div>
-                        )}
-                        {toll.segments.map((s, i) => (
-                          <div className="gantry-plaza is-wide" key={i}>
-                            <div className="gantry-plaza-road">{s.label}</div>
-                            <div className="gantry-plaza-name">{s.entry && s.exit ? `${s.entry.name} → ${s.exit.name}` : (s.network ? 'Plaza not matched' : 'Rates not loaded')}</div>
-                            <div className="gantry-plaza-fee">{s.fee !== null ? peso(s.fee) : 'Not priced'}</div>
+                    <div className="planner-save">
+                      {saved[selected] ? (
+                        <div className="notice notice-ok">
+                          <div className="save-done">
+                            <Icon name="check" size={16} stroke={2.5} />
+                            <span>Saved to your trip history. <Link to={`/trip-history/${saved[selected].id}`}>View trip</Link></span>
                           </div>
-                        ))}
-                      </div>
+                          <div className="save-rfid">{rfidMessage(saved[selected].rfid)}</div>
+                        </div>
+                      ) : (
+                        <button type="button" className="btn btn-primary btn-block" onClick={onSaveClick} disabled={saving || busy}>
+                          <Icon name="clock" size={15} stroke={2.3} />
+                          {saving ? 'Saving…' : `Save to History · ${toll.segments.length ? peso(toll.total) + (toll.complete ? '' : ' +') : 'No toll'}`}
+                        </button>
+                      )}
+                      {saveError && <div className="field-hint" style={{ color: 'var(--error)' }}>{saveError}</div>}
+                      {!saved[selected] && !toll.complete && (
+                        <div className="field-hint">Only the priced part of the toll is saved.</div>
+                      )}
                     </div>
 
-                    <div className="grid-2 mt-24">
-                      <div className="card">
-                        <h3 style={{ fontSize: 15, marginBottom: 16 }}>Toll Fee Breakdown</h3>
-                        {toll.segments.length === 0 && (
-                          <div className="card-row breakdown-row"><span className="muted">No toll plazas on this route</span><span style={{ fontWeight: 600, fontSize: 14 }}>₱0.00</span></div>
-                        )}
-                        {toll.segments.map((s, i) => (
-                          <div className="card-row breakdown-row" key={i}>
-                            <span className="muted">
-                              {s.entry && s.exit ? `${s.entry.name} → ${s.exit.name}` : s.label}
-                              {s.entry && s.exit && (
-                                <div className="breakdown-sub">{s.label}{s.network ? ` · ${s.network}` : ''} · {km(s.distance_m)}</div>
-                              )}
-                            </span>
-                            <span style={{ fontWeight: 600, fontSize: 14 }}>{s.fee !== null ? peso(s.fee) : '—'}</span>
-                          </div>
-                        ))}
-                        <div className="card-row" style={{ padding: '15px 0 0', borderTop: '2px solid var(--green-dark)', marginTop: 6 }}>
-                          <span style={{ fontWeight: 700, fontSize: 15 }}>Total Estimated Toll</span>
-                          <span style={{ fontFamily: "'Manrope'", fontWeight: 800, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--green-deep)' }}>
-                            {peso(toll.total)}{toll.complete ? '' : ' +'}
-                          </span>
-                        </div>
+                    <div className="divider" />
+                    <h3 className="planner-section">Toll fee breakdown</h3>
+                    {toll.segments.length === 0 && (
+                      <div className="card-row breakdown-row"><span className="muted">No toll plazas on this route</span><span style={{ fontWeight: 600, fontSize: 14 }}>₱0.00</span></div>
+                    )}
+                    {toll.segments.map((s, i) => (
+                      <div className="card-row breakdown-row" key={i}>
+                        <span className="muted">
+                          {s.entry && s.exit ? `${s.entry.name} → ${s.exit.name}` : s.label}
+                          {s.entry && s.exit && (
+                            <div className="breakdown-sub">{s.label}{s.network ? ` · ${s.network}` : ''} · {km(s.distance_m)}</div>
+                          )}
+                        </span>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{s.fee !== null ? peso(s.fee) : '—'}</span>
                       </div>
+                    ))}
+                    <div className="card-row" style={{ padding: '14px 0 0', borderTop: '2px solid var(--ink)', marginTop: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: 15 }}>Total estimated toll</span>
+                      <span style={{ fontFamily: "'Manrope'", fontWeight: 800, fontSize: 24, letterSpacing: '-0.02em', color: 'var(--green-deep)' }}>
+                        {peso(toll.total)}{toll.complete ? '' : ' +'}
+                      </span>
+                    </div>
 
+                    <div className="planner-balance">
                       {guest ? (
                         <GuestBalanceCard toll={toll} onLogin={() => setLoginModal(true)} onRegister={() => setRegisterModal(true)} />
                       ) : (
@@ -619,9 +576,15 @@ export default function TripPlanner() {
                     </div>
                   </>
                 )}
-              </div>
-            </div>
-          )}
+
+                {!route && (
+                  <p className="planner-hint">
+                    Choose an origin and a destination, then press <strong>Find Route</strong>. The routes appear on the map, with the toll and your RFID balance here.
+                  </p>
+                )}
+              </>
+            )}
+          </aside>
         </div>
       </div>
 

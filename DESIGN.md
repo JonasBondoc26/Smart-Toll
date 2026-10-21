@@ -382,6 +382,8 @@ This register stays on the driving screen.
 ### Plan a Trip (map first)
 The map fills the screen. A floating card on top holds From, To (coloured dots, label above the value) and the vehicle, with a round swap button. Routes load as soon as both places are set. Each route line carries a tag with its time and toll ("1h 31m · ₱266", "3h 19m · Free"; the selected one Overhead Green), placed where the routes run apart; exit plazas carry an amber ₱ fee tag. The bottom sheet shows the routes as swipeable cards (badges, time, toll, km and roads, traffic chip; selected: green wash with a sign-green outline) and a sticky action bar: the RFID balance before → after, then **Save Trip · ₱266** (Update Balance when short, Start Trip once saved). Dragged up, it holds the toll breakdown and the RFID balance, flat inside the sheet (no cards inside it).
 
+On the website the same page is map first too, like Waze: the top bar and sidebar stay, the map fills the rest of the window, and one 400 px panel floats over its left side with the places, the two-line route cards, Save to History and, further down, the toll breakdown and RFID balance (scrolling inside the panel). The route is framed clear of the panel and the zoom buttons sit bottom right. Below 1024 px the map sits on top and the panel follows it.
+
 ## Do's and Don'ts
 
 ### Do:

@@ -46,6 +46,7 @@ Web Application: https://smarttoll.onrender.com/login
   - See the toll fee breakdown per expressway, from entry plaza to exit plaza.
   - **RFID balance check:** current balance, total estimated toll, the deduction and the balance after the trip. If the balance is too low, a pop-up lets you update it.
   - **Save to History** deducts the trip's toll from the vehicle's recorded RFID balance.
+- **Map first, like Waze:** Plan a Trip fills the window with the map (the top bar and sidebar stay); the places, route options, Save to History, the toll breakdown and the RFID balance sit in one panel floating over it.
 - **Saved routes:** save a route such as "Home → Office" and plan it again in one click from Plan a Trip.
 - **Trip History:** a list of saved trips, and a detail page per trip with its map, toll breakdown and RFID payment.
   - **Plan Again** opens a past trip in Plan a Trip with the same origin, destination and vehicle, priced with today's toll rates.

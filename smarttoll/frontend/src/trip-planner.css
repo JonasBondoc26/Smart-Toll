@@ -141,3 +141,51 @@
 .saved-route-x:hover { color: var(--red); }
 .saved-route-go:focus-visible, .saved-route-x:focus-visible { outline: 2px solid var(--green-mid); outline-offset: -2px; }
 
+
+/* ---------- Map first (like Waze): the map fills the page beside the navigation, one panel floats over it ---------- */
+.app-shell.planner-shell { height: calc(100vh - 67px); height: calc(100dvh - 67px); min-height: 480px; overflow: hidden; }   /* 67px: the top bar */
+.planner-main { position: relative; flex: 1; min-width: 0; padding: 0 !important; max-width: none !important; overflow: hidden; }
+.planner-main.main-guest { margin: 0; width: 100%; }
+.planner-map.is-full { position: absolute; inset: 0; height: auto; border-radius: 0; margin: 0; }
+.planner-map.is-full .map-status { left: calc(50% + var(--pad-left, 0px) / 2); max-width: calc(88% - var(--pad-left, 0px)); }
+.planner-map.is-full .map-legend { left: auto; right: 62px; bottom: 26px; }
+.planner-map.is-full .leaflet-bottom.leaflet-right .leaflet-control-zoom { margin-bottom: 26px; }
+
+.planner-panel {
+  position: absolute; z-index: 600; top: 16px; left: 16px; bottom: 16px; width: 400px; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-modal); padding: 20px 20px 24px;
+  scrollbar-width: thin;
+}
+.planner-panel-head { margin-bottom: 16px; }
+.planner-panel-head h1 { font-size: 24px; margin-bottom: 4px; }
+.planner-panel-head .subtitle { font-size: 13px; }
+.planner-panel .saved-routes { margin-bottom: 14px; }
+.planner-section { font-size: 15px; margin: 0 0 10px; }
+.planner-save { margin-top: 16px; }
+.planner-hint { margin-top: 16px; font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+/* The balance sits flat in the panel, not as a card inside a card. */
+.planner-balance { margin-top: 20px; }
+.planner-balance .card { padding: 0; background: transparent; border: 0; box-shadow: none; }
+
+/* Route options: two lines each, stacked (time, what it's best at, toll; then distance, roads, traffic) */
+.planner-panel .route-options { grid-template-columns: 1fr; gap: 8px; }
+.planner-panel .route-option { padding: 10px 12px; }
+.planner-panel .tradeoff-options { grid-template-columns: 1fr; }
+.route-option-top { display: flex; align-items: baseline; gap: 8px; }
+.route-option-time { font-weight: 800; font-size: 18px; color: var(--ink); letter-spacing: -0.01em; }
+.route-option-tags { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: var(--green-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.route-option-top .route-option-toll { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 16px; color: var(--ink); }
+.planner-panel .route-option-meta { margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.route-option-traffic { font-weight: 600; }
+.route-option-traffic.is-light { color: var(--green-deep); }
+.route-option-traffic.is-moderate { color: var(--amber-dark); }
+.route-option-traffic.is-heavy { color: var(--red); }
+
+/* Narrow screens (the sidebar becomes the bottom bar): map on top, the panel below it */
+@media (max-width: 1024px) {
+  .app-shell.planner-shell { height: auto; min-height: 0; }
+  .planner-main { overflow: visible; padding: 0 0 88px !important; }
+  .planner-map.is-full { position: relative; inset: auto; height: 52vh; min-height: 300px; }
+  .planner-map.is-full .map-status { left: 50%; max-width: 88%; }
+  .planner-panel { position: static; width: auto; margin: -24px 12px 0; overflow: visible; box-shadow: var(--shadow-card); }
+}

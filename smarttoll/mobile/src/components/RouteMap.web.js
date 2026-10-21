@@ -42,6 +42,8 @@ export default function RouteMap({ data, position, follow = false, heading = nul
 
 const styles = themed(() => StyleSheet.create({
   box: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.line, backgroundColor: colors.concrete, marginBottom: 14 },
-  // Full-screen map under floating panels (Trip in Progress, Plan a Trip)
-  bare: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.concrete },
+  // Full-screen map under floating panels (Trip in Progress, Plan a Trip). It takes the space in
+  // the normal layout (flex), not absolutely positioned: Android's WebView can stay blank inside
+  // an absolutely positioned box. The panels float over it instead.
+  bare: { flex: 1, alignSelf: 'stretch', backgroundColor: colors.concrete },
 }));
